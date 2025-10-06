@@ -1,4 +1,4 @@
-import type { Product, StockLog } from '@/lib/types';
+import type { Product, StockLog, Loan } from '@/lib/types';
 
 export const products: Product[] = [
   { id: 'PROD001', name: 'Blue Widgets', sku: 'BW-001', category: 'Widgets', quantity: 15, location: 'Warehouse A, Shelf 3', reorderPoint: 10 },
@@ -11,11 +11,17 @@ export const products: Product[] = [
 ];
 
 export const stockLogs: StockLog[] = [
-  { id: 'LOG001', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Red Gadgets', quantityChange: -5, reason: 'Sale' },
-  { id: 'LOG002', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Blue Widgets', quantityChange: -10, reason: 'Sale' },
-  { id: 'LOG003', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Purple Doohickeys', quantityChange: 20, reason: 'Restock' },
-  { id: 'LOG004', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Green Gizmos', quantityChange: -2, reason: 'Damage' },
-  { id: 'LOG005', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Red Gadgets', quantityChange: 50, reason: 'Restock' },
-  { id: 'LOG006', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Yellow Sprockets', quantityChange: -30, reason: 'Sale' },
-  { id: 'LOG007', timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Purple Doohickeys', quantityChange: -1, reason: 'Adjustment' },
+  { id: 'LOG001', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Red Gadgets', quantityChange: -5, reason: 'Venta' },
+  { id: 'LOG002', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Blue Widgets', quantityChange: -10, reason: 'Venta' },
+  { id: 'LOG003', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Purple Doohickeys', quantityChange: 20, reason: 'Reabastecimiento' },
+  { id: 'LOG004', timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Green Gizmos', quantityChange: -2, reason: 'Daño' },
+  { id: 'LOG005', timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Red Gadgets', quantityChange: 50, reason: 'Reabastecimiento' },
+  { id: 'LOG006', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Yellow Sprockets', quantityChange: -30, reason: 'Venta' },
+  { id: 'LOG007', timestamp: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), productName: 'Purple Doohickeys', quantityChange: -1, reason: 'Ajuste' },
+];
+
+export const loans: Loan[] = [
+    { id: 'LOAN001', productName: 'Red Gadgets', requester: 'Equipo de Marketing', loanDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'Prestado' },
+    { id: 'LOAN002', productName: 'Blue Widgets', requester: 'Juan Pérez (Ventas)', loanDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), status: 'Devuelto' },
+    { id: 'LOAN003', productName: 'Yellow Sprockets', requester: 'I+D', loanDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), status: 'Prestado' },
 ];

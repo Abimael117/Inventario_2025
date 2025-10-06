@@ -15,3 +15,11 @@ export type StockLog = {
   quantityChange: number;
   reason: 'Venta' | 'Reabastecimiento' | 'Ajuste' | 'Daño';
 };
+
+export type Loan = {
+  id: string;
+  productName: string;
+  requester: string;
+  loanDate: string;
+  status: 'Prestado' | 'Devuelto';
+};

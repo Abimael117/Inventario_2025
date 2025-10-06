@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart2, Home, Package, Settings } from "lucide-react";
+import { BarChart2, Home, Package, Settings, ArrowRightLeft } from "lucide-react";
 
 import {
   SidebarProvider,
@@ -59,6 +59,18 @@ export default function DashboardLayout({
                   <span>Inventario</span>
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton
+                    asChild
+                    isActive={pathname.startsWith("/loans")}
+                    tooltip="Préstamos"
+                >
+                    <Link href="/loans">
+                        <ArrowRightLeft />
+                        <span>Préstamos</span>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
