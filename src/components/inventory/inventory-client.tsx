@@ -32,12 +32,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AddProductForm } from "./add-product-form";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
   const [products, setProducts] = useState<Product[]>(data);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const { toast } = useToast();
 
@@ -48,7 +57,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
 
   const confirmDelete = () => {
     if (productToDelete) {
-      // This is a mock implementation. In a real app, you would make an API call.
       setProducts(products.filter((p) => p.id !== productToDelete.id));
       toast({
         title: "Éxito",
@@ -57,6 +65,19 @@ export default function InventoryClient({ data }: { data: Product[] }) {
       setProductToDelete(null);
     }
     setIsDeleteDialogOpen(false);
+  };
+  
+  const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
+    const newProduct: Product = {
+      ...newProductData,
+      id: `PROD${(Math.random() * 1000).toFixed(0).padStart(3, '0')}`,
+    };
+    setProducts([newProduct, ...products]);
+    toast({
+      title: "Éxito",
+      description: `El producto "${newProduct.name}" ha sido añadido.`,
+    });
+    setIsAddDialogOpen(false);
   };
 
   const handleDownloadCsv = () => {
@@ -94,7 +115,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                 <Download className="h-4 w-4 mr-2" />
                 Descargar CSV
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Añadir Producto
             </Button>
@@ -178,6 +199,18 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             </CardContent>
         </Card>
       </main>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+            <DialogDescription>
+              Rellena los detalles del nuevo producto. Haz clic en guardar cuando hayas terminado.
+            </DialogDescription>
+          </DialogHeader>
+          <AddProductForm onSubmit={handleAddProduct} />
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
