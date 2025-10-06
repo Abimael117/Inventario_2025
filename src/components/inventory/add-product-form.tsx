@@ -35,7 +35,6 @@ const formSchema = z.object({
   reorderPoint: z.coerce.number().int().min(0, {
     message: "El punto de reorden no puede ser negativo.",
   }),
-  imageUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).or(z.literal("")),
 });
 
 type AddProductFormProps = {
@@ -52,16 +51,11 @@ export function AddProductForm({ onSubmit }: AddProductFormProps) {
       location: "",
       quantity: 0,
       reorderPoint: 0,
-      imageUrl: "",
     },
   });
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    const dataToSubmit = {
-      ...values,
-      imageUrl: values.imageUrl || `https://picsum.photos/seed/${values.sku || 'default'}/200/200`
-    };
-    onSubmit(dataToSubmit);
+    onSubmit(values);
     form.reset();
   }
 
@@ -115,19 +109,6 @@ export function AddProductForm({ onSubmit }: AddProductFormProps) {
               <FormLabel>Ubicación</FormLabel>
               <FormControl>
                 <Input placeholder="Ej: Almacén A, Estante 3" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="imageUrl"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL de la Imagen</FormLabel>
-              <FormControl>
-                <Input placeholder="https://ejemplo.com/imagen.jpg" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

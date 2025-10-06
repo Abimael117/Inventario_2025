@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Download, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { collection, doc } from "firebase/firestore";
-import Image from "next/image";
 
 import type { Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -106,11 +105,11 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
 
   const handleDownloadCsv = () => {
-    const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden", "URL de Imagen"];
+    const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
     const csvRows = [
       headers.join(","),
       ...data.map(p => 
-        [p.id, `"${p.name}"`, p.sku, p.category, p.quantity, `"${p.location}"`, p.reorderPoint, p.imageUrl].join(",")
+        [p.id, `"${p.name}"`, p.sku, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
       )
     ];
     const csvString = csvRows.join("\n");
@@ -156,7 +155,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                     <Table>
                         <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[80px]">Imagen</TableHead>
                             <TableHead>Nombre del Producto</TableHead>
                             <TableHead className="hidden md:table-cell">SKU</TableHead>
                             <TableHead className="hidden lg:table-cell">Categoría</TableHead>
@@ -171,16 +169,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         <TableBody>
                         {data.map((product) => (
                             <TableRow key={product.id}>
-                            <TableCell>
-                                <Image
-                                    alt={product.name}
-                                    className="aspect-square rounded-md object-cover"
-                                    height="64"
-                                    src={product.imageUrl}
-                                    width="64"
-                                    data-ai-hint="product image"
-                                />
-                            </TableCell>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                             <TableCell className="hidden lg:table-cell">{product.category}</TableCell>

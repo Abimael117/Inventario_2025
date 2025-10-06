@@ -29,10 +29,6 @@
         "reorderPoint": {
           "type": "number",
           "description": "The reorder point for the product."
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "The URL of the product image."
         }
       },
       "required": [
@@ -41,8 +37,7 @@
         "category",
         "quantity",
         "location",
-        "reorderPoint",
-        "imageUrl"
+        "reorderPoint"
       ]
     },
     "Loan": {
