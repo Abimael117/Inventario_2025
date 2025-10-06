@@ -44,14 +44,22 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, useFirebase } from "@/firebase";
+import { EditProductForm } from "./edit-product-form";
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, useFirebase } from "@/firebase";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const { toast } = useToast();
   const { firestore } = useFirebase();
+
+  const handleEditClick = (product: Product) => {
+    setProductToEdit(product);
+    setIsEditDialogOpen(true);
+  };
 
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
@@ -80,6 +88,19 @@ export default function InventoryClient({ data }: { data: Product[] }) {
         description: `El producto "${newProductData.name}" ha sido añadido.`,
       });
       setIsAddDialogOpen(false);
+    }
+  };
+
+  const handleEditProduct = (editedProductData: Omit<Product, 'id'>) => {
+    if (firestore && productToEdit) {
+      const productRef = doc(firestore, "products", productToEdit.id);
+      setDocumentNonBlocking(productRef, editedProductData, { merge: true });
+      toast({
+        title: "Éxito",
+        description: `El producto "${editedProductData.name}" ha sido actualizado.`,
+      });
+      setIsEditDialogOpen(false);
+      setProductToEdit(null);
     }
   };
 
@@ -181,8 +202,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" /> Editar
+                                    <DropdownMenuItem onSelect={() => handleEditClick(product)}>
+                                        <Edit className="mr-2 h-4 w-4" /> Editar
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                     onSelect={() => handleDeleteClick(product)}
@@ -213,6 +234,19 @@ export default function InventoryClient({ data }: { data: Product[] }) {
           <AddProductForm onSubmit={handleAddProduct} />
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Producto</DialogTitle>
+            <DialogDescription>
+              Modifica los detalles del producto. Haz clic en guardar cuando hayas terminado.
+            </DialogDescription>
+          </DialogHeader>
+          <EditProductForm onSubmit={handleEditProduct} product={productToEdit} />
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -221,7 +255,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente el
               producto "{productToDelete?.name}" de tus datos de inventario.
-            </AlertDialogDescription>
+            </DialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
