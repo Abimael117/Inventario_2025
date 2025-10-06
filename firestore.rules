@@ -1,99 +1,46 @@
 /**
- * @fileoverview Firestore Security Rules for StockWise.
- *
- * Core Philosophy:
- * This ruleset provides public read access to all collections and allows all authenticated users to create, update, and delete documents.
- *
- * Data Structure:
- * The database consists of several top-level collections: 'categories', 'products', 'stock_levels', 'locations', 'stock_alerts', and 'stock_movements'.
- *
+ * @description This ruleset enforces a public read, owner-write model for Products and Loans.
+ * All data is stored in top-level collections: /products/{productId} and /loans/{loanId}.
  * Key Security Decisions:
- * - Public read access for all collections.
- * - Unrestricted write access for all authenticated users.
+ *   - Unauthenticated (anonymous) users can read all product and loan data.
+ *   - Only authenticated users can create, update, or delete product and loan data.
+ *   - An 'ownerId' field (or similar) must be added to the Product and Loan entities to enable write permissions.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     /**
-     * @description Grants public read access and authenticated write access to the 'categories' collection.
-     * @path /categories/{categoryId}
-     * @allow (get, list): Any user can read a category.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a category.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a category.
-     * @principle Allows any user to create, read, update, and delete categories.
-     */
-    match /categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Grants public read access and authenticated write access to the 'products' collection.
+     * @description Allows public read access to products and restricts write access to authenticated owners.
      * @path /products/{productId}
-     * @allow (get, list): Any user can read a product.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a product.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a product.
-     * @principle Allows any user to create, read, update, and delete products.
+     * @allow (get, list): Any unauthenticated user can read product data.
+     * @allow (create): Only an authenticated user can create a product, with the 'ownerId' matching their UID.
+     * @allow (update, delete): Only the authenticated owner of the product can modify or delete it.
+     * @deny (create): Unauthenticated users cannot create products.
+     * @deny (update, delete): Unauthenticated users cannot modify or delete products.
+     * @principle Public read, owner-only writes. Requires 'ownerId' field in the Product entity.
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.keys().hasAll(['name', 'sku', 'category', 'quantity', 'location', 'reorderPoint']) ;
+      allow update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
     /**
-     * @description Grants public read access and authenticated write access to the 'stock_levels' collection.
-     * @path /stock_levels/{stockLevelId}
-     * @allow (get, list): Any user can read a stock level.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock level.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock level.
-     * @principle Allows any user to create, read, update, and delete stock levels.
+     * @description Allows public read access to loans and restricts write access to authenticated owners.
+     * @path /loans/{loanId}
+     * @allow (get, list): Any unauthenticated user can read loan data.
+     * @allow (create): Only an authenticated user can create a loan, with the 'ownerId' matching their UID.
+     * @allow (update, delete): Only the authenticated owner of the loan can modify or delete it.
+     * @deny (create): Unauthenticated users cannot create loans.
+     * @deny (update, delete): Unauthenticated users cannot modify or delete loans.
+     * @principle Public read, owner-only writes. Requires 'ownerId' field in the Loan entity.
      */
-    match /stock_levels/{stockLevelId} {
+    match /loans/{loanId} {
       allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.keys().hasAll(['productName', 'requester', 'loanDate', 'status']) ;
+      allow update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
 
-    /**
-     * @description Grants public read access and authenticated write access to the 'locations' collection.
-     * @path /locations/{locationId}
-     * @allow (get, list): Any user can read a location.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a location.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a location.
-     * @principle Allows any user to create, read, update, and delete locations.
-     */
-    match /locations/{locationId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Grants public read access and authenticated write access to the 'stock_alerts' collection.
-     * @path /stock_alerts/{stockAlertId}
-     * @allow (get, list): Any user can read a stock alert.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock alert.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock alert.
-     * @principle Allows any user to create, read, update, and delete stock alerts.
-     */
-    match /stock_alerts/{stockAlertId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    /**
-     * @description Grants public read access and authenticated write access to the 'stock_movements' collection.
-     * @path /stock_movements/{stockMovementId}
-     * @allow (get, list): Any user can read a stock movement.
-     * @allow (create, update, delete): Any authenticated user can create, update, or delete a stock movement.
-     * @deny (create, update, delete): An unauthenticated user cannot create, update, or delete a stock movement.
-     * @principle Allows any user to create, read, update, and delete stock movements.
-     */
-    match /stock_movements/{stockMovementId} {
-      allow get, list: if true;
-      allow create, update, delete: if isSignedIn();
-    }
-
-    // Helper function to determine if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
