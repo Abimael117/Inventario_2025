@@ -1,48 +1,42 @@
 /**
- * @description This ruleset enforces a public read, owner-write model for Products and Loans.
- * All data is stored in top-level collections: /products/{productId} and /loans/{loanId}.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces public read access to 'products' and 'loans' collections,
+ * with write access entirely disabled as no authentication is required by the application.
+ *
+ * Data Structure:
+ * - /products/{productId}: Stores product information. Publicly readable.
+ * - /loans/{loanId}: Stores loan information. Publicly readable.
+ *
  * Key Security Decisions:
- *   - Unauthenticated (anonymous) users can read all product and loan data.
- *   - Only authenticated users can create, update, or delete product and loan data.
- *   - An 'ownerId' field (or similar) must be added to the Product and Loan entities to enable write permissions.
+ * - Public Read Access: Both 'products' and 'loans' collections are publicly readable, making their data accessible to anyone.
+ * - No Write Access: All write operations (create, update, delete) are explicitly denied due to the absence of authentication providers in the application configuration.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     /**
-     * @description Allows public read access to products and restricts write access to authenticated owners.
+     * @description Allows public read access to the 'products' collection, but denies all write access.
      * @path /products/{productId}
-     * @allow (get, list): Any unauthenticated user can read product data.
-     * @allow (create): Only an authenticated user can create a product, with the 'ownerId' matching their UID.
-     * @allow (update, delete): Only the authenticated owner of the product can modify or delete it.
-     * @deny (create): Unauthenticated users cannot create products.
-     * @deny (update, delete): Unauthenticated users cannot modify or delete products.
-     * @principle Public read, owner-only writes. Requires 'ownerId' field in the Product entity.
+     * @allow (get, list): Any user (or unauthenticated user) can read product information.
+     * @deny (create, update, delete): No user can create, update, or delete products.
+     * @principle Allows public read access while preventing any modifications to the data.
      */
     match /products/{productId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.keys().hasAll(['name', 'sku', 'category', 'quantity', 'location', 'reorderPoint']) ;
-      allow update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description Allows public read access to loans and restricts write access to authenticated owners.
+     * @description Allows public read access to the 'loans' collection, but denies all write access.
      * @path /loans/{loanId}
-     * @allow (get, list): Any unauthenticated user can read loan data.
-     * @allow (create): Only an authenticated user can create a loan, with the 'ownerId' matching their UID.
-     * @allow (update, delete): Only the authenticated owner of the loan can modify or delete it.
-     * @deny (create): Unauthenticated users cannot create loans.
-     * @deny (update, delete): Unauthenticated users cannot modify or delete loans.
-     * @principle Public read, owner-only writes. Requires 'ownerId' field in the Loan entity.
+     * @allow (get, list): Any user (or unauthenticated user) can read loan information.
+     * @deny (create, update, delete): No user can create, update, or delete loans.
+     * @principle Allows public read access while preventing any modifications to the data.
      */
     match /loans/{loanId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.keys().hasAll(['productName', 'requester', 'loanDate', 'status']) ;
-      allow update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-    }
-
-    function isSignedIn() {
-      return request.auth != null;
+      allow create, update, delete: if false;
     }
   }
 }
