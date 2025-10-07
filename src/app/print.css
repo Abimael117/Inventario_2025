@@ -1,22 +1,14 @@
 
+.print-only {
+  display: none;
+}
+
 @media print {
-  body {
-    background: none;
-  }
-
-  .printable-content > .print-hide {
-    display: none !important;
-  }
-  
-  .printable-content > .print-only {
-    display: block !important;
-  }
-
-  .print-only {
-    display: block !important;
-  }
-  
   .print-hide {
     display: none !important;
+  }
+  
+  .print-only {
+    display: block !important;
   }
 }
