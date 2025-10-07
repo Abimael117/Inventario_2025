@@ -116,9 +116,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
 
   const handlePrint = () => {
+    // We need a short timeout to ensure the state has updated
+    // and the `loanToPrint` is set before triggering the print.
     setTimeout(() => {
       window.print();
-    }, 50);
+    }, 100);
   };
 
   return (
@@ -217,54 +219,56 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
               </CardContent>
           </Card>
         </main>
+
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
+                <DialogDescription>
+                Rellena los detalles del nuevo préstamo.
+                </DialogDescription>
+            </DialogHeader>
+            <AddLoanForm onSubmit={handleAddLoan} products={products} />
+            </DialogContent>
+        </Dialog>
+        
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+                </AlertDialogAction>
+            </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+            <DialogContent className="w-full max-w-3xl">
+            <DialogHeader>
+                <DialogTitle>Vista Previa del Comprobante</DialogTitle>
+                <DialogDescription>
+                Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+                </DialogDescription>
+            </DialogHeader>
+            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
+            </DialogFooter>
+            </DialogContent>
+        </Dialog>
       </div>
-      
-      {loanToPrint && <LoanReceipt loan={loanToPrint} className="print-only" />}
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
-            <DialogDescription>
-              Rellena los detalles del nuevo préstamo.
-            </DialogDescription>
-          </DialogHeader>
-          <AddLoanForm onSubmit={handleAddLoan} products={products} />
-        </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="w-full max-w-3xl print-hide">
-           <DialogHeader>
-            <DialogTitle>Vista Previa del Comprobante</DialogTitle>
-            <DialogDescription>
-              Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
-            </DialogDescription>
-          </DialogHeader>
-          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="print-only">
+        {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+      </div>
     </>
   );
 }
