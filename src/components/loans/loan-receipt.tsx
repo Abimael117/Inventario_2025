@@ -11,7 +11,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   return (
     <div 
       id="printable-receipt" 
-      className="receipt-container font-sans text-foreground"
+      className="font-sans text-foreground"
     >
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
         <div className="flex justify-start">

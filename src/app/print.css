@@ -20,17 +20,4 @@
     box-shadow: none !important;
     border: none !important;
   }
-
-  /* Asegura que el recibo ocupe la página completa y distribuye el contenido */
-  #printable-receipt {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100vh;
-    padding: 1.5rem;
-    font-size: 14px;
-    background: none;
-    box-shadow: none;
-    border: none;
-  }
 }
