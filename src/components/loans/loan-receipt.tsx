@@ -11,10 +11,10 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   return (
     <div 
       id="printable-receipt" 
-      className="receipt-container font-sans text-foreground p-6"
+      className="receipt-container font-sans text-foreground p-6 bg-card"
     >
-      <header className="flex justify-between items-center pb-4 border-b border-gray-400">
-        <div className="flex items-center justify-start">
+      <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
+        <div className="flex justify-start">
           <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
         </div>
         <div className="text-center text-sm font-semibold">
@@ -22,7 +22,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
           <p>DE ESCÁRCEGA</p>
           <p>2024-2027</p>
         </div>
-        <div className="flex items-center justify-end">
+        <div className="flex justify-end">
           <Image src="https://tse1.mm.bing.net/th/id/OIP.W6OOgA_8g2-y3CIw54Uk6gHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Logo Gobierno de Escárcega" width={120} height={68} data-ai-hint="logo city" />
         </div>
       </header>
