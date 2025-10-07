@@ -109,27 +109,27 @@
     position: absolute;
     left: 0;
     top: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     height: 100%;
     margin: 0;
-    padding: 1.5rem;
+    padding: 1rem;
     box-sizing: border-box;
 
     display: flex;
     flex-direction: column;
-    font-size: 18px;
+
+    transform: scale(1.15);
+    transform-origin: top left;
   }
 
   #printable-receipt > header img:first-child {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
   }
   
   #printable-receipt > header img:last-child {
-    width: 180px;
-    height: 100px;
+    width: 150px;
+    height: 84px;
   }
 
 
