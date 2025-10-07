@@ -116,17 +116,17 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    font-size: 14px;
+    font-size: 2vw; /* Use viewport width for responsive font size */
   }
 
   #printable-receipt > header img:first-child {
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
   }
   
   #printable-receipt > header img:last-child {
-    width: 130px;
-    height: 73px;
+    width: 150px;
+    height: 84px;
   }
 
   #printable-receipt > main {
