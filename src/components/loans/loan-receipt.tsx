@@ -52,6 +52,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
             <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                 <div className="text-center">
+                    <p className="mb-8 text-sm font-semibold">Entregado por</p>
                     <input
                       type="text"
                       value={entregadoPor}
@@ -59,9 +60,9 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                       placeholder="Nombre y Firma"
                       className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
                     />
-                    <p className="mt-2 text-sm font-semibold">Entregado por</p>
                 </div>
                 <div className="text-center">
+                    <p className="mb-8 text-sm font-semibold">Recibido por</p>
                     <input
                       type="text"
                       value={recibidoPor}
@@ -69,7 +70,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                       placeholder="Nombre y Firma"
                       className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
                     />
-                    <p className="mt-2 text-sm font-semibold">Recibido por</p>
                 </div>
             </div>
         </main>
