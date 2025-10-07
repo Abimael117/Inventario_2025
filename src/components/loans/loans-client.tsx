@@ -233,7 +233,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="max-w-3xl">
-          <DialogHeader className="print-hide">
+          <DialogHeader>
             <DialogTitle>Comprobante de Préstamo</DialogTitle>
             <DialogDescription>
               Imprime este comprobante para mantener un registro físico.
