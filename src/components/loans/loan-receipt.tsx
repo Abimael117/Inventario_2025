@@ -17,7 +17,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div id="receipt-to-print" className="p-8">
         <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
             <div className="flex items-center">
-              <Image src="https://picsum.photos/seed/escudo/100/100" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
+              <Image src="https://storage.googleapis.com/project-lk-chat-apps/7473787b-4024-4d1a-ac18-2d174d816f1b.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
             </div>
             <div className="text-center text-sm font-semibold">
               <p>HONORABLE AYUNTAMIENTO</p>
@@ -25,7 +25,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>2024-2027</p>
             </div>
             <div className="flex items-center">
-              <Image src="https://picsum.photos/seed/logo-escarcega/120/80" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo heart" />
+              <Image src="https://storage.googleapis.com/project-lk-chat-apps/719aa018-0245-4299-8805-4c6c06a461e1.png" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
             </div>
         </header>
 
@@ -44,10 +44,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                     <p className="font-bold">Fecha de Salida:</p>
                     <p>{format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}</p>
                 </div>
-                 <div>
-                    <p className="font-bold">ID de Préstamo:</p>
-                    <p>{loan.id}</p>
-                </div>
             </div>
 
             <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
@@ -64,15 +60,8 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             </div>
         </main>
         
-        <footer className="flex justify-between items-center pt-4 mt-8 border-t-4" style={{borderColor: '#E8D8C0'}}>
-            <div className="text-xs">
-                <p className="font-bold">Honorable Ayuntamiento de Escárcega</p>
-                <p>Dirección: Andador Luis Donaldo Colosio No. 1, entre Calle 31 y 29, Col. Centro</p>
-                <p>Tel: 982 82 4 02 11 Email: presidencia@escarcega.gob.mx</p>
-            </div>
-            <div>
-                 <Image src="https://picsum.photos/seed/corazon/100/40" alt="Logo Corazón" width={100} height={40} data-ai-hint="logo signature" />
-            </div>
+        <footer className="pt-4 mt-8">
+            <Image src="https://storage.googleapis.com/project-lk-chat-apps/d7a7c269-b5cd-45a8-ba50-0a25595f9c49.png" alt="Información del Ayuntamiento" width={800} height={80} layout="responsive" />
         </footer>
       </div>
 
