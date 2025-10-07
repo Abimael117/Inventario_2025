@@ -48,28 +48,28 @@ const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregad
                 </div>
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
-                <div className="text-center">
-                    <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
-                    <p className="mt-2 text-sm font-semibold">Entregado por</p>
-                     <input
-                    type="text"
-                    placeholder="Nombre de quien entrega"
-                    className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
-                    value={entregadoPor}
-                    readOnly
-                    />
-                </div>
-                <div className="text-center">
-                    <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
-                    <p className="mt-2 text-sm font-semibold">Recibido por</p>
-                     <input
-                    type="text"
-                    placeholder="Nombre de quien recibe"
-                    className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
-                    value={recibidoPor}
-                    readOnly
-                    />
-                </div>
+                    <div className="text-center">
+                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                        <p className="mt-2 text-sm font-semibold">Entregado por</p>
+                         <input
+                        type="text"
+                        placeholder="Nombre de quien entrega"
+                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
+                        value={entregadoPor}
+                        readOnly
+                        />
+                    </div>
+                    <div className="text-center">
+                        <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
+                        <p className="mt-2 text-sm font-semibold">Recibido por</p>
+                         <input
+                        type="text"
+                        placeholder="Nombre de quien recibe"
+                        className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
+                        value={recibidoPor}
+                        readOnly
+                        />
+                    </div>
                 </div>
             </main>
             
@@ -98,7 +98,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
-        {/* Esto es lo que el usuario ve y edita. El formato es idéntico al que ya funcionaba */}
+        {/* Esto es lo que el usuario ve y edita. */}
         <div className="bg-white text-black p-8">
             <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
                 <div className="flex items-center justify-start w-1/3">
