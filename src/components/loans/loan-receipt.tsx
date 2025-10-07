@@ -21,7 +21,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div id="receipt-to-print" className="p-8">
         <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
             <div className="flex items-center justify-start w-1/3">
-              <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={293} height={200} data-ai-hint="logo government" style={{ height: '120px', width: 'auto' }} />
+              <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={293} height={200} data-ai-hint="logo government" style={{ height: '200px', width: 'auto' }} />
             </div>
             <div className="text-center text-sm font-semibold w-1/3">
               <p>HONORABLE AYUNTAMIENTO</p>
@@ -29,7 +29,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>2024-2027</p>
             </div>
             <div className="flex items-center justify-end w-1/3">
-              <Image src="https://tse1.mm.bing.net/th/id/OIP.W6OOgA_8g2-y3CIw54Uk6gHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Logo Gobierno de Escárcega" width={293} height={200} data-ai-hint="logo city" style={{ height: '120px', width: 'auto' }} />
+              <Image src="https://tse1.mm.bing.net/th/id/OIP.W6OOgA_8g2-y3CIw54Uk6gHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Logo Gobierno de Escárcega" width={293} height={200} data-ai-hint="logo city" style={{ height: '200px', width: 'auto' }} />
             </div>
         </header>
 
@@ -52,24 +52,26 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
             <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                 <div className="text-center">
+                    <div className="w-3/4 mx-auto border-b border-gray-400 h-8"></div>
                     <input
                       type="text"
                       value={entregadoPor}
                       onChange={(e) => setEntregadoPor(e.target.value)}
-                      placeholder="Nombre y Firma"
-                      className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
+                      placeholder="Nombre de quien entrega"
+                      className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                     />
-                    <p className="mt-2 text-sm font-semibold">Entregado por</p>
+                    <p className="mt-1 text-sm font-semibold">Entregado por</p>
                 </div>
                 <div className="text-center">
+                    <div className="w-3/4 mx-auto border-b border-gray-400 h-8"></div>
                     <input
                       type="text"
                       value={recibidoPor}
                       onChange={(e) => setRecibidoPor(e.target.value)}
-                      placeholder="Nombre y Firma"
-                      className="w-3/4 mx-auto border-t-0 border-b border-x-0 border-gray-400 text-center text-sm focus:outline-none focus:ring-0 print:border-b"
+                      placeholder="Nombre de quien recibe"
+                      className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                     />
-                    <p className="mt-2 text-sm font-semibold">Recibido por</p>
+                    <p className="mt-1 text-sm font-semibold">Recibido por</p>
                 </div>
             </div>
         </main>
@@ -97,15 +99,14 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
             width: 100%;
           }
           input {
+            border: none !important;
+          }
+          .border-b {
             border-bottom: 1px solid #9ca3af !important;
-            border-top: none !important;
           }
         }
         input {
-          border-top: none !important;
-          border-left: none !important;
-          border-right: none !important;
-          border-bottom: 1px solid #d1d5db;
+          border: none;
           background-color: transparent;
         }
       `}</style>
