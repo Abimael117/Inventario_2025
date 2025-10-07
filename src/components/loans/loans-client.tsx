@@ -50,7 +50,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { AddLoanForm } from "./add-loan-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
 import { LoanReceipt } from "./loan-receipt";
-import { cn } from "@/lib/utils";
 
 type LoansClientProps = {
   loans: Loan[];
@@ -153,7 +152,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {loans.map((loan) => (
+                        {loans.length > 0 ? (
+                          loans.map((loan) => (
                             <TableRow key={loan.id}>
                             <TableCell className="font-medium">{loan.productName}</TableCell>
                             <TableCell>{loan.requester}</TableCell>
@@ -202,7 +202,14 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                 </DropdownMenu>
                             </TableCell>
                             </TableRow>
-                        ))}
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="h-24 text-center">
+                              No hay préstamos registrados.
+                            </TableCell>
+                          </TableRow>
+                        )}
                         </TableBody>
                     </Table>
                 </div>
@@ -240,8 +247,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       </AlertDialog>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
-        <DialogContent className="printable-receipt w-full max-w-3xl" >
-          <DialogHeader className="print-hide">
+        <DialogContent className="printable-receipt w-full max-w-3xl">
+           <DialogHeader className="print-hide">
             <DialogTitle>Vista Previa del Comprobante</DialogTitle>
             <DialogDescription>
               Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
