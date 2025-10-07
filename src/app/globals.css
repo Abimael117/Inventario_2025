@@ -112,24 +112,22 @@
     width: 100%;
     height: 100%;
     margin: 0;
-    padding: 1rem;
+    padding: 1.5rem;
     box-sizing: border-box;
+    font-size: 18px;
 
     display: flex;
     flex-direction: column;
-
-    transform: scale(1.15);
-    transform-origin: top left;
   }
 
   #printable-receipt > header img:first-child {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
   }
   
   #printable-receipt > header img:last-child {
-    width: 150px;
-    height: 84px;
+    width: 180px;
+    height: 101px;
   }
 
 
