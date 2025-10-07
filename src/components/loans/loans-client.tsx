@@ -238,7 +238,10 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
         <DialogContent className="w-full max-w-3xl border-none bg-transparent p-0 shadow-none">
-          <div className="py-4">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Comprobante de Préstamo</DialogTitle>
+          </DialogHeader>
+          <div>
             {loanToPrint && <LoanReceipt loan={loanToPrint} />}
           </div>
           <DialogFooter className="print-hide justify-center">
