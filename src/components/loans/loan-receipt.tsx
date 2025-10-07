@@ -17,7 +17,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div id="receipt-to-print" className="p-8">
         <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
             <div className="flex items-center">
-              <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={150} height={150} data-ai-hint="logo government" />
+              <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={120} height={120} data-ai-hint="logo government" />
             </div>
             <div className="text-center text-sm font-semibold">
               <p>HONORABLE AYUNTAMIENTO</p>
