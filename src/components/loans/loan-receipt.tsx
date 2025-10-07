@@ -64,8 +64,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                     </div>
                     <div className="text-center">
                         <div className="border-b border-gray-400 w-3/4 mx-auto">&nbsp;</div>
-                        <p className="mt-2 text-sm font-semibold">Recibido por</p>
-                         <input
+                        <p className="mt-2 text-sm font-semibold">Recibido por</p>                         <input
                         type="text"
                         placeholder="Nombre de quien recibe"
                         className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500 print-input-value"

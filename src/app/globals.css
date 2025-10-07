@@ -82,13 +82,10 @@
 }
 
 @media print {
-  body {
-    background: #fff;
-  }
   body * {
     visibility: hidden;
   }
-  #printable-receipt, #printable-receipt *, .radix-dialog-content, .radix-dialog-content * {
+  #printable-receipt, #printable-receipt * {
     visibility: visible;
   }
   #printable-receipt {
@@ -96,14 +93,16 @@
     left: 0;
     top: 0;
     right: 0;
-    width: 210mm; /* A4 width */
-    margin: 20px auto;
+    width: 100%;
+    margin: 0 auto;
+    padding: 20px;
     border: none;
     box-shadow: none;
     color: #000 !important;
+    background-color: #fff !important;
   }
   .print-hide {
-      display: none !important;
+    display: none !important;
   }
   .print-input-value {
     border: none !important;
