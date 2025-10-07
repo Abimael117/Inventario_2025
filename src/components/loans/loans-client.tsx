@@ -237,14 +237,16 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
       </AlertDialog>
 
       <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="dialog-content max-w-3xl overflow-auto">
+        <DialogContent className="dialog-content max-w-3xl overflow-auto p-6">
           <DialogHeader className="print-hide">
             <DialogTitle>Comprobante de Préstamo</DialogTitle>
             <DialogDescription>
               Revisa el comprobante antes de imprimir.
             </DialogDescription>
           </DialogHeader>
-          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+          <div className="pt-6">
+            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+          </div>
           <DialogFooter className="print-hide">
             <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
