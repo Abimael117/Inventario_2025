@@ -81,7 +81,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
           </footer>
       </div>
 
-      <div className="p-6 bg-gray-50 flex items-center justify-end gap-4 print-hide">
+      <div className="p-6 bg-gray-50 flex items-center justify-end gap-4">
         <Button onClick={handlePrint}>Imprimir Comprobante</Button>
       </div>
     </>

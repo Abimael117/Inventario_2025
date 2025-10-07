@@ -80,3 +80,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    background: none;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+}
