@@ -17,7 +17,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div id="receipt-to-print" className="p-8">
         <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
             <div className="flex items-center">
-              <Image src="https://storage.googleapis.com/project-lk-chat-apps/f2178229-2391-4d1d-847e-a034d6105c31.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
+              <Image src="https://storage.googleapis.com/project-lk-chat-apps/7473787b-4024-4d1a-ac18-2d174d816f1b.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
             </div>
             <div className="text-center text-sm font-semibold">
               <p>HONORABLE AYUNTAMIENTO</p>
