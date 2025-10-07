@@ -25,7 +25,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>2024-2027</p>
             </div>
             <div className="flex items-center">
-              <Image src="https://storage.googleapis.com/project-lk-chat-apps/1c4d9326-8092-48a5-83c3-631b53e32b6e.png" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
+              <Image src="" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
             </div>
         </header>
 
@@ -61,7 +61,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
         </main>
         
         <footer className="pt-4 mt-8">
-            <Image src="https://storage.googleapis.com/project-lk-chat-apps/040a4521-82b1-432d-8bab-d686f06a0e69.png" alt="Información del Ayuntamiento" width={800} height={80} layout="responsive" />
+            <Image src="" alt="Información del Ayuntamiento" width={800} height={80} layout="responsive" />
         </footer>
       </div>
 
