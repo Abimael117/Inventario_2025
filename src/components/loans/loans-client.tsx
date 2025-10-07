@@ -249,19 +249,19 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
             </AlertDialogContent>
         </AlertDialog>
 
-        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-            <DialogContent className="w-full max-w-3xl">
-            <DialogHeader>
-                <DialogTitle>Vista Previa del Comprobante</DialogTitle>
-                <DialogDescription>
-                Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
-                </DialogDescription>
-            </DialogHeader>
-            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-            </DialogFooter>
+        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
+            <DialogContent className="w-full max-w-3xl print-hide">
+              <DialogHeader>
+                  <DialogTitle>Vista Previa del Comprobante</DialogTitle>
+                  <DialogDescription>
+                  Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+                  </DialogDescription>
+              </DialogHeader>
+              {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
+              </DialogFooter>
             </DialogContent>
         </Dialog>
       </div>
