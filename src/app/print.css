@@ -7,10 +7,14 @@
     display: none !important;
   }
 
-  /* Oculta el botón de cierre del diálogo de ShadCN */
-  [role="dialog"] > button[aria-label="Close"],
-  [role="dialog"] > button[data-state="open"] {
+  /* Oculta el botón de cierre 'X' del diálogo de ShadCN */
+  .dialog-content > button[aria-label="Close"] {
       display: none !important;
+  }
+
+  /* Asegura que el contenido del diálogo no cause overflow en la impresión */
+  .dialog-content {
+      overflow: visible !important;
   }
 
   #printable-receipt {
