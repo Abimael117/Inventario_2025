@@ -1,6 +1,26 @@
+.print-only {
+  display: none;
+}
 
 @media print {
+  body * {
+    visibility: hidden;
+  }
+  
   .print-hide {
     display: none !important;
+  }
+  
+  .print-only, .print-only * {
+    visibility: visible;
+  }
+
+  .print-only {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: block !important;
   }
 }
