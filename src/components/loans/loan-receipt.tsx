@@ -18,7 +18,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
   return (
     <div>
-      <div id="printable-receipt" className="receipt-container bg-white text-black p-8 font-sans">
+      <div id="printable-receipt" className="receipt-container bg-white text-black font-sans">
         <header className="flex justify-between items-center pb-4 border-b-2" style={{ borderColor: '#C0A0A0' }}>
           <div className="flex items-center justify-start w-1/4">
             <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={120} height={120} data-ai-hint="logo government" />
@@ -50,8 +50,9 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>{format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}</p>
             </div>
           </div>
+        </main>
 
-          <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
+        <div className="grid grid-cols-2 gap-8 pt-12">
             <div className="text-center">
               <div className="border-t border-gray-400 w-3/4 mx-auto mb-2">&nbsp;</div>
               <p className="text-sm font-semibold">Entregado por</p>
@@ -75,7 +76,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               />
             </div>
           </div>
-        </main>
       </div>
 
       <div className="p-6 bg-gray-50 flex justify-end print-hide">
