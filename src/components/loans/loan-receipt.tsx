@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -11,6 +11,8 @@ import { useReactToPrint } from 'react-to-print';
 
 export function LoanReceipt({ loan }: { loan: Loan }) {
   const componentRef = useRef(null);
+  const [entregadoPor, setEntregadoPor] = useState('');
+  const [recibidoPor, setRecibidoPor] = useState('');
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
@@ -58,6 +60,8 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                         type="text"
                         placeholder="Nombre y Firma"
                         className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
+                        value={entregadoPor}
+                        onChange={(e) => setEntregadoPor(e.target.value)}
                         />
                     </div>
                     <div className="text-center">
@@ -66,6 +70,8 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                         type="text"
                         placeholder="Nombre y Firma"
                         className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
+                        value={recibidoPor}
+                        onChange={(e) => setRecibidoPor(e.target.value)}
                         />
                     </div>
                 </div>
