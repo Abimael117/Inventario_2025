@@ -55,6 +55,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                     <div className="text-center">
+                        <p className="mt-1 text-sm font-semibold">Entregado por</p>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
@@ -62,9 +63,9 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                         value={entregadoPor}
                         onChange={(e) => setEntregadoPor(e.target.value)}
                         />
-                        <p className="mt-1 text-sm font-semibold">Entregado por</p>
                     </div>
                     <div className="text-center">
+                        <p className="mt-1 text-sm font-semibold">Recibido por</p>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
@@ -72,7 +73,6 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
                         value={recibidoPor}
                         onChange={(e) => setRecibidoPor(e.target.value)}
                         />
-                        <p className="mt-1 text-sm font-semibold">Recibido por</p>
                     </div>
                 </div>
             </main>
