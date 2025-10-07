@@ -57,7 +57,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               value={entregadoPor}
               onChange={(e) => setEntregadoPor(e.target.value)}
             />
-            <p className="print-only text-xs text-gray-500">{entregadoPor || ' '}</p>
+            <p className="print-only text-sm text-center min-h-[20px]">{entregadoPor || ' '}</p>
           </div>
         </div>
         <div className="text-center">
@@ -70,7 +70,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               value={recibidoPor}
               onChange={(e) => setRecibidoPor(e.target.value)}
             />
-             <p className="print-only text-xs text-gray-500">{recibidoPor || ' '}</p>
+             <p className="print-only text-sm text-center min-h-[20px]">{recibidoPor || ' '}</p>
           </div>
         </div>
       </footer>
