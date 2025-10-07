@@ -7,10 +7,13 @@ import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Image from 'next/image';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 export function LoanReceipt({ loan }: { loan: Loan }) {
   const [entregadoPor, setEntregadoPor] = useState('');
   const [recibidoPor, setRecibidoPor] = useState('');
+  const [scale, setScale] = useState(1);
 
   const handlePrint = () => {
     window.print();
@@ -21,12 +24,13 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div 
         id="printable-receipt" 
         className="receipt-container bg-white text-black font-sans"
+        style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}
       >
         <header className="flex justify-between items-center pb-4 border-b-2" style={{ borderColor: '#C0A0A0' }}>
           <div className="flex items-center justify-start">
             <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={120} height={120} data-ai-hint="logo government" />
           </div>
-          <div className="text-center text-sm font-semibold">
+          <div className="text-center text-sm font-semibold px-2">
             <p>HONORABLE AYUNTAMIENTO</p>
             <p>DE ESCÁRCEGA</p>
             <p>2024-2027</p>
@@ -81,7 +85,18 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
           </footer>
       </div>
 
-      <div className="p-6 bg-gray-50 flex justify-end print-hide">
+      <div className="p-6 bg-gray-50 flex items-center justify-end gap-4 print-hide">
+        <div className="flex-1 max-w-xs space-y-2">
+            <Label htmlFor="scale-slider" className="text-sm font-medium">Ajustar Tamaño ({Math.round(scale * 100)}%)</Label>
+            <Slider
+                id="scale-slider"
+                min={0.8}
+                max={1.2}
+                step={0.01}
+                value={[scale]}
+                onValueChange={(value) => setScale(value[0])}
+            />
+        </div>
         <Button onClick={handlePrint}>Imprimir Comprobante</Button>
       </div>
     </>

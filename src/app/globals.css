@@ -116,19 +116,18 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    font-size: 16px;
+    font-size: 14px;
   }
 
   #printable-receipt > header img:first-child {
-    width: 120px;
-    height: 120px;
+    width: 100px;
+    height: 100px;
   }
   
   #printable-receipt > header img:last-child {
-    width: 150px;
-    height: 84px;
+    width: 130px;
+    height: 73px;
   }
-
 
   #printable-receipt > main {
     flex-grow: 1;
