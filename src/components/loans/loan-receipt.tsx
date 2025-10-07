@@ -9,8 +9,6 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { useReactToPrint } from 'react-to-print';
 
-// Componente que contiene el contenido a imprimir.
-// Se usa React.forwardRef para que react-to-print pueda obtener la referencia del DOM.
 const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregadoPor: string; recibidoPor: string; }>((props, ref) => {
     const { loan, entregadoPor, recibidoPor } = props;
   
@@ -93,12 +91,10 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
   return (
     <div>
-        {/* El contenido imprimible ahora está separado y oculto a la vista */}
         <div className="hidden">
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
-        {/* Esto es lo que el usuario ve y edita. */}
         <div className="bg-white text-black p-8">
             <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
                 <div className="flex items-center justify-start w-1/3">
