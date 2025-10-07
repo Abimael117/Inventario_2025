@@ -123,99 +123,101 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   return (
     <>
-      <AppHeader title="Préstamos">
-        <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Registrar Préstamo
-            </Button>
-        </div>
-      </AppHeader>
-      <main className="flex-1 p-4 md:p-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Historial de Préstamos</CardTitle>
-                <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Solicitante</TableHead>
-                            <TableHead>Fecha de Préstamo</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>
-                            <span className="sr-only">Acciones</span>
-                            </TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {loans.length > 0 ? (
-                          loans.map((loan) => (
-                            <TableRow key={loan.id}>
-                            <TableCell className="font-medium">{loan.productName}</TableCell>
-                            <TableCell>{loan.requester}</TableCell>
-                            <TableCell>
-                                {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
-                            </TableCell>
-                            <TableCell>
-                                <Badge
-                                variant={
-                                    loan.status === 'Prestado'
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                                >
-                                {loan.status}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Alternar menú</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                    <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
-                                      <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem 
-                                        onSelect={() => handleMarkAsReturned(loan.id)}
-                                        disabled={loan.status === 'Devuelto'}
-                                    >
-                                        <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onSelect={() => handleDeleteClick(loan)}
-                                      disabled={loan.status !== 'Devuelto'}
-                                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                    >
-                                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                            </TableRow>
-                          ))
-                        ) : (
+      <div className="printable-content">
+        <AppHeader title="Préstamos">
+          <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Registrar Préstamo
+              </Button>
+          </div>
+        </AppHeader>
+        <main className="flex-1 p-4 md:p-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Historial de Préstamos</CardTitle>
+                  <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="overflow-x-auto">
+                      <Table>
+                          <TableHeader>
                           <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                              No hay préstamos registrados.
-                            </TableCell>
+                              <TableHead>Producto</TableHead>
+                              <TableHead>Solicitante</TableHead>
+                              <TableHead>Fecha de Préstamo</TableHead>
+                              <TableHead>Estado</TableHead>
+                              <TableHead>
+                              <span className="sr-only">Acciones</span>
+                              </TableHead>
                           </TableRow>
-                        )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-      </main>
+                          </TableHeader>
+                          <TableBody>
+                          {loans.length > 0 ? (
+                            loans.map((loan) => (
+                              <TableRow key={loan.id}>
+                              <TableCell className="font-medium">{loan.productName}</TableCell>
+                              <TableCell>{loan.requester}</TableCell>
+                              <TableCell>
+                                  {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
+                              </TableCell>
+                              <TableCell>
+                                  <Badge
+                                  variant={
+                                      loan.status === 'Prestado'
+                                      ? "destructive"
+                                      : "secondary"
+                                  }
+                                  >
+                                  {loan.status}
+                                  </Badge>
+                              </TableCell>
+                              <TableCell>
+                                  <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">Alternar menú</span>
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                      <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
+                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                          onSelect={() => handleMarkAsReturned(loan.id)}
+                                          disabled={loan.status === 'Devuelto'}
+                                      >
+                                          <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onSelect={() => handleDeleteClick(loan)}
+                                        disabled={loan.status !== 'Devuelto'}
+                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                      >
+                                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                      </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                  </DropdownMenu>
+                              </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                No hay préstamos registrados.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                          </TableBody>
+                      </Table>
+                  </div>
+              </CardContent>
+          </Card>
+        </main>
+      </div>
 
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
