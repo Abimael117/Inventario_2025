@@ -56,7 +56,6 @@ const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregad
                     placeholder="Nombre de quien entrega"
                     className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
                     value={entregadoPor}
-                    onChange={(e) => (e.target.value)} // Esto no necesita cambiar estado aquí, se lee del padre
                     readOnly
                     />
                 </div>
@@ -68,7 +67,6 @@ const PrintableContent = React.forwardRef<HTMLDivElement, { loan: Loan; entregad
                     placeholder="Nombre de quien recibe"
                     className="w-3/4 mx-auto border-0 text-center text-sm focus:outline-none focus:ring-0 bg-transparent text-gray-500"
                     value={recibidoPor}
-                    onChange={(e) => (e.target.value)} // Esto no necesita cambiar estado aquí, se lee del padre
                     readOnly
                     />
                 </div>
@@ -96,7 +94,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
   return (
     <div>
         {/* El contenido imprimible ahora está separado y oculto a la vista */}
-        <div style={{ display: "none" }}>
+        <div className="hidden">
             <PrintableContent ref={componentRef} loan={loan} entregadoPor={entregadoPor} recibidoPor={recibidoPor} />
         </div>
 
