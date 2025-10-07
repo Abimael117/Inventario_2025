@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
+import "./print.css";
 
 export const metadata: Metadata = {
   title: "StockWise",
@@ -32,7 +33,9 @@ export default function RootLayout({
           "min-h-screen bg-background font-body text-foreground antialiased"
         )}
       >
-        {children}
+        <div className="printable-content">
+          {children}
+        </div>
         <Toaster />
       </body>
     </html>
