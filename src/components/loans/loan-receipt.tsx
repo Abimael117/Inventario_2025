@@ -7,12 +7,12 @@ import { es } from 'date-fns/locale';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 
-export function LoanReceipt({ loan }: { loan: Loan }) {
+export function LoanReceipt({ loan, className }: { loan: Loan, className?: string }) {
   const [entregadoPor, setEntregadoPor] = React.useState('');
   const [recibidoPor, setRecibidoPor] = React.useState('');
   
   return (
-    <div className="font-sans text-foreground bg-background p-10">
+    <div className={`font-sans text-foreground bg-background p-10 ${className}`}>
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">
         <div className="flex justify-start">
           <Image src="https://escarcega.gob.mx/escarcega.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
