@@ -25,7 +25,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>2024-2027</p>
             </div>
             <div className="flex items-center">
-              <Image src="" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
+              <Image src="https://tse1.mm.bing.net/th/id/OIP.W6OOgA_8g2-y3CIw54Uk6gHaEK?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
             </div>
         </header>
 
