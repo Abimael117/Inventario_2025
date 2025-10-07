@@ -17,7 +17,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
       <div id="receipt-to-print" className="p-8">
         <header className="flex justify-between items-center pb-4 border-b-4" style={{borderColor: '#C0A0A0'}}>
             <div className="flex items-center">
-              <Image src="https://storage.googleapis.com/project-lk-chat-apps/7473787b-4024-4d1a-ac18-2d174d816f1b.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
+              <Image src="https://storage.googleapis.com/project-lk-chat-apps/f21d3f95-5388-4662-861f-4b68903c7349.png" alt="Escudo de Escárcega" width={100} height={100} data-ai-hint="logo government" />
             </div>
             <div className="text-center text-sm font-semibold">
               <p>HONORABLE AYUNTAMIENTO</p>
@@ -25,7 +25,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
               <p>2024-2027</p>
             </div>
             <div className="flex items-center">
-              <Image src="https://storage.googleapis.com/project-lk-chat-apps/18021b02-7c8a-4428-a6b6-a21239b5608c.png" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
+              <Image src="https://storage.googleapis.com/project-lk-chat-apps/1e07b5a2-332e-4624-9b2f-3435f9920150.png" alt="Logo Gobierno de Escárcega" width={120} height={80} data-ai-hint="logo city" />
             </div>
         </header>
 
@@ -61,7 +61,7 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
         </main>
         
         <footer className="pt-4 mt-8">
-            <Image src="https://storage.googleapis.com/project-lk-chat-apps/013063f7-9150-4357-a53c-1f63a2336303.png" alt="Información del Ayuntamiento" width={800} height={80} layout="responsive" />
+            <Image src="https://storage.googleapis.com/project-lk-chat-apps/19322a3d-4c31-419a-9d0a-9d95f87b2829.png" alt="Información del Ayuntamiento" width={800} height={80} layout="responsive" />
         </footer>
       </div>
 
