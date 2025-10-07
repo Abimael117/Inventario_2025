@@ -31,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -45,6 +44,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle
+} from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
@@ -59,7 +66,7 @@ type LoansClientProps = {
 export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+  const [isReceiptSheetOpen, setIsReceiptSheetOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
   const [loanToPrint, setLoanToPrint] = useState<Loan | null>(null);
   const { toast } = useToast();
@@ -99,7 +106,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   const handlePrintClick = (loan: Loan) => {
     setLoanToPrint(loan);
-    setIsReceiptDialogOpen(true);
+    setIsReceiptSheetOpen(true);
   };
 
   const confirmDelete = () => {
@@ -236,21 +243,23 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
-        <DialogContent className="dialog-content max-w-3xl overflow-auto p-6">
-          <DialogHeader className="print-hide">
-            <DialogTitle>Comprobante de Préstamo</DialogTitle>
-            <DialogDescription>
-              Revisa el comprobante antes de imprimir.
-            </DialogDescription>
-          </DialogHeader>
-          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-          <DialogFooter className="print-hide">
-            <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+      <Sheet open={isReceiptSheetOpen} onOpenChange={setIsReceiptSheetOpen}>
+        <SheetContent className="w-full sm:max-w-3xl overflow-auto p-6" side="right">
+          <SheetHeader className="print-hide">
+            <SheetTitle>Comprobante de Préstamo</SheetTitle>
+            <SheetDescription>
+              Revisa el comprobante y rellena los nombres antes de imprimir.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+          </div>
+          <SheetFooter className="print-hide">
+            <Button variant="outline" onClick={() => setIsReceiptSheetOpen(false)}>Cancelar</Button>
             <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

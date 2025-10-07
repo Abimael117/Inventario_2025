@@ -11,14 +11,6 @@
     display: block !important;
     visibility: visible !important;
   }
-
-  .dialog-content {
-    overflow: visible !important;
-    background: none !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-  }
 }
 
 .print-only {
