@@ -82,39 +82,23 @@
 }
 
 @media print {
-  body > * {
-    display: none !important;
-  }
-  
-  body > [role="dialog"] {
-    display: block !important;
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-    inset: auto !important;
-    transform: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    display: flex !important;
-    justify-content: center;
-    align-items: flex-start;
+  body * {
+    visibility: hidden;
   }
 
-  [role="dialog"] > * {
-     display: block !important;
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
   }
 
   #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
-    max-width: 100%;
-    margin: 0;
     padding: 2rem;
-    box-shadow: none !important;
-    border: none !important;
+    margin: 0;
   }
-
+  
   .print-hide {
     display: none !important;
   }
