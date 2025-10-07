@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
@@ -53,20 +53,20 @@ export function LoanReceipt({ loan }: { loan: Loan }) {
 
                 <div className="mt-24 grid grid-cols-2 gap-8 pt-12">
                     <div className="text-center">
+                        <p className="mt-1 text-sm font-semibold">Entregado por</p>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
                         className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                         />
-                        <p className="mt-1 text-sm font-semibold">Entregado por</p>
                     </div>
                     <div className="text-center">
+                        <p className="mt-1 text-sm font-semibold">Recibido por</p>
                         <input
                         type="text"
                         placeholder="Nombre y Firma"
                         className="w-3/4 mx-auto border-0 border-b border-gray-400 text-center text-sm focus:outline-none focus:ring-0 bg-transparent"
                         />
-                        <p className="mt-1 text-sm font-semibold">Recibido por</p>
                     </div>
                 </div>
             </main>
