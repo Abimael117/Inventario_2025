@@ -252,7 +252,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </AlertDialog>
 
         <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
-            <DialogContent className="w-full max-w-3xl print-hide">
+            <DialogContent className="w-full max-w-3xl">
               <DialogHeader>
                   <DialogTitle>Vista Previa del Comprobante</DialogTitle>
                   <DialogDescription>
