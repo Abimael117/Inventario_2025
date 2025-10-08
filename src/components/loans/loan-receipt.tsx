@@ -8,10 +8,23 @@ import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
-export function LoanReceipt({ loan, className }: { loan: Loan; className?: string }) {
-  const [entregadoPor, setEntregadoPor] = React.useState('');
-  const [recibidoPor, setRecibidoPor] = React.useState('');
+type LoanReceiptProps = {
+  loan: Loan;
+  className?: string;
+  entregadoPor: string;
+  recibidoPor: string;
+  setEntregadoPor: (value: string) => void;
+  setRecibidoPor: (value: string) => void;
+};
 
+export function LoanReceipt({
+  loan,
+  className,
+  entregadoPor,
+  recibidoPor,
+  setEntregadoPor,
+  setRecibidoPor,
+}: LoanReceiptProps) {
   return (
     <div className={cn('font-sans text-foreground bg-white p-10', className)}>
       <header className="grid grid-cols-3 items-center pb-4 border-b border-gray-400">

@@ -62,6 +62,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
   const [loanToPrint, setLoanToPrint] = useState<Loan | null>(null);
+  const [entregadoPor, setEntregadoPor] = useState('');
+  const [recibidoPor, setRecibidoPor] = useState('');
   const { toast } = useToast();
   const { firestore } = useFirebase();
 
@@ -99,6 +101,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   const handlePrintClick = (loan: Loan) => {
     setLoanToPrint(loan);
+    setEntregadoPor('');
+    setRecibidoPor('');
     setIsReceiptDialogOpen(true);
   };
 
@@ -116,8 +120,6 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
 
   const handlePrint = () => {
-    // We need a short timeout to ensure the state has updated
-    // and the `loanToPrint` is set before triggering the print.
     setTimeout(() => {
       window.print();
     }, 100);
@@ -235,7 +237,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás absolutely seguro?</AlertDialogTitle>
+                <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
                 <AlertDialogDescription>
                 Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
                 </AlertDialogDescription>
@@ -257,7 +259,15 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                   Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
                   </DialogDescription>
               </DialogHeader>
-              {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+              {loanToPrint && (
+                <LoanReceipt 
+                  loan={loanToPrint} 
+                  entregadoPor={entregadoPor}
+                  recibidoPor={recibidoPor}
+                  setEntregadoPor={setEntregadoPor}
+                  setRecibidoPor={setRecibidoPor}
+                />
+              )}
               <DialogFooter>
                   <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
                   <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
@@ -266,7 +276,15 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </Dialog>
       </div>
       <div className="print-only">
-        {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+        {loanToPrint && (
+            <LoanReceipt 
+              loan={loanToPrint} 
+              entregadoPor={entregadoPor}
+              recibidoPor={recibidoPor}
+              setEntregadoPor={setEntregadoPor}
+              setRecibidoPor={setRecibidoPor}
+            />
+        )}
       </div>
     </div>
   );
