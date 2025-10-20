@@ -127,152 +127,154 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   return (
     <>
-      <AppHeader title="Préstamos">
-        <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Registrar Préstamo
-            </Button>
-        </div>
-      </AppHeader>
-      <main className="flex-1 p-4 md:p-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Historial de Préstamos</CardTitle>
-                <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead>Producto</TableHead>
-                            <TableHead>Solicitante</TableHead>
-                            <TableHead>Fecha de Préstamo</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead>
-                            <span className="sr-only">Acciones</span>
-                            </TableHead>
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {loans.length > 0 ? (
-                            loans.map((loan) => (
-                              <TableRow key={loan.id}>
-                              <TableCell className="font-medium">{loan.productName}</TableCell>
-                              <TableCell>{loan.requester}</TableCell>
-                              <TableCell>
-                                  {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
-                              </TableCell>
-                              <TableCell>
-                                  <Badge
-                                  variant={
-                                      loan.status === 'Prestado'
-                                      ? "destructive"
-                                      : "secondary"
-                                  }
-                                  >
-                                  {loan.status}
-                                  </Badge>
-                              </TableCell>
-                              <TableCell>
-                                  <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                      <Button aria-haspopup="true" size="icon" variant="ghost">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                      <span className="sr-only">Alternar menú</span>
-                                      </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                      <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
-                                        <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem 
-                                          onSelect={() => handleMarkAsReturned(loan.id)}
-                                          disabled={loan.status === 'Devuelto'}
-                                      >
-                                          <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onSelect={() => handleDeleteClick(loan)}
-                                        disabled={loan.status !== 'Devuelto'}
-                                        className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                      >
-                                        <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                      </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                  </DropdownMenu>
-                              </TableCell>
-                              </TableRow>
-                            ))
-                          ) : (
-                              <TableRow>
-                                  <TableCell colSpan={5} className="h-24 text-center">
-                                  No hay préstamos registrados.
-                                  </TableCell>
-                              </TableRow>
-                          )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
-      </main>
+      <div className="print-hide">
+        <AppHeader title="Préstamos">
+          <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Registrar Préstamo
+              </Button>
+          </div>
+        </AppHeader>
+        <main className="flex-1 p-4 md:p-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Historial de Préstamos</CardTitle>
+                  <CardDescription>Gestiona los productos prestados a equipos o personal.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <div className="overflow-x-auto">
+                      <Table>
+                          <TableHeader>
+                          <TableRow>
+                              <TableHead>Producto</TableHead>
+                              <TableHead>Solicitante</TableHead>
+                              <TableHead>Fecha de Préstamo</TableHead>
+                              <TableHead>Estado</TableHead>
+                              <TableHead>
+                              <span className="sr-only">Acciones</span>
+                              </TableHead>
+                          </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {loans.length > 0 ? (
+                              loans.map((loan) => (
+                                <TableRow key={loan.id}>
+                                <TableCell className="font-medium">{loan.productName}</TableCell>
+                                <TableCell>{loan.requester}</TableCell>
+                                <TableCell>
+                                    {format(new Date(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es })}
+                                </TableCell>
+                                <TableCell>
+                                    <Badge
+                                    variant={
+                                        loan.status === 'Prestado'
+                                        ? "destructive"
+                                        : "secondary"
+                                    }
+                                    >
+                                    {loan.status}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Alternar menú</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuItem onSelect={() => handlePrintClick(loan)}>
+                                          <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem 
+                                            onSelect={() => handleMarkAsReturned(loan.id)}
+                                            disabled={loan.status === 'Devuelto'}
+                                        >
+                                            <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                          onSelect={() => handleDeleteClick(loan)}
+                                          disabled={loan.status !== 'Devuelto'}
+                                          className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                        >
+                                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={5} className="h-24 text-center">
+                                    No hay préstamos registrados.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                          </TableBody>
+                      </Table>
+                  </div>
+              </CardContent>
+          </Card>
+        </main>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-              <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
-              <DialogDescription>
-              Rellena los detalles del nuevo préstamo.
-              </DialogDescription>
-          </DialogHeader>
-          <AddLoanForm onSubmit={handleAddLoan} products={products} />
-          </DialogContent>
-      </Dialog>
-      
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-          <AlertDialogContent>
-          <AlertDialogHeader>
-              <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
-              <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
-              </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
-              </AlertDialogAction>
-          </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
-          <DialogContent className="w-full max-w-3xl loan-receipt-printable-area">
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle>Vista Previa del Comprobante</DialogTitle>
+                <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
                 <DialogDescription>
-                Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+                Rellena los detalles del nuevo préstamo.
                 </DialogDescription>
             </DialogHeader>
-            {loanToPrint && (
-              <LoanReceipt 
-                loan={loanToPrint} 
-                entregadoPor={entregadoPor}
-                recibidoPor={recibidoPor}
-                setEntregadoPor={setEntregadoPor}
-                setRecibidoPor={setRecibidoPor}
-              />
-            )}
-            <DialogFooter>
-                <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
-            </DialogFooter>
-          </DialogContent>
-      </Dialog>
+            <AddLoanForm onSubmit={handleAddLoan} products={products} />
+            </DialogContent>
+        </Dialog>
+        
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+                <AlertDialogDescription>
+                Esta acción no se puede deshacer. Esto eliminará permanentemente el préstamo del producto "{loanToDelete?.productName}".
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Eliminar
+                </AlertDialogAction>
+            </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>>
+
+        <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen} >
+            <DialogContent className="w-full max-w-3xl loan-receipt-printable-area">
+              <DialogHeader>
+                  <DialogTitle>Vista Previa del Comprobante</DialogTitle>
+                  <DialogDescription>
+                  Así es como se verá tu comprobante. Puedes editar los campos de "Entregado por" y "Recibido por" antes de imprimir.
+                  </DialogDescription>
+              </DialogHeader>
+              {loanToPrint && (
+                <LoanReceipt 
+                  loan={loanToPrint} 
+                  entregadoPor={entregadoPor}
+                  recibidoPor={recibidoPor}
+                  setEntregadoPor={setEntregadoPor}
+                  setRecibidoPor={setRecibidoPor}
+                />
+              )}
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsReceiptDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" />Imprimir</Button>
+              </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      </div>
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Download, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
 import { collection, doc } from "firebase/firestore";
 
@@ -48,6 +48,7 @@ import { EditProductForm } from "./edit-product-form";
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, useFirebase } from "@/firebase";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
+  const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -108,7 +109,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
     const csvRows = [
       headers.join(","),
-      ...data.map(p => 
+      ...filteredData.map(p => 
         [p.id, `"${p.name}"`, p.sku, p.category, p.quantity, `"${p.location}"`, p.reorderPoint].join(",")
       )
     ];
@@ -130,9 +131,30 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     }
   };
 
+  const filteredData = useMemo(() => {
+    if (!searchQuery) {
+      return data;
+    }
+    const lowercasedQuery = searchQuery.toLowerCase();
+    return data.filter(
+      (product) =>
+        product.name.toLowerCase().includes(lowercasedQuery) ||
+        product.sku.toLowerCase().includes(lowercasedQuery) ||
+        product.category.toLowerCase().includes(lowercasedQuery)
+    );
+  }, [data, searchQuery]);
+
+
   return (
     <>
-      <AppHeader title="Inventario">
+      <AppHeader 
+        title="Inventario"
+        search={{
+          value: searchQuery,
+          onChange: (e) => setSearchQuery(e.target.value),
+          placeholder: "Buscar por nombre, SKU, categoría..."
+        }}
+      >
         <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={handleDownloadCsv}>
                 <Download className="h-4 w-4 mr-2" />
@@ -144,7 +166,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             </Button>
         </div>
       </AppHeader>
-      <main className="flex-1 p-4 md:p-6">
+      <main className="flex-1 p-4 md:p-6 print-hide">
         <Card>
             <CardHeader>
                 <CardTitle>Todos los Productos</CardTitle>
@@ -167,7 +189,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {data.map((product) => (
+                        {filteredData.map((product) => (
                             <TableRow key={product.id}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
@@ -242,7 +264,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             <DialogDescription>
               Modifica los detalles del producto. Haz clic en guardar cuando hayas terminado.
             </DialogDescription>
-          </DialogHeader>
+          </Header>
           <EditProductForm onSubmit={handleEditProduct} product={productToEdit} />
         </DialogContent>
       </Dialog>
