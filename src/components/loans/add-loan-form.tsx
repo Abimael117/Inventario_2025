@@ -63,8 +63,9 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
     const product = products.find(p => p.id === values.productId);
     if (!product) {
         console.error("No se encontró el producto con el ID:", values.productId);
+        // Aquí podrías usar un toast para notificar al usuario.
         return;
-    };
+    }
 
     onSubmit({
         productId: values.productId,
