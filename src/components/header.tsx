@@ -29,7 +29,7 @@ export default function AppHeader({
       <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
       <div className="ml-auto flex items-center gap-4">
         {search && (
-          <form className="relative ml-auto flex-1 md:grow-0">
+          <div className="relative ml-auto flex-1 md:grow-0">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
@@ -38,7 +38,7 @@ export default function AppHeader({
               value={search.value}
               onChange={search.onChange}
             />
-          </form>
+          </div>
         )}
         <Button variant="ghost" size="icon" className="rounded-full">
           <Bell className="h-5 w-5" />
