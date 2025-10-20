@@ -105,6 +105,21 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     }
   };
 
+  const filteredData = useMemo(() => {
+    if (!data) return [];
+    const lowercasedQuery = searchQuery.toLowerCase();
+    if (!lowercasedQuery) {
+      return data;
+    }
+    return data.filter(
+      (product) =>
+        product.name.toLowerCase().includes(lowercasedQuery) ||
+        product.sku.toLowerCase().includes(lowercasedQuery) ||
+        product.category.toLowerCase().includes(lowercasedQuery)
+    );
+  }, [data, searchQuery]);
+
+
   const handleDownloadCsv = () => {
     const headers = ["ID", "Nombre", "SKU", "Categoría", "Cantidad", "Ubicación", "PuntoDeReorden"];
     const csvRows = [
@@ -131,20 +146,6 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     }
   };
 
-  const filteredData = useMemo(() => {
-    const lowercasedQuery = searchQuery.toLowerCase();
-    if (!lowercasedQuery) {
-      return data;
-    }
-    return data.filter(
-      (product) =>
-        product.name.toLowerCase().includes(lowercasedQuery) ||
-        product.sku.toLowerCase().includes(lowercasedQuery) ||
-        product.category.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [data, searchQuery]);
-
-
   return (
     <>
       <AppHeader 
@@ -166,7 +167,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             </Button>
         </div>
       </AppHeader>
-      <main className="flex-1 p-4 md:p-6 print-hide">
+      <main className="flex-1 p-4 md:p-6">
         <Card>
             <CardHeader>
                 <CardTitle>Todos los Productos</CardTitle>
