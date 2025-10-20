@@ -60,6 +60,10 @@ export function LoanReceipt({
             <p className="font-bold">Producto Prestado:</p>
             <p>{loan.productName}</p>
           </div>
+           <div>
+            <p className="font-bold">Cantidad Prestada:</p>
+            <p>{loan.quantity} unidad(es)</p>
+          </div>
           <div>
             <p className="font-bold">Solicitado Por:</p>
             <p>{loan.requester}</p>

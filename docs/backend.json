@@ -70,6 +70,10 @@
             "Prestado",
             "Devuelto"
           ]
+        },
+        "productId": {
+          "type": "string",
+          "description": "The ID of the loaned product."
         }
       },
       "required": [
@@ -77,7 +81,8 @@
         "requester",
         "loanDate",
         "quantity",
-        "status"
+        "status",
+        "productId"
       ]
     }
   },
