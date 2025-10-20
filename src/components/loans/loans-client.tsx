@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { collection, doc } from "firebase/firestore";
+import { collection, doc, runTransaction } from "firebase/firestore";
 
 import type { Loan, Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -48,7 +48,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useFirebase } from "@/firebase";
+import { deleteDocumentNonBlocking, useFirebase } from "@/firebase";
 import { LoanReceipt } from "./loan-receipt";
 
 type LoansClientProps = {
@@ -67,30 +67,93 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const { toast } = useToast();
   const { firestore } = useFirebase();
 
-  const handleAddLoan = (newLoanData: Omit<Loan, 'id' | 'status'>) => {
-    if (firestore) {
-      const newLoan: Omit<Loan, 'id'> = {
-        ...newLoanData,
-        status: 'Prestado',
-      };
-      const loansCollection = collection(firestore, "loans");
-      addDocumentNonBlocking(loansCollection, newLoan);
-      toast({
-        title: "Éxito",
-        description: `El préstamo para "${newLoan.productName}" ha sido registrado.`,
-      });
-      setIsAddDialogOpen(false);
+  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status' | 'productName'>) => {
+    if (!firestore) return;
+
+    const product = products.find(p => p.id === loanData.productId);
+    if (!product) {
+      toast({ variant: "destructive", title: "Error", description: "Producto no encontrado." });
+      return;
+    }
+
+    if (product.quantity <= 0) {
+        toast({ variant: "destructive", title: "Error", description: "No hay stock disponible para este producto." });
+        return;
+    }
+
+    const newLoanRef = doc(collection(firestore, "loans"));
+    const productRef = doc(firestore, "products", loanData.productId);
+
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const productDoc = await transaction.get(productRef);
+            if (!productDoc.exists()) {
+                throw "¡El producto ya no existe!";
+            }
+
+            const currentQuantity = productDoc.data().quantity;
+            if (currentQuantity < 1) {
+                throw "¡No hay suficiente stock para este préstamo!";
+            }
+
+            const newQuantity = currentQuantity - 1;
+            transaction.update(productRef, { quantity: newQuantity });
+
+            transaction.set(newLoanRef, {
+                ...loanData,
+                productName: product.name,
+                status: 'Prestado',
+            });
+        });
+
+        toast({
+            title: "Éxito",
+            description: `El préstamo para "${product.name}" ha sido registrado.`,
+        });
+        setIsAddDialogOpen(false);
+
+    } catch (e) {
+        console.error("Error en la transacción de préstamo: ", e);
+        toast({
+            variant: "destructive",
+            title: "Error en la transacción",
+            description: typeof e === 'string' ? e : "No se pudo completar el préstamo. El stock puede haber cambiado.",
+        });
     }
   };
   
-  const handleMarkAsReturned = (loanId: string) => {
-    if (firestore) {
-        const loanRef = doc(firestore, 'loans', loanId);
-        updateDocumentNonBlocking(loanRef, { status: 'Devuelto' });
-        toast({
-            title: "Actualizado",
-            description: "El préstamo ha sido marcado como devuelto.",
-        });
+  const handleMarkAsReturned = async (loan: Loan) => {
+    if (!firestore) return;
+
+    const loanRef = doc(firestore, 'loans', loan.id);
+    const productRef = doc(firestore, 'products', loan.productId);
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const productDoc = await transaction.get(productRef);
+        if (!productDoc.exists()) {
+          // Si el producto fue eliminado, al menos actualizamos el estado del préstamo
+          transaction.update(loanRef, { status: 'Devuelto' });
+          throw "El producto original ya no existe en el inventario, pero el préstamo fue actualizado.";
+        }
+
+        const newQuantity = productDoc.data().quantity + 1;
+        transaction.update(productRef, { quantity: newQuantity });
+        transaction.update(loanRef, { status: 'Devuelto' });
+      });
+
+      toast({
+          title: "Actualizado",
+          description: "El préstamo ha sido marcado como devuelto y el stock ha sido repuesto.",
+      });
+
+    } catch(e) {
+      console.error("Error en la transacción de devolución: ", e);
+      toast({
+          variant: "destructive",
+          title: "Error en la transacción",
+          description: typeof e === 'string' ? e : "No se pudo marcar como devuelto.",
+      });
     }
   };
 
@@ -191,7 +254,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem 
-                                            onSelect={() => handleMarkAsReturned(loan.id)}
+                                            onSelect={() => handleMarkAsReturned(loan)}
                                             disabled={loan.status === 'Devuelto'}
                                         >
                                             <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto

@@ -18,6 +18,7 @@ export type StockLog = {
 
 export type Loan = {
   id: string;
+  productId: string;
   productName: string;
   requester: string;
   loanDate: string;

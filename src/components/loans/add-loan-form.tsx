@@ -34,7 +34,7 @@ import { Calendar } from "@/components/ui/calendar";
 import type { Loan, Product } from "@/lib/types";
 
 const formSchema = z.object({
-  productName: z.string({
+  productId: z.string({
     required_error: "Por favor, selecciona un producto.",
   }),
   requester: z.string().min(2, {
@@ -46,7 +46,7 @@ const formSchema = z.object({
 });
 
 type AddLoanFormProps = {
-  onSubmit: (data: Omit<Loan, 'id' | 'status'>) => void;
+  onSubmit: (data: Omit<Loan, 'id' | 'status' | 'productName'>) => void;
   products: Product[];
 };
 
@@ -60,8 +60,12 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
   });
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
+    const product = products.find(p => p.id === values.productId);
+    if (!product) return;
+
     onSubmit({
-        ...values,
+        productId: values.productId,
+        requester: values.requester,
         loanDate: values.loanDate.toISOString(),
     });
     form.reset();
@@ -72,7 +76,7 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="productName"
+          name="productId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Producto</FormLabel>
@@ -83,9 +87,9 @@ export function AddLoanForm({ onSubmit, products }: AddLoanFormProps) {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {products.map(product => (
-                    <SelectItem key={product.id} value={product.name}>
-                      {product.name}
+                  {products.filter(p => p.quantity > 0).map(product => (
+                    <SelectItem key={product.id} value={product.id}>
+                      {product.name} ({product.quantity} disp.)
                     </SelectItem>
                   ))}
                 </SelectContent>
