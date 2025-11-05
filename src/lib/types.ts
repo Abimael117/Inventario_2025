@@ -25,3 +25,10 @@ export type Loan = {
   quantity: number;
   status: 'Prestado' | 'Devuelto';
 };
+
+export type UserProfile = {
+  uid: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+};
