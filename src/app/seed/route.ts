@@ -43,7 +43,7 @@ export async function GET() {
       name: 'Admin User',
       email: adminEmail,
       role: 'admin',
-    });
+    }, { merge: true }); // Use merge: true to be safe
     console.log('Successfully created/verified admin profile in Firestore for UID:', uid);
     return NextResponse.json({ message: 'Admin user created or verified successfully.' }, { status: 200 });
   } catch (error: any) {
