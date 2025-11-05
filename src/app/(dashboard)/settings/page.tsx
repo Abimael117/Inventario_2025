@@ -21,12 +21,12 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle>Gestión de Usuarios</CardTitle>
               <CardDescription>
-                La creación y gestión de usuarios ha sido deshabilitada temporalmente.
+                La gestión de usuarios ha sido deshabilitada temporalmente para simplificar la aplicación.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Para gestionar usuarios, por favor contacta al soporte técnico o gestiona los usuarios directamente desde la consola de Firebase.
+                Para gestionar usuarios, necesitarías volver a implementar un sistema de autenticación completo y seguro.
               </p>
             </CardContent>
           </Card>

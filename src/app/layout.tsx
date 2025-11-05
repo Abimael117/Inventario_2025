@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import "./print.css";
-import { FirebaseErrorListener } from "@/components/FirebaseErrorListener";
-import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -28,9 +26,6 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        <Suspense>
-          <FirebaseErrorListener />
-        </Suspense>
         <div className="printable-content">
           {children}
         </div>

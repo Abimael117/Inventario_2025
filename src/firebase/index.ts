@@ -1,8 +1,9 @@
+
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { Auth, getAuth, User, onAuthStateChanged } from 'firebase/auth';
+import { Auth, getAuth } from 'firebase/auth';
 import { Firestore, getFirestore } from 'firebase/firestore';
 import { DependencyList, useMemo } from 'react';
 
@@ -31,9 +32,6 @@ export const firestore = getFirestore(firebaseApp);
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
-export * from './errors';
-export * from './error-emitter';
-
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 

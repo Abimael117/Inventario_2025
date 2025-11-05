@@ -30,7 +30,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const userProfile = {
   name: 'Admin',
-  role: 'admin',
   email: 'admin@example.com',
 };
 
@@ -127,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenuLabel>{userProfile.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive focus:text-destructive" disabled>
-                     <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
+                     <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión (deshabilitado)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
