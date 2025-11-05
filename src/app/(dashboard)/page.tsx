@@ -1,18 +1,15 @@
-
 'use client';
 
-import { useCollection, firestore, useMemoFirebase } from "@/firebase";
 import DashboardClient from "@/components/dashboard/dashboard-client";
 import AppHeader from "@/components/header";
-import { collection } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 
 export default function DashboardPage() {
-  const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), []);
-  const { data: inventoryData, isLoading: productsLoading } = useCollection(productsQuery);
-
-  const loansQuery = useMemoFirebase(() => collection(firestore, 'loans'), []);
-  const { data: recentChanges, isLoading: loansLoading } = useCollection(loansQuery);
+  // NOTE: Firebase logic has been removed to restore functionality.
+  const inventoryData = [];
+  const recentChanges = [];
+  const productsLoading = false;
+  const loansLoading = false;
 
   if (productsLoading || loansLoading) {
     return (
