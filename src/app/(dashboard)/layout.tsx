@@ -55,43 +55,61 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
   const [profileLoading, setProfileLoading] = React.useState(true);
   
   useEffect(() => {
+    // Si el estado de autenticación de Firebase está cargando, no hacemos nada todavía.
     if (isUserLoading) {
       setProfileLoading(true);
       return;
     }
+    // Si, después de cargar, no hay usuario, lo redirigimos al login.
     if (!user) {
       router.replace('/login');
       return;
     }
+    // Si hay un usuario pero todavía no hemos cargado su perfil, lo buscamos.
+    if (user && !userProfile) {
+      const fetchUserProfile = async () => {
+        setProfileLoading(true);
+        if (!firestore) return;
+        const userDocRef = doc(firestore, "users", user.uid);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
 
-    const fetchUserProfile = async () => {
-      setProfileLoading(true);
-      if (!firestore) return;
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDocSnap = await getDoc(userDocRef);
+          if (userDocSnap.exists()) {
+            setUserProfile(userDocSnap.data() as UserProfile);
+          } else {
+            // El perfil no existe. Esto es un estado anómalo.
+            // Cerramos sesión para forzar un reinicio limpio del flujo.
+            console.error("No user profile found in Firestore! Signing out.");
+            await auth.signOut();
+            router.replace('/login');
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+          await auth.signOut();
+          router.replace('/login');
+        } finally {
+          setProfileLoading(false);
+        }
+      };
 
-      if (userDocSnap.exists()) {
-        setUserProfile(userDocSnap.data() as UserProfile);
-      } else {
-        console.error("No user profile found in Firestore!");
-        auth.signOut();
-        router.replace('/login');
-      }
+      fetchUserProfile();
+    } else {
+      // Si ya tenemos el perfil, nos aseguramos de que el estado de carga sea falso.
       setProfileLoading(false);
-    };
-
-    fetchUserProfile();
-
-  }, [user, isUserLoading, firestore, auth, router]);
+    }
+  }, [user, isUserLoading, firestore, auth, router, userProfile]);
 
   const handleLogout = () => {
     if (!auth) return;
     auth.signOut().then(() => {
+      // Limpiamos el perfil de usuario al cerrar sesión
+      setUserProfile(null);
       router.push('/login');
     });
   };
 
   const getInitials = (name: string) => {
+    if (!name) return '';
     const names = name.split(' ');
     if (names.length > 1) {
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
@@ -99,6 +117,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
     return name.substring(0, 2).toUpperCase();
   }
 
+  // La pantalla de carga se muestra si la autenticación de Firebase está en curso
+  // o si estamos cargando el perfil de Firestore.
   const isLoading = isUserLoading || profileLoading;
   const isAdmin = userProfile?.role === 'admin';
 
@@ -113,7 +133,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {isAdmin && (
+            {!isLoading && isAdmin && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -127,19 +147,21 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith("/inventory")}
-                tooltip="Inventario"
-              >
-                <Link href="/inventory">
-                  <Package />
-                  <span>Inventario</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {isAdmin && (
+            {!isLoading && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/inventory")}
+                  tooltip="Inventario"
+                >
+                  <Link href="/inventory">
+                    <Package />
+                    <span>Inventario</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {!isLoading && isAdmin && (
               <SidebarMenuItem>
                   <SidebarMenuButton
                       asChild
@@ -157,7 +179,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
-             {isAdmin && (
+             {!isLoading && isAdmin && (
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
