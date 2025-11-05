@@ -3,7 +3,6 @@
 
 import { useState, useMemo } from "react";
 import { Download, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
-import { collection, doc } from "firebase/firestore";
 
 import type { Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -46,7 +45,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, firestore } from "@/firebase";
+
+// Mock functions to avoid crashes
+const deleteDocumentNonBlocking = (ref: any) => {};
+const addDocumentNonBlocking = (col: any, data: any) => {};
+const setDocumentNonBlocking = (ref: any, data: any, options: any) => {};
+
 
 export default function InventoryClient({ data }: { data: Product[] }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,10 +73,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
 
   const confirmDelete = () => {
     if (productToDelete) {
-      const productRef = doc(firestore, "products", productToDelete.id);
-      deleteDocumentNonBlocking(productRef);
       toast({
-        title: "Éxito",
+        title: "Éxito (Simulado)",
         description: `El producto "${productToDelete.name}" ha sido eliminado.`,
       });
       setProductToDelete(null);
@@ -81,10 +83,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   };
   
   const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
-    const productsCollection = collection(firestore, "products");
-    addDocumentNonBlocking(productsCollection, newProductData);
     toast({
-      title: "Éxito",
+      title: "Éxito (Simulado)",
       description: `El producto "${newProductData.name}" ha sido añadido.`,
     });
     setIsAddDialogOpen(false);
@@ -92,10 +92,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
 
   const handleEditProduct = (editedProductData: Omit<Product, 'id'>) => {
     if (productToEdit) {
-      const productRef = doc(firestore, "products", productToEdit.id);
-      setDocumentNonBlocking(productRef, editedProductData, { merge: true });
       toast({
-        title: "Éxito",
+        title: "Éxito (Simulado)",
         description: `El producto "${editedProductData.name}" ha sido actualizado.`,
       });
       setIsEditDialogOpen(false);
@@ -188,8 +186,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {filteredData.map((product) => (
-                            <TableRow key={product.id}>
+                        {filteredData.map((product, index) => (
+                            <TableRow key={product.id || index}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
                             <TableCell className="hidden lg:table-cell">{product.category}</TableCell>
