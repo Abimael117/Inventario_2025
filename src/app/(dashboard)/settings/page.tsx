@@ -3,9 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState } from 'react';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { useState, useTransition } from 'react';
 
 import AppHeader from '@/components/header';
 import {
@@ -33,21 +31,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
-import { FirebaseError } from 'firebase/app';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-
-const createUserSchema = z.object({
-  name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  email: z.string().email({ message: 'Por favor, introduce un email válido.' }),
-  password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres.' }),
-  role: z.enum(['admin', 'user'], { required_error: 'Debes seleccionar un rol.' }),
-});
+import { createUser } from '@/app/actions';
+import { createUserSchema } from '@/lib/schemas';
 
 export default function SettingsPage() {
-  const { firestore } = useFirebase();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof createUserSchema>>({
@@ -60,50 +49,32 @@ export default function SettingsPage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof createUserSchema>) => {
-    setIsSubmitting(true);
-    
-    // We need a separate auth instance to create users without logging out the admin
-    const auth = getAuth();
-    let createdUserUid: string | null = null;
+  const onSubmit = (values: z.infer<typeof createUserSchema>) => {
+    startTransition(async () => {
+      const result = await createUser(values);
 
-    try {
-      // Step 1: Create the user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      createdUserUid = userCredential.user.uid;
-
-      // Step 2: Create the user profile document in Firestore
-      const userDocRef = doc(firestore, 'users', createdUserUid);
-      await setDoc(userDocRef, {
-        name: values.name,
-        email: values.email,
-        role: values.role,
-      });
-
-      toast({
-        title: 'Usuario Creado',
-        description: `El usuario ${values.name} ha sido creado con éxito.`,
-      });
-      form.reset();
-
-    } catch (error) {
-       console.error('Error creating user:', error);
-       let description = 'Ocurrió un error inesperado al crear el usuario.';
-       if (error instanceof FirebaseError) {
-           if (error.code === 'auth/email-already-in-use') {
-               description = 'Este correo electrónico ya está en uso por otra cuenta.';
-           } else if (error.code === 'auth/weak-password') {
-               description = 'La contraseña es demasiado débil.';
-           }
-       }
-       toast({
+      if (result.serverError) {
+        toast({
+          variant: 'destructive',
+          title: 'Error al Crear Usuario',
+          description: result.serverError,
+        });
+      } else if (result.validationErrors) {
+         // This part is unlikely to be hit if client-side validation is working,
+         // but it's good practice for handling server-side validation errors.
+         toast({
            variant: 'destructive',
-           title: 'Error al Crear Usuario',
-           description,
-       });
-    } finally {
-        setIsSubmitting(false);
-    }
+           title: 'Error de Validación',
+           description: 'Por favor, revisa los campos del formulario.',
+         });
+      } else {
+        toast({
+          title: 'Usuario Creado',
+          description: `El usuario ${result.data?.name} ha sido creado con éxito.`,
+        });
+        form.reset();
+      }
+    });
   };
 
   return (
@@ -181,8 +152,8 @@ export default function SettingsPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isPending}>
+                    {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Crear Usuario
                   </Button>
                 </form>
