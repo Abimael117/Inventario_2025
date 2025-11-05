@@ -4,8 +4,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import action from '@/lib/safe-action';
+import { createSafeActionClient } from 'next-safe-action';
 import type { User } from '@/lib/types';
+
+const action = createSafeActionClient();
 
 // Define el esquema para un nuevo usuario
 const userSchema = z.object({
