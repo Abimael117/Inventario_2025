@@ -2,9 +2,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Home, Package, Settings, ArrowRightLeft, LogOut } from "lucide-react";
-import React from 'react';
+import { usePathname, useRouter } from "next/navigation";
+import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2 } from "lucide-react";
+import React, { useEffect, useState } from 'react';
 
 import {
   SidebarProvider,
@@ -35,6 +35,24 @@ const userProfile = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const session = sessionStorage.getItem('authenticated');
+    if (session === 'true') {
+      setIsAuthenticated(true);
+    } else {
+      router.replace('/login');
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('authenticated');
+    router.replace('/login');
+  };
 
   const getInitials = (name: string) => {
     if (!name) return '';
@@ -43,6 +61,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  }
+
+  if (!isClient || !isAuthenticated) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
@@ -59,10 +85,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === "/"}
+                isActive={pathname === "/dashboard"}
                 tooltip="Panel"
               >
-                <Link href="/">
+                <Link href="/dashboard">
                   <Home />
                   <span>Panel</span>
                 </Link>
@@ -125,8 +151,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
                   <DropdownMenuLabel>{userProfile.email}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-destructive focus:text-destructive" disabled>
-                     <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión (deshabilitado)
+                  <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
+                     <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

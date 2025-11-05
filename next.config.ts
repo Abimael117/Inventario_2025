@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/',
-        destination: '/inventory',
+        destination: '/login',
         permanent: true,
       },
     ]
