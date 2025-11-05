@@ -12,7 +12,7 @@
  *
  * Key Security Decisions:
  * - All collections require user to be authenticated for any access.
- * - The 'users' collection is read-only for clients, except for admins who can create users.
+ * - The 'users' collection is read-only for clients, except for admins who can write.
  *   A user can only read their own data.
  * - Write access to 'products' and 'loans' is restricted to authenticated users.
  */
@@ -40,14 +40,14 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (get): A user can only read their own profile.
      * @allow (list): Listing users is forbidden to prevent leaking user information.
-     * @allow (create): Only admins can create new user documents.
-     * @allow (update, delete): No one can update or delete user profiles from the client-side.
+     * @allow (write): Only admins can create or update user documents.
+     * @allow (delete): No one can delete user profiles from the client-side.
      */
     match /users/{userId} {
       allow get: if isSignedIn() && request.auth.uid == userId;
       allow list: if false;
-      allow create: if isAdmin();
-      allow update, delete: if false;
+      allow write: if isAdmin();
+      allow delete: if false;
     }
 
     /**
