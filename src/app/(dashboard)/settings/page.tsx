@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import usersData from '@/lib/users.json';
 import { saveUser, deleteUser } from '@/app/actions';
@@ -54,19 +54,22 @@ export default function SettingsPage() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  useEffect(() => {
+    setUsers(usersData.users);
+  }, []);
+
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
       const userWithId = { ...newUser, id: (Math.random() * 10000).toString(36) };
       const result = await saveUser(userWithId);
 
       if (result.success) {
-        setUsers(currentUsers => [...currentUsers, userWithId]);
         toast({
           title: "Usuario Creado",
           description: `El usuario "${userWithId.username}" ha sido guardado.`,
         });
         setIsAddUserOpen(false);
-        router.refresh(); // Recarga los datos del servidor
+        router.refresh(); 
       } else {
         toast({
           variant: "destructive",
@@ -95,12 +98,11 @@ export default function SettingsPage() {
       startTransition(async () => {
         const result = await deleteUser(userToDelete.id);
         if (result.success) {
-          setUsers(currentUsers => currentUsers.filter(u => u.id !== userToDelete!.id));
           toast({
             title: "Usuario Eliminado",
             description: `El usuario "${userToDelete!.username}" ha sido eliminado.`,
           });
-          router.refresh(); // Recarga los datos del servidor
+          router.refresh();
         } else {
           toast({
             variant: "destructive",
