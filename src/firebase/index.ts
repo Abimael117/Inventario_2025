@@ -11,9 +11,11 @@ let firebaseApp: FirebaseApp;
 // Simplified, idempotent initialization
 if (!getApps().length) {
     try {
-      firebaseApp = initializeApp();
+      firebaseApp = initializeApp(firebaseConfig);
     } catch (e) {
-      if (process.env.NODE_ENV === "production") {
+      // This can happen in certain server-side rendering scenarios.
+      // We fall back to the config object.
+      if (process.env.NODE_ENV === "development") {
         console.warn('Automatic initialization failed. Falling back to firebase config object.', e);
       }
       firebaseApp = initializeApp(firebaseConfig);
@@ -22,13 +24,13 @@ if (!getApps().length) {
     firebaseApp = getApp();
 }
 
+
 export const auth = getAuth(firebaseApp);
 export const firestore = getFirestore(firebaseApp);
 
 export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './non-blocking-updates';
-export * from './non-blocking-login';
 export * from './errors';
 export * from './error-emitter';
 
