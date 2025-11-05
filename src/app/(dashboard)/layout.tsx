@@ -50,6 +50,8 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [currentUser, setCurrentUser] = React.useState<User>(users[0]);
 
+  const isAdmin = currentUser.role === 'Administrador';
+
   return (
     <FirebaseClientProvider>
       <SidebarProvider>
@@ -62,18 +64,20 @@ export default function DashboardLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/"}
-                  tooltip="Panel"
-                >
-                  <Link href="/">
-                    <Home />
-                    <span>Panel</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === "/"}
+                    tooltip="Panel"
+                  >
+                    <Link href="/">
+                      <Home />
+                      <span>Panel</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
@@ -86,18 +90,20 @@ export default function DashboardLayout({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                  <SidebarMenuButton
-                      asChild
-                      isActive={pathname.startsWith("/loans")}
-                      tooltip="Préstamos"
-                  >
-                      <Link href="/loans">
-                          <ArrowRightLeft />
-                          <span>Préstamos</span>
-                      </Link>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isAdmin && (
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                        asChild
+                        isActive={pathname.startsWith("/loans")}
+                        tooltip="Préstamos"
+                    >
+                        <Link href="/loans">
+                            <ArrowRightLeft />
+                            <span>Préstamos</span>
+                        </Link>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
