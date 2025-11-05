@@ -36,7 +36,7 @@ export default function LoginPage() {
       // Simulate successful login by setting a session flag with user data
       const { password: _, ...sessionData } = user;
       sessionStorage.setItem('user-session', JSON.stringify(sessionData));
-      router.replace('/inventory');
+      router.replace('/dashboard');
     } else {
       setError('Usuario o contraseña incorrectos. Inténtalo de nuevo.');
     }

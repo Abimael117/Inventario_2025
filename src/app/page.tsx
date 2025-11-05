@@ -9,7 +9,7 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/inventory');
+    router.replace('/login');
   }, [router]);
 
   return (
