@@ -8,43 +8,46 @@ export async function GET() {
 
   const adminEmail = 'admin@example.com';
   const adminPassword = 'password123';
+  let uid = '';
 
   try {
-    // Check if the user already exists in Firebase Auth
-    let userRecord;
-    try {
-      userRecord = await auth.getUserByEmail(adminEmail);
-    } catch (error: any) {
-      if (error.code === 'auth/user-not-found') {
-        // User doesn't exist, so create them
-        userRecord = await auth.createUser({
-          email: adminEmail,
-          password: adminPassword,
-          displayName: 'Admin User',
-        });
-      } else {
-        // Another error occurred
-        throw error;
-      }
-    }
-
-    // Now, ensure the user has the 'admin' role in Firestore
-    const userDocRef = firestore.collection('users').doc(userRecord.uid);
-    const userDoc = await userDocRef.get();
-
-    if (!userDoc.exists || userDoc.data()?.role !== 'admin') {
-      await userDocRef.set({
-        name: 'Admin User',
-        email: adminEmail,
-        role: 'admin',
-      });
-      return NextResponse.json({ message: 'Admin user created successfully.' }, { status: 201 });
-    }
-
-    return NextResponse.json({ message: 'Admin user already exists.' }, { status: 200 });
-
+    // Attempt to create the user.
+    const userRecord = await auth.createUser({
+      email: adminEmail,
+      password: adminPassword,
+      displayName: 'Admin User',
+    });
+    uid = userRecord.uid;
+    console.log('Successfully created new admin user:', uid);
   } catch (error: any) {
-    console.error('Error seeding admin user:', error);
-    return NextResponse.json({ error: 'Failed to seed admin user.', details: error.message }, { status: 500 });
+    if (error.code === 'auth/email-already-exists') {
+      // If the user already exists, get their UID to ensure their Firestore profile is correct.
+      console.log('Admin user already exists in Auth. Fetching UID.');
+      const userRecord = await auth.getUserByEmail(adminEmail);
+      uid = userRecord.uid;
+    } else {
+      // For any other auth error, fail loudly.
+      console.error('Error creating admin user in Auth:', error);
+      return NextResponse.json({ error: 'Failed to create admin user in Auth.', details: error.message }, { status: 500 });
+    }
+  }
+
+  if (!uid) {
+    return NextResponse.json({ error: 'Could not obtain UID for admin user.'}, { status: 500 });
+  }
+
+  try {
+    // With the UID, create or overwrite the Firestore document to ensure the role is set.
+    const userDocRef = firestore.collection('users').doc(uid);
+    await userDocRef.set({
+      name: 'Admin User',
+      email: adminEmail,
+      role: 'admin',
+    });
+    console.log('Successfully created/verified admin profile in Firestore for UID:', uid);
+    return NextResponse.json({ message: 'Admin user created or verified successfully.' }, { status: 200 });
+  } catch (error: any) {
+    console.error('Error setting admin role in Firestore:', error);
+    return NextResponse.json({ error: 'Failed to set admin role in Firestore.', details: error.message }, { status: 500 });
   }
 }
