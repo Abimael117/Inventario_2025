@@ -4,6 +4,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import type { User } from "@/lib/types";
 
 const permissions = [
   { id: 'dashboard', label: 'Ver Panel Principal' },
@@ -34,17 +36,18 @@ const formSchema = z.object({
 });
 
 type AddUserFormProps = {
-  onSubmit: (data: any) => void; // Simplified for simulation
+  onSubmit: (data: Omit<User, 'id' | 'role'>) => void;
+  isPending: boolean;
 };
 
-export function AddUserForm({ onSubmit }: AddUserFormProps) {
+export function AddUserForm({ onSubmit, isPending }: AddUserFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       username: "",
       password: "",
-      permissions: ["dashboard", "inventory"], // Default permissions
+      permissions: ["inventory"], // Default permissions
     },
   });
 
@@ -53,8 +56,8 @@ export function AddUserForm({ onSubmit }: AddUserFormProps) {
       ...values,
       role: 'user', // All created users are 'user' role
     };
+    // @ts-ignore
     onSubmit(userData);
-    form.reset();
   }
 
   return (
@@ -149,7 +152,10 @@ export function AddUserForm({ onSubmit }: AddUserFormProps) {
           )}
         />
         
-        <Button type="submit" className="w-full">Crear Usuario</Button>
+        <Button type="submit" className="w-full" disabled={isPending}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? "Guardando..." : "Crear Usuario"}
+        </Button>
       </form>
     </Form>
   );

@@ -38,34 +38,43 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import usersData from '@/lib/users.json';
-
-// This is a simplified, client-side only user management for demonstration.
-// In a real app, this would be handled by a secure backend and database.
-
-type User = typeof usersData.users[0];
+import { saveUser, deleteUser } from '@/app/actions';
+import type { User } from '@/lib/types';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>(usersData.users);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
-    // In a real app, you would send this to a server.
-    // Here we're just updating local state to simulate it.
-    const userWithId = { ...newUser, id: (Math.random() * 10000).toString(36) };
-    setUsers(currentUsers => [...currentUsers, userWithId]);
-    toast({
-      title: "Usuario Creado (Simulado)",
-      description: `El usuario "${userWithId.username}" ha sido añadido.`,
+    startTransition(async () => {
+      const userWithId = { ...newUser, id: (Math.random() * 10000).toString(36) };
+      const result = await saveUser(userWithId);
+
+      if (result.success) {
+        setUsers(currentUsers => [...currentUsers, userWithId]);
+        toast({
+          title: "Usuario Creado",
+          description: `El usuario "${userWithId.username}" ha sido guardado.`,
+        });
+        setIsAddUserOpen(false);
+        router.refresh(); // Recarga los datos del servidor
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al Guardar",
+          description: result.error || "No se pudo guardar el usuario en el servidor.",
+        });
+      }
     });
-    setIsAddUserOpen(false);
-    // NOTE: This does not persist the user. Refreshing the page will reset users
-    // to the initial state from users.json.
   };
 
   const openDeleteDialog = (user: User) => {
@@ -83,14 +92,26 @@ export default function SettingsPage() {
 
   const confirmDelete = () => {
     if (userToDelete) {
-      setUsers(currentUsers => currentUsers.filter(u => u.id !== userToDelete.id));
-      toast({
-        title: "Usuario Eliminado (Simulado)",
-        description: `El usuario "${userToDelete.username}" ha sido eliminado.`,
+      startTransition(async () => {
+        const result = await deleteUser(userToDelete.id);
+        if (result.success) {
+          setUsers(currentUsers => currentUsers.filter(u => u.id !== userToDelete!.id));
+          toast({
+            title: "Usuario Eliminado",
+            description: `El usuario "${userToDelete!.username}" ha sido eliminado.`,
+          });
+          router.refresh(); // Recarga los datos del servidor
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error al Eliminar",
+            description: result.error || "No se pudo eliminar el usuario.",
+          });
+        }
+        setIsDeleteConfirmOpen(false);
+        setUserToDelete(null);
       });
     }
-    setIsDeleteConfirmOpen(false);
-    setUserToDelete(null);
   }
 
   const permissionLabels: { [key: string]: string } = {
@@ -104,7 +125,7 @@ export default function SettingsPage() {
     <>
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración">
-            <Button size="sm" onClick={() => setIsAddUserOpen(true)}>
+            <Button size="sm" onClick={() => setIsAddUserOpen(true)} disabled={isPending}>
                 <PlusCircle className="h-4 w-4 mr-2" />
                 Añadir Usuario
             </Button>
@@ -115,7 +136,7 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade o elimina usuarios y gestiona sus permisos de acceso.
+                  Añade o elimina usuarios y gestiona sus permisos de acceso. Los cambios son permanentes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -153,7 +174,7 @@ export default function SettingsPage() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.role === 'admin'}
+                                    disabled={user.role === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
                                   >
                                     <Trash2 className="h-4 w-4" />
@@ -175,9 +196,9 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
-                        Este es un sistema de gestión de usuarios **simulado** y funciona únicamente en el cliente.
-                        Cualquier usuario que crees o elimines **desaparecerá al recargar la página**.
-                        En una aplicación real, esta lógica estaría conectada a una base de datos segura y un backend.
+                       Este sistema de gestión de usuarios ahora guarda los cambios de forma permanente.
+                       Cualquier usuario que crees o elimines se reflejará en el archivo de configuración del servidor.
+                       Ten en cuenta que esta es una implementación simplificada para este entorno de prototipado.
                     </p>
                 </CardContent>
             </Card>
@@ -191,10 +212,10 @@ export default function SettingsPage() {
             <DialogHeader>
                 <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                    Completa los detalles para crear una nueva cuenta de usuario.
+                    Completa los detalles para crear una nueva cuenta de usuario. Los cambios se guardarán permanentemente.
                 </DialogDescription>
             </DialogHeader>
-            <AddUserForm onSubmit={handleAddUser} />
+            <AddUserForm onSubmit={handleAddUser} isPending={isPending} />
         </DialogContent>
       </Dialog>
       
@@ -203,13 +224,13 @@ export default function SettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará al usuario "{userToDelete?.name}". Esta acción es simulada y se revertirá al recargar la página.
+              Esta acción eliminará permanentemente al usuario "{userToDelete?.name}". No podrás deshacer esta acción.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+              {isPending ? 'Eliminando...' : 'Eliminar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
