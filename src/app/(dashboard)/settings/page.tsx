@@ -60,8 +60,6 @@ export default function SettingsPage() {
           description: result.serverError,
         });
       } else if (result.validationErrors) {
-         // This part is unlikely to be hit if client-side validation is working,
-         // but it's good practice for handling server-side validation errors.
          toast({
            variant: 'destructive',
            title: 'Error de Validación',
@@ -84,7 +82,7 @@ export default function SettingsPage() {
         <div className="grid gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Crear Nuevo Usuario</CardTitle>
+              <CardTitle>Gestión de Usuarios</CardTitle>
               <CardDescription>
                 Añade nuevos usuarios al sistema y asígnales un rol.
               </CardDescription>
