@@ -93,10 +93,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -109,6 +105,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter>
+          <SidebarMenu>
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </Avatar>
                     <div className="flex flex-col truncate">
                       <span className="text-sm font-semibold">{userProfile.name}</span>
-                      <span className="text-xs text-muted-foreground capitalize">{userProfile.role === 'admin' ? 'Administrador' : 'Usuario'}</span>
+                      <span className="text-xs text-muted-foreground capitalize">Administrador</span>
                     </div>
                   </div>
                 </DropdownMenuTrigger>

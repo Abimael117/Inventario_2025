@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -25,7 +26,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Para gestionar usuarios, por favor contacta al soporte técnico.
+                Para gestionar usuarios, por favor contacta al soporte técnico o gestiona los usuarios directamente desde la consola de Firebase.
               </p>
             </CardContent>
           </Card>
