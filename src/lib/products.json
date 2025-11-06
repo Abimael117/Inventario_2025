@@ -26,6 +26,15 @@
       "quantity": 50,
       "reorderPoint": 10,
       "id": "mho0r41a.6pq"
+    },
+    {
+      "name": "Pilas",
+      "sku": "12010",
+      "category": "Refaccion",
+      "location": "Almacen 1",
+      "quantity": 100,
+      "reorderPoint": 5,
+      "id": "mho171r5.3ua"
     }
   ]
 }

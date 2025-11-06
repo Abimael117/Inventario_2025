@@ -1,10 +1,11 @@
 
+
 'use server';
 
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import type { Product, Loan } from '@/lib/types';
+import type { Product, Loan, StockMovement } from '@/lib/types';
 
 const productSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
@@ -23,9 +24,17 @@ const loanSchema = z.object({
     quantity: z.coerce.number().int().min(1, "La cantidad debe ser al menos 1."),
 });
 
+const stockAdjustmentSchema = z.object({
+  quantity: z.coerce.number().int().gt(0, "La cantidad a descontar debe ser mayor que cero."),
+  reason: z.string().min(3, "La razón debe tener al menos 3 caracteres."),
+});
+
+
 // JSON file paths are kept for reference but logic will be migrated to Firestore
 const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
+const movementsFilePath = path.join(process.cwd(), 'src', 'lib', 'movements.json');
+
 
 // HELPERS
 async function readData<T>(filePath: string, defaultData: T): Promise<T> {
@@ -127,6 +136,54 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
         return { success: false, error: error.message || 'An unknown error occurred' };
     }
 }
+
+// STOCK ADJUSTMENT ACTION
+export async function adjustStock(productId: string, adjustmentData: { quantity: number; reason: string }): Promise<{ success: boolean; error?: string; }> {
+  const result = stockAdjustmentSchema.safeParse(adjustmentData);
+
+  if (!result.success) {
+    const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
+    return { success: false, error: firstError || "Datos de ajuste inválidos." };
+  }
+
+  try {
+    const productsData = await readData(productsFilePath, { products: [] });
+    const productIndex = productsData.products.findIndex(p => p.id === productId);
+
+    if (productIndex === -1) {
+      return { success: false, error: "No se encontró el producto." };
+    }
+
+    const product = productsData.products[productIndex];
+    if (result.data.quantity > product.quantity) {
+      return { success: false, error: `Stock insuficiente. Solo hay ${product.quantity} unidades.` };
+    }
+
+    // Update product quantity
+    product.quantity -= result.data.quantity;
+    await writeData(productsFilePath, productsData);
+
+    // Record the movement
+    const movementsData = await readData(movementsFilePath, { movements: [] });
+    const newMovement: StockMovement = {
+      id: (Date.now() + Math.random()).toString(36),
+      productId: product.id,
+      productName: product.name,
+      quantity: result.data.quantity,
+      type: 'descuento',
+      reason: result.data.reason,
+      date: new Date().toISOString(),
+    };
+    movementsData.movements.push(newMovement);
+    await writeData(movementsFilePath, movementsData);
+
+    return { success: true };
+  } catch (e: any) {
+    console.error("Failed to adjust stock:", e);
+    return { success: false, error: e.message || "Ocurrió un error desconocido." };
+  }
+}
+
 
 // LOAN ACTIONS
 export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean, error?: string, data?: Loan }> {

@@ -1,4 +1,5 @@
 
+
 export type Product = {
   id: string;
   name: string;
@@ -25,6 +26,16 @@ export type Loan = {
   loanDate: string;
   quantity: number;
   status: 'Prestado' | 'Devuelto';
+};
+
+export type StockMovement = {
+    id: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+    type: 'descuento' | 'incremento';
+    reason: string;
+    date: string;
 };
 
 export type User = {

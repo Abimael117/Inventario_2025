@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
-import { Download, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2 } from "lucide-react";
+import { Download, Edit, MoreHorizontal, PlusCircle, Trash2, MinusCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { Product } from "@/lib/types";
@@ -46,7 +47,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
-import { saveProduct, updateProduct, deleteProduct } from "@/app/actions";
+import { AdjustStockForm } from "./adjust-stock-form";
+import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
   const router = useRouter();
@@ -54,8 +56,10 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [productToAdjust, setProductToAdjust] = useState<Product | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -67,6 +71,11 @@ export default function InventoryClient({ data }: { data: Product[] }) {
   const handleDeleteClick = (product: Product) => {
     setProductToDelete(product);
     setIsDeleteDialogOpen(true);
+  };
+  
+  const handleAdjustClick = (product: Product) => {
+    setProductToAdjust(product);
+    setIsAdjustDialogOpen(true);
   };
 
   const confirmDelete = () => {
@@ -129,6 +138,29 @@ export default function InventoryClient({ data }: { data: Product[] }) {
             variant: "destructive",
             title: "Error al Actualizar",
             description: result.error || "No se pudo actualizar el producto.",
+          });
+        }
+      });
+    }
+  };
+
+  const handleAdjustStock = (adjustmentData: { quantity: number, reason: string }) => {
+    if (productToAdjust) {
+      startTransition(async () => {
+        const result = await adjustStock(productToAdjust.id, adjustmentData);
+        if (result.success) {
+          toast({
+            title: "Stock Ajustado",
+            description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
+          });
+          setIsAdjustDialogOpen(false);
+          setProductToAdjust(null);
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error al Ajustar",
+            description: result.error || "No se pudo ajustar el stock.",
           });
         }
       });
@@ -254,10 +286,13 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={() => handleAdjustClick(product)}>
+                                      <MinusCircle className="mr-2 h-4 w-4" /> Ajustar Stock
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem onSelect={() => handleEditClick(product)}>
                                         <Edit className="mr-2 h-4 w-4" /> Editar
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                     onSelect={() => handleDeleteClick(product)}
                                     className="text-destructive focus:bg-destructive/10 focus:text-destructive"
@@ -305,7 +340,18 @@ export default function InventoryClient({ data }: { data: Product[] }) {
           <EditProductForm onSubmit={handleEditProduct} product={productToEdit} isPending={isPending} />
         </DialogContent>
       </Dialog>
-
+      
+      <Dialog open={isAdjustDialogOpen} onOpenChange={setIsAdjustDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Ajustar Stock de "{productToAdjust?.name}"</DialogTitle>
+            <DialogDescription>
+              Descuenta unidades del inventario por uso interno, daño, etc. Esta acción quedará registrada.
+            </DialogDescription>
+          </DialogHeader>
+          <AdjustStockForm onSubmit={handleAdjustStock} product={productToAdjust} isPending={isPending} />
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -318,9 +364,8 @@ export default function InventoryClient({ data }: { data: Product[] }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isPending ? 'Eliminando...' : 'Eliminar'}
+            <AlertDialogAction onClick={confirmDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
