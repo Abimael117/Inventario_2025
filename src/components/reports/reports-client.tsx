@@ -15,31 +15,27 @@ interface ReportsClientProps {
 
 // Simple Markdown to HTML parser
 const MarkdownViewer = ({ content }: { content: string }) => {
-  const lines = content.split('\n');
+  const lines = content.split('\n').filter(line => line.trim() !== '');
 
   return (
-    <div>
+    <div className="prose prose-sm max-w-none text-foreground">
       {lines.map((line, index) => {
         line = line.trim();
 
-        if (line.startsWith('#### ')) {
-          return <h4 key={index} className="text-md font-semibold mt-4 mb-2">{line.substring(5)}</h4>;
+        if (line.startsWith('## ')) {
+          return <h2 key={index} className="text-xl font-bold mt-6 mb-3 border-b pb-2">{line.substring(3)}</h2>;
         }
         if (line.startsWith('### ')) {
-          return <h3 key={index} className="text-lg font-semibold mt-6 mb-3 border-b pb-2">{line.substring(4)}</h3>;
+            return <h3 key={index} className="text-lg font-semibold mt-4 mb-2">{line.substring(4)}</h3>;
         }
-        if (line.startsWith('## ')) {
-          return <h2 key={index} className="text-xl font-bold mt-8 mb-4">{line.substring(3)}</h2>;
+        if (line.match(/^\d+\.\s/)) {
+            const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            return <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: boldedLine }} />;
         }
-        if (line.startsWith('*')) {
-            const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').substring(1).trim();
+        if (line.startsWith('* ')) {
+            const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').substring(2);
             return <p key={index} className="pl-4" dangerouslySetInnerHTML={{ __html: `&bull; ${boldedLine}` }} />;
         }
-        if (line.match(/^\d+\./)) {
-             const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-             return <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: boldedLine }} />;
-        }
-
 
         // Replace **word** with <strong>word</strong>
         const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -90,7 +86,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
       <CardContent className="space-y-4">
         {report ? (
           <div className="space-y-4">
-            <div className="prose prose-sm max-w-none rounded-md border bg-muted/30 p-4 text-sm leading-relaxed">
+            <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
               <MarkdownViewer content={report} />
             </div>
             <Button variant="outline" size="sm" onClick={() => setReport('')}>
