@@ -13,36 +13,42 @@ interface ReportsClientProps {
   loans: Loan[];
 }
 
-// Simple Markdown to HTML parser
+// Improved Markdown to HTML parser
 const MarkdownViewer = ({ content }: { content: string }) => {
-  const lines = content.split('\n').filter(line => line.trim() !== '');
+  // Process the entire content as a single block
+  const formattedContent = content
+    .split('\n')
+    // Handle headings
+    .map(line => line.replace(/^##\s+(.*)/, '<h2 class="text-xl font-bold mt-6 mb-3 border-b pb-2">$1</h2>'))
+    .map(line => line.replace(/^###\s+(.*)/, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>'))
+    // Handle bullet points, converting them to paragraphs with a bullet symbol
+    .map(line => line.replace(/^\*\s+(.*)/, '<p class="pl-4">&bull; $1</p>'))
+    // Join lines that are part of the same paragraph, but keep headings and list items on their own lines
+    .reduce((acc, line) => {
+        if (line.startsWith('<h') || line.startsWith('<p class="pl-4">')) {
+            acc.push(line);
+        } else if (acc.length === 0 || acc[acc.length - 1].startsWith('<h')) {
+             acc.push(`<p>${line}</p>`);
+        } else {
+            // Append to the previous paragraph if it's not a heading or list item
+            const lastLine = acc.pop() || '';
+            if(lastLine.endsWith('</p>')){
+                 acc.push(lastLine.slice(0,-4) + ' ' + line + '</p>');
+            } else {
+                 acc.push(lastLine + ' ' + line);
+            }
+        }
+        return acc;
+    }, [] as string[])
+    .join('')
+    // Handle bold text within the final HTML
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
 
   return (
-    <div className="prose prose-sm max-w-none text-foreground">
-      {lines.map((line, index) => {
-        line = line.trim();
-
-        if (line.startsWith('## ')) {
-          return <h2 key={index} className="text-xl font-bold mt-6 mb-3 border-b pb-2">{line.substring(3)}</h2>;
-        }
-        if (line.startsWith('### ')) {
-            return <h3 key={index} className="text-lg font-semibold mt-4 mb-2">{line.substring(4)}</h3>;
-        }
-        if (line.match(/^\d+\.\s/)) {
-            const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            return <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: boldedLine }} />;
-        }
-        if (line.startsWith('* ')) {
-            const boldedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').substring(2);
-            return <p key={index} className="pl-4" dangerouslySetInnerHTML={{ __html: `&bull; ${boldedLine}` }} />;
-        }
-
-        // Replace **word** with <strong>word</strong>
-        const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-
-        return <p key={index} className="mb-2" dangerouslySetInnerHTML={{ __html: formattedLine }} />;
-      })}
-    </div>
+    <div
+      className="prose prose-sm max-w-none text-foreground"
+      dangerouslySetInnerHTML={{ __html: formattedContent }}
+    />
   );
 };
 
