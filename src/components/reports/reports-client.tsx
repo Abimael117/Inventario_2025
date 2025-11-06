@@ -149,8 +149,8 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center print-hide">
-             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                <FileText className="h-8 w-8 text-primary" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <FileText className="h-8 w-8 text-primary" />
             </div>
             <p className="text-sm text-muted-foreground">
               Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
