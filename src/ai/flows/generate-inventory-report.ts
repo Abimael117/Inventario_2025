@@ -18,7 +18,7 @@ const GenerateInventoryReportInputSchema = z.object({
 export type GenerateInventoryReportInput = z.infer<typeof GenerateInventoryReportInputSchema>;
 
 const GenerateInventoryReportOutputSchema = z.object({
-  generalSummary: z.string().describe('Un breve resumen ejecutivo (2-3 frases) del estado general del inventario.'),
+  generalSummary: z.string().min(1, "El resumen general no puede estar vacío.").describe('Un breve resumen ejecutivo (2-3 frases) del estado general del inventario.'),
   stockAlerts: z.object({
     critical: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos con cantidad CERO (agotados).'),
     low: z.array(z.object({ name: z.string(), quantity: z.number() })).describe('Lista de productos cuya cantidad es mayor que cero pero menor o igual a su punto de reorden.'),
@@ -40,7 +40,7 @@ const prompt = ai.definePrompt({
 
 Analiza los siguientes datos y rellena los campos del schema de salida:
 
-- **generalSummary**: Escribe un resumen profesional de 2 o 3 frases sobre el estado general.
+- **generalSummary**: Escribe un resumen profesional de 2 o 3 frases sobre el estado general. Este campo es obligatorio.
 - **stockAlerts.critical**: Identifica los productos con cantidad CERO.
 - **stockAlerts.low**: Identifica productos donde la cantidad es > 0 pero <= reorderPoint.
 - **inStock**: Lista los productos donde la cantidad es > reorderPoint.
@@ -69,4 +69,3 @@ const generateInventoryReportFlow = ai.defineFlow(
     return output;
   }
 );
-
