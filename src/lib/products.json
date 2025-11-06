@@ -5,7 +5,7 @@
       "sku": "1234lam",
       "category": "Iluminacion",
       "location": "Almacen 1",
-      "quantity": 100,
+      "quantity": 10,
       "reorderPoint": 10,
       "id": "mhmx2zor.ns"
     }

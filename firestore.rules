@@ -1,69 +1,157 @@
 /**
- * @file Firestore Security Rules
- * @version 2
+ * @fileoverview Firestore Security Rules for StockWise.
  *
- * @description
- * This ruleset enforces access control based on user authentication and roles.
+ * Core Philosophy:
+ * This ruleset enforces a hybrid security model. Core data (Products, Locations)
+ * is publicly readable but writable only by authenticated users. User-specific
+ * data (StockAlerts) is strictly owned by each user.
  *
  * Data Structure:
- * - /products/{productId}: Stores product inventory information.
- * - /loans/{loanId}: Stores product loan records.
- * - /users/{userId}: Stores user-specific data, including their role.
+ * - /products/{productId}: Public product information.
+ * - /locations/{locationId}: Public location information.
+ * - /products/{productId}/stockLevels/{stockLevelId}: Stock levels for products.
+ * - /users/{userId}/stockAlerts/{stockAlertId}: User-specific stock alerts.
+ * - /products/{productId}/stockMovements/{stockMovementId}: Stock movement history for a product.
  *
  * Key Security Decisions:
- * - All collections require user to be authenticated for any access.
- * - The 'users' collection is read-only for clients, except for admins who can write.
- *   A user can only read their own data.
- * - Write access to 'products' and 'loans' is restricted to authenticated users.
+ * - Public read access is granted for Products and Locations to facilitate
+ *   easy data retrieval for all users.
+ * - StockAlerts are strictly user-owned and stored under the /users/{userId}
+ *   path to ensure only the owning user can manage them.
+ * - StockLevels and StockMovements are subcollections of Products and inherit the
+ *   product's access control (public read).
+ *
+ * Denormalization for Authorization:
+ * - User ownership of StockAlerts is enforced through path-based rules,
+ *   eliminating the need for data denormalization within the StockAlert documents themselves.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user is signed in.
+    /**
+     * @description Allows anyone to read product information, but only authenticated users to create, update, or delete products.
+     * @path /products/{productId}
+     * @allow get, list: if true
+     * @allow create: if isSignedIn()
+     * @allow update: if isSignedIn() && resource != null;
+     * @allow delete: if isSignedIn() && resource != null;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle Allows public read access but requires authentication for write access to product data.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Allows anyone to read location information, but only authenticated users to create, update, or delete locations.
+     * @path /locations/{locationId}
+     * @allow get, list: if true
+     * @allow create: if isSignedIn()
+     * @allow update: if isSignedIn() && resource != null;
+     * @allow delete: if isSignedIn() && resource != null;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle Allows public read access but requires authentication for write access to location data.
+     */
+    match /locations/{locationId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Allows anyone to read stock level information, but only authenticated users to create, update, or delete stock levels.
+     * @path /products/{productId}/stockLevels/{stockLevelId}
+     * @allow get, list: if true
+     * @allow create: if isSignedIn()
+     * @allow update: if isSignedIn() && resource != null;
+     * @allow delete: if isSignedIn() && resource != null;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle StockLevels inherit the access control of their parent Product (public read, auth required for writes).
+     */
+    match /products/{productId}/stockLevels/{stockLevelId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Allows a user to manage their own stock alerts.
+     * @path /users/{userId}/stockAlerts/{stockAlertId}
+     * @allow get, list: if isOwner(userId)
+     * @allow create: if isOwner(userId)
+     * @allow update: if isExistingOwner(userId)
+     * @allow delete: if isExistingOwner(userId)
+     * @deny create: if !isOwner(userId);
+     * @deny get: if !isOwner(userId);
+     * @deny list: if !isOwner(userId);
+     * @deny update: if !isExistingOwner(userId);
+     * @deny delete: if !isExistingOwner(userId);
+     * @principle Enforces strict user ownership for stock alerts.
+     */
+    match /users/{userId}/stockAlerts/{stockAlertId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Allows anyone to read stock movement information, but only authenticated users to create, update, or delete stock movements.
+     * @path /products/{productId}/stockMovements/{stockMovementId}
+     * @allow get, list: if true
+     * @allow create: if isSignedIn()
+     * @allow update: if isSignedIn() && resource != null;
+     * @allow delete: if isSignedIn() && resource != null;
+     * @deny create: if false;
+     * @deny update: if false;
+     * @deny delete: if false;
+     * @principle StockMovements inherit the access control of their parent Product (public read, auth required for writes).
+     */
+    match /products/{productId}/stockMovements/{stockMovementId} {
+      allow get, list: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    // --- Helper functions ---
+
+    /**
+     * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
+     */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper function to get the user's role from the 'users' collection.
-    function getUserRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
-    }
-
-    // Helper function to check if the requesting user is an admin.
-    function isAdmin() {
-      return isSignedIn() && getUserRole(request.auth.uid) == 'admin';
-    }
-
     /**
-     * @description Access to user data is restricted.
-     * @path /users/{userId}
-     * @allow (get): A user can only read their own profile.
-     * @allow (list): Listing users is forbidden to prevent leaking user information.
-     * @allow (write): Only admins can create or update user documents.
-     * @allow (delete): No one can delete user profiles from the client-side.
+     * @description Checks if the authenticated user is the owner of the resource.
+     * @param {string} userId The user ID to compare against the authenticated user's ID.
+     * @return {boolean} True if the user is the owner, false otherwise.
      */
-    match /users/{userId} {
-      allow get: if isSignedIn() && request.auth.uid == userId;
-      allow list: if false;
-      allow write: if isAdmin();
-      allow delete: if false;
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
 
-    /**
-     * @description Requires authentication for all access to products.
-     * @path /products/{productId}
-     */
-    match /products/{productId} {
-      allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Requires authentication for all access to loans.
-     * @path /loans/{loanId}
-     */
-    match /loans/{loanId} {
-      allow read, write: if isSignedIn();
+        /**
+         * @description Checks if the authenticated user is the owner of the resource and the resource exists.
+         * @param {string} userId The user ID to compare against the authenticated user's ID.
+         * @return {boolean} True if the user is the owner and the resource exists, false otherwise.
+         */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
     }
   }
 }

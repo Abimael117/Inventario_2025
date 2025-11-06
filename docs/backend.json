@@ -6,118 +6,182 @@
       "type": "object",
       "description": "Represents a product in the inventory.",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the product."
+        },
         "name": {
           "type": "string",
-          "description": "The name of the product."
+          "description": "Name of the product."
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of the product."
         },
         "sku": {
           "type": "string",
-          "description": "The Stock Keeping Unit (SKU) of the product."
+          "description": "Stock Keeping Unit - a unique identifier for the product."
         },
         "category": {
           "type": "string",
-          "description": "The category of the product."
+          "description": "Category the product belongs to."
         },
-        "quantity": {
+        "cost": {
           "type": "number",
-          "description": "The current stock quantity of the product."
+          "description": "Cost of the product."
         },
-        "location": {
-          "type": "string",
-          "description": "The storage location of the product."
-        },
-        "reorderPoint": {
+        "price": {
           "type": "number",
-          "description": "The reorder point for the product."
+          "description": "Selling price of the product."
         }
       },
       "required": [
+        "id",
         "name",
         "sku",
         "category",
-        "quantity",
-        "location",
-        "reorderPoint"
+        "cost",
+        "price"
       ]
     },
-    "Loan": {
+    "Location": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Loan",
+      "title": "Location",
       "type": "object",
-      "description": "Represents a product loan.",
+      "description": "Represents a physical location where products are stored.",
       "properties": {
-        "productName": {
+        "id": {
           "type": "string",
-          "description": "The name of the loaned product."
-        },
-        "requester": {
-          "type": "string",
-          "description": "The person or team who requested the loan."
-        },
-        "loanDate": {
-          "type": "string",
-          "description": "The date the loan was made.",
-          "format": "date-time"
-        },
-        "quantity": {
-          "type": "number",
-          "description": "The number of items loaned."
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the loan.",
-          "enum": [
-            "Prestado",
-            "Devuelto"
-          ]
-        },
-        "productId": {
-          "type": "string",
-          "description": "The ID of the loaned product."
-        }
-      },
-      "required": [
-        "productName",
-        "requester",
-        "loanDate",
-        "quantity",
-        "status",
-        "productId"
-      ]
-    },
-    "User": {
-      "title": "User",
-      "description": "Represents a user account with role-based access control.",
-      "type": "object",
-      "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The user's email address."
-        },
-        "role": {
-          "type": "string",
-          "description": "The role of the user, which determines their permissions.",
-          "enum": [
-            "admin",
-            "user"
-          ]
+          "description": "Unique identifier for the location."
         },
         "name": {
           "type": "string",
-          "description": "The display name of the user."
+          "description": "Name of the location (e.g., Warehouse A, Shelf 2)."
+        },
+        "address": {
+          "type": "string",
+          "description": "Address of the location."
         }
       },
       "required": [
-        "email",
-        "role",
-        "name"
+        "id",
+        "name",
+        "address"
+      ]
+    },
+    "StockLevel": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StockLevel",
+      "type": "object",
+      "description": "Represents the quantity of a product at a specific location.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stock level record."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N StockLevel)"
+        },
+        "locationId": {
+          "type": "string",
+          "description": "Reference to Location. (Relationship: Location 1:N StockLevel)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the product at this location."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "locationId",
+        "quantity"
+      ]
+    },
+    "StockAlert": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StockAlert",
+      "type": "object",
+      "description": "Represents an alert that is triggered when stock levels are low.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stock alert."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N StockAlert)"
+        },
+        "threshold": {
+          "type": "number",
+          "description": "The minimum quantity that triggers the alert."
+        },
+        "alertDate": {
+          "type": "string",
+          "description": "Date and time the alert was triggered.",
+          "format": "date-time"
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "Indicates whether the alert has been resolved."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "threshold"
+      ]
+    },
+    "StockMovement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StockMovement",
+      "type": "object",
+      "description": "Represents a movement of stock, such as a delivery or a sale.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the stock movement."
+        },
+        "productId": {
+          "type": "string",
+          "description": "Reference to Product. (Relationship: Product 1:N StockMovement)"
+        },
+        "fromLocationId": {
+          "type": "string",
+          "description": "Reference to Location.  Location the product moved from. (Relationship: Location 1:N StockMovement)"
+        },
+        "toLocationId": {
+          "type": "string",
+          "description": "Reference to Location. Location the product moved to. (Relationship: Location 1:N StockMovement)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the product that was moved."
+        },
+        "movementDate": {
+          "type": "string",
+          "description": "Date and time the stock movement occurred.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of stock movement (e.g., Delivery, Sale, Transfer)."
+        }
+      },
+      "required": [
+        "id",
+        "productId",
+        "quantity",
+        "movementDate",
+        "type"
       ]
     }
   },
   "auth": {
     "providers": [
-      "emailPassword"
+      "password",
+      "anonymous"
     ]
   },
   "firestore": {
@@ -129,29 +193,92 @@
           "schema": {
             "$ref": "#/backend/entities/Product"
           },
-          "description": "Stores all products in the inventory."
+          "description": "Stores product information. StockLevels and StockMovements are stored as subcollections of Products. Includes productId as a param.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            }
+          ]
         }
       },
       {
-        "path": "/loans/{loanId}",
+        "path": "/locations/{locationId}",
         "definition": {
-          "entityName": "Loan",
+          "entityName": "Location",
           "schema": {
-            "$ref": "#/backend/entities/Loan"
+            "$ref": "#/backend/entities/Location"
           },
-          "description": "Stores all product loans."
+          "description": "Stores location information.  Includes locationId as a param.",
+          "params": [
+            {
+              "name": "locationId",
+              "description": "The unique identifier for the location."
+            }
+          ]
         }
       },
       {
-        "path": "/users/{userId}",
+        "path": "/products/{productId}/stockLevels/{stockLevelId}",
         "definition": {
-          "entityName": "User",
+          "entityName": "StockLevel",
           "schema": {
-            "$ref": "#/backend/entities/User"
+            "$ref": "#/backend/entities/StockLevel"
           },
-          "description": "Stores user profile information, including their role."
+          "description": "Stores the quantity of a product at a specific location. Includes productId and stockLevelId as params.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            },
+            {
+              "name": "stockLevelId",
+              "description": "The unique identifier for the stock level."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/stockAlerts/{stockAlertId}",
+        "definition": {
+          "entityName": "StockAlert",
+          "schema": {
+            "$ref": "#/backend/entities/StockAlert"
+          },
+          "description": "Stores stock alerts specific to a user.  Includes userId and stockAlertId as params.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "stockAlertId",
+              "description": "The unique identifier for the stock alert."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/products/{productId}/stockMovements/{stockMovementId}",
+        "definition": {
+          "entityName": "StockMovement",
+          "schema": {
+            "$ref": "#/backend/entities/StockMovement"
+          },
+          "description": "Stores stock movement records for a product. Includes productId and stockMovementId as params.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "The unique identifier for the product."
+            },
+            {
+              "name": "stockMovementId",
+              "description": "The unique identifier for the stock movement."
+            }
+          ]
         }
       }
-    ]
+    ],
+    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules through denormalization. User-owned data (stock alerts) is segregated under user-specific paths. Core data such as Products, Locations are stored at the root for global access.  StockLevels and StockMovements, are stored as subcollections of Products, since they represent 1:N relationships with products.\n\n**Authorization Independence:**\nAuthorization independence is achieved by storing core authorization data directly within each document. For example, since StockAlerts are user specific, they are stored under /users/{userId}/stockAlerts/{stockAlertId}.\n\n**QAPs Support:**\nSegregation ensures that list operations are secure. Path-based ownership for user-specific alerts means that listing stock alerts under a user path is inherently limited to that user's alerts."
   }
 }
