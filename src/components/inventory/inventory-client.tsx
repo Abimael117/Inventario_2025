@@ -1,8 +1,9 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
-import { Download, Edit, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { useState, useMemo, useTransition } from "react";
+import { Download, Edit, MoreHorizontal, PlusCircle, Trash2, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import type { Product } from "@/lib/types";
 import AppHeader from "@/components/header";
@@ -45,20 +46,17 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
-
-// Mock functions to avoid crashes
-const deleteDocumentNonBlocking = (ref: any) => {};
-const addDocumentNonBlocking = (col: any, data: any) => {};
-const setDocumentNonBlocking = (ref: any, data: any, options: any) => {};
-
+import { saveProduct, updateProduct, deleteProduct } from "@/app/actions";
 
 export default function InventoryClient({ data }: { data: Product[] }) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
+  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleEditClick = (product: Product) => {
@@ -73,31 +71,67 @@ export default function InventoryClient({ data }: { data: Product[] }) {
 
   const confirmDelete = () => {
     if (productToDelete) {
-      toast({
-        title: "Éxito (Simulado)",
-        description: `El producto "${productToDelete.name}" ha sido eliminado.`,
+      startTransition(async () => {
+        const result = await deleteProduct(productToDelete.id);
+        if (result.success) {
+          toast({
+            title: "Producto Eliminado",
+            description: `El producto "${productToDelete.name}" ha sido eliminado.`,
+          });
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error al Eliminar",
+            description: result.error || "No se pudo eliminar el producto.",
+          });
+        }
+        setIsDeleteDialogOpen(false);
+        setProductToDelete(null);
       });
-      setProductToDelete(null);
     }
-    setIsDeleteDialogOpen(false);
   };
   
   const handleAddProduct = (newProductData: Omit<Product, 'id'>) => {
-    toast({
-      title: "Éxito (Simulado)",
-      description: `El producto "${newProductData.name}" ha sido añadido.`,
+    startTransition(async () => {
+      const result = await saveProduct(newProductData);
+      if (result.success) {
+        toast({
+          title: "Producto Añadido",
+          description: `El producto "${newProductData.name}" ha sido guardado.`,
+        });
+        setIsAddDialogOpen(false);
+        router.refresh();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al Guardar",
+          description: result.error || "No se pudo guardar el producto.",
+        });
+      }
     });
-    setIsAddDialogOpen(false);
   };
 
   const handleEditProduct = (editedProductData: Omit<Product, 'id'>) => {
     if (productToEdit) {
-      toast({
-        title: "Éxito (Simulado)",
-        description: `El producto "${editedProductData.name}" ha sido actualizado.`,
+      startTransition(async () => {
+        const result = await updateProduct(productToEdit.id, editedProductData);
+        if (result.success) {
+          toast({
+            title: "Producto Actualizado",
+            description: `El producto "${editedProductData.name}" ha sido actualizado.`,
+          });
+          setIsEditDialogOpen(false);
+          setProductToEdit(null);
+          router.refresh();
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error al Actualizar",
+            description: result.error || "No se pudo actualizar el producto.",
+          });
+        }
       });
-      setIsEditDialogOpen(false);
-      setProductToEdit(null);
     }
   };
 
@@ -186,7 +220,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {filteredData.map((product, index) => (
+                        {filteredData.length > 0 ? filteredData.map((product, index) => (
                             <TableRow key={product.id || index}>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.sku}</TableCell>
@@ -234,7 +268,13 @@ export default function InventoryClient({ data }: { data: Product[] }) {
                                 </DropdownMenu>
                             </TableCell>
                             </TableRow>
-                        ))}
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="h-24 text-center">
+                              No se encontraron productos. Empieza añadiendo uno nuevo.
+                            </TableCell>
+                          </TableRow>
+                        )}
                         </TableBody>
                     </Table>
                 </div>
@@ -250,7 +290,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
               Rellena los detalles del nuevo producto. Haz clic en guardar cuando hayas terminado.
             </DialogDescription>
           </DialogHeader>
-          <AddProductForm onSubmit={handleAddProduct} />
+          <AddProductForm onSubmit={handleAddProduct} isPending={isPending} />
         </DialogContent>
       </Dialog>
       
@@ -262,7 +302,7 @@ export default function InventoryClient({ data }: { data: Product[] }) {
               Modifica los detalles del producto. Haz clic en guardar cuando hayas terminado.
             </DialogDescription>
           </DialogHeader>
-          <EditProductForm onSubmit={handleEditProduct} product={productToEdit} />
+          <EditProductForm onSubmit={handleEditProduct} product={productToEdit} isPending={isPending} />
         </DialogContent>
       </Dialog>
 
@@ -278,8 +318,9 @@ export default function InventoryClient({ data }: { data: Product[] }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Eliminar
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isPending ? 'Eliminando...' : 'Eliminar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -287,5 +328,3 @@ export default function InventoryClient({ data }: { data: Product[] }) {
     </>
   );
 }
-
-    

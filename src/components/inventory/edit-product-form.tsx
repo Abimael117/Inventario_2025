@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -40,20 +41,21 @@ const formSchema = z.object({
 });
 
 type EditProductFormProps = {
-  onSubmit: (data: Omit<Product, 'id'>) => void;
+  onSubmit: (data: Partial<Omit<Product, 'id'>>) => void;
   product: Product | null;
+  isPending: boolean;
 };
 
-export function EditProductForm({ onSubmit, product }: EditProductFormProps) {
+export function EditProductForm({ onSubmit, product, isPending }: EditProductFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: product?.name || "",
-      sku: product?.sku || "",
-      category: product?.category || "",
-      location: product?.location || "",
-      quantity: product?.quantity || 0,
-      reorderPoint: product?.reorderPoint || 0,
+    defaultValues: product || {
+      name: "",
+      sku: "",
+      category: "",
+      location: "",
+      quantity: 0,
+      reorderPoint: 0,
     },
   });
 
@@ -65,7 +67,6 @@ export function EditProductForm({ onSubmit, product }: EditProductFormProps) {
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     onSubmit(values);
-    form.reset();
   }
 
   return (
@@ -151,7 +152,10 @@ export function EditProductForm({ onSubmit, product }: EditProductFormProps) {
             )}
             />
         </div>
-        <Button type="submit" className="w-full">Guardar Cambios</Button>
+        <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? "Guardando..." : "Guardar Cambios"}
+        </Button>
       </form>
     </Form>
   );

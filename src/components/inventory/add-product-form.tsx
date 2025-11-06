@@ -1,8 +1,10 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,9 +41,10 @@ const formSchema = z.object({
 
 type AddProductFormProps = {
   onSubmit: (data: Omit<Product, 'id'>) => void;
+  isPending: boolean;
 };
 
-export function AddProductForm({ onSubmit }: AddProductFormProps) {
+export function AddProductForm({ onSubmit, isPending }: AddProductFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -56,7 +59,6 @@ export function AddProductForm({ onSubmit }: AddProductFormProps) {
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
     onSubmit(values);
-    form.reset();
   }
 
   return (
@@ -142,7 +144,10 @@ export function AddProductForm({ onSubmit }: AddProductFormProps) {
             )}
             />
         </div>
-        <Button type="submit" className="w-full">Guardar Producto</Button>
+        <Button type="submit" className="w-full" disabled={isPending}>
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? "Guardando..." : "Guardar Producto"}
+        </Button>
       </form>
     </Form>
   );
