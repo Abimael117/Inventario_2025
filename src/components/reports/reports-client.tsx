@@ -161,7 +161,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <FileText className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="max-w-xs text-sm text-muted-foreground">
               Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
             </p>
             <Button onClick={handleGenerateReport} disabled={isPending}>
