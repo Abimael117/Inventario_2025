@@ -130,7 +130,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
           Genera un análisis completo del estado actual de tu inventario, incluyendo alertas de stock bajo y préstamos activos.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {report ? (
           <div className="space-y-4">
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
