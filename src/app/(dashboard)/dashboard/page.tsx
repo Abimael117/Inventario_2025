@@ -1,63 +1,52 @@
-'use client';
-import { useEffect, useState } from 'react';
+'use server';
 import DashboardClient from "@/components/dashboard/dashboard-client";
 import AppHeader from "@/components/header";
-import { Loader2 } from "lucide-react";
 import type { Product, Loan } from '@/lib/types';
+import { promises as fs } from 'fs';
+import path from 'path';
 
-// NOTE: This page is now a client component that fetches data on mount.
-// This is a temporary workaround to address data loading issues.
-// A better approach would be to use Server Components with client-side data fetching hooks.
-
-export default function DashboardPage() {
-  const [inventoryData, setInventoryData] = useState<Product[]>([]);
-  const [recentChanges, setRecentChanges] = useState<Loan[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        // These would be API calls in a real application
-        const productsRes = await fetch('/api/products');
-        const products = await productsRes.json();
-        
-        const loansRes = await fetch('/api/loans');
-        const loans = await loansRes.json();
-
-        setInventoryData(products);
-        setRecentChanges(loans);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
+async function getProducts(): Promise<Product[]> {
+  const filePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
+  try {
+    const data = await fs.readFile(filePath, 'utf-8');
+    const jsonData = JSON.parse(data);
+    return jsonData.products || [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
     }
-    // This is a placeholder for where data fetching would occur.
-    // Since we are reading from local files, we will keep the dummy data logic
-    // to avoid breaking the app structure during the refactor.
-    // In a real app, you would fetch from an API here.
-    setLoading(false);
-    
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <AppHeader title="Panel" />
-        <main className="flex-1 p-4 md:p-6 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </main>
-      </div>
-    )
+    console.error('Error reading or parsing products.json:', error);
+    return [];
   }
+}
+
+async function getLoans(): Promise<Loan[]> {
+  const filePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
+  try {
+    const data = await fs.readFile(filePath, 'utf-8');
+    const jsonData = JSON.parse(data);
+    return jsonData.loans || [];
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    console.error('Error reading or parsing loans.json:', error);
+    return [];
+  }
+}
+
+
+export default async function DashboardPage() {
+  const inventoryData = await getProducts();
+  const recentChanges = await getLoans();
 
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title="Panel" />
       <main className="flex-1 p-4 md:p-6 print-hide">
         <DashboardClient
-          inventoryData={inventoryData || []}
-          recentChanges={recentChanges || []}
+          inventoryData={inventoryData}
+          recentChanges={recentChanges}
         />
       </main>
     </div>
