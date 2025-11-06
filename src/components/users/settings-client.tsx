@@ -41,9 +41,12 @@ import { AddUserForm } from '@/components/users/add-user-form';
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { saveUser, deleteUser, updateUser } from '@/app/actions';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { createUserWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser as deleteFirebaseUser } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
   initialUsers: User[];
@@ -51,6 +54,9 @@ type SettingsClientProps = {
 
 export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const router = useRouter();
+  const firestore = useFirestore();
+  const auth = useAuth();
+  
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -61,20 +67,28 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
 
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
-      const result = await saveUser(newUser);
-
-      if (result.success) {
-        toast({
-          title: "Usuario Creado",
-          description: `El usuario "${newUser.username}" ha sido guardado.`,
-        });
-        setIsAddUserOpen(false);
-        router.refresh();
-      } else {
+      try {
+        // We can't create a user with the client SDK and then sign out and sign back in
+        // as the original user. We'll show an alert that this isn't supported in Studio.
         toast({
           variant: "destructive",
-          title: "Error al Guardar",
-          description: result.error || "No se pudo guardar el usuario en el servidor.",
+          title: "Función no compatible",
+          description: "La creación de usuarios no es compatible en este entorno. Usa la consola de Firebase.",
+        });
+
+      } catch (error: any) {
+        let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
+        if (error instanceof FirebaseError) {
+          if (error.code === 'auth/email-already-in-use') {
+            description = 'Este correo electrónico ya está en uso por otra cuenta.';
+          } else if (error.code === 'auth/weak-password') {
+            description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+          }
+        }
+        toast({
+          variant: "destructive",
+          title: "Error al Crear Usuario",
+          description,
         });
       }
     });
@@ -95,21 +109,24 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role'>>) => {
     startTransition(async () => {
-        const result = await updateUser(userId, data);
-        if (result.success) {
-            toast({
-                title: "Usuario Actualizado",
-                description: `Los datos del usuario han sido actualizados.`,
-            });
-            setIsEditUserOpen(false);
-            router.refresh();
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Error al Actualizar",
-                description: result.error || "No se pudo actualizar el usuario.",
-            });
-        }
+      try {
+        const userDocRef = doc(firestore, "users", userId);
+        // We only support updating permissions for now.
+        setDocumentNonBlocking(userDocRef, { permissions: data.permissions }, { merge: true });
+        
+        toast({
+            title: "Usuario Actualizado",
+            description: `Los permisos del usuario han sido actualizados.`,
+        });
+        setIsEditUserOpen(false);
+        router.refresh();
+      } catch (e) {
+         toast({
+            variant: "destructive",
+            title: "Error al Actualizar",
+            description: "No se pudo actualizar el usuario.",
+        });
+      }
     });
   };
 
@@ -130,22 +147,28 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const confirmDelete = () => {
     if (userToDelete) {
       startTransition(async () => {
-        const result = await deleteUser(userToDelete.id);
-        if (result.success) {
+        try {
+          // Deleting users from the client is a sensitive operation and not recommended
+          // without re-authentication, which complicates the UX in this admin panel.
+          // We will delete the Firestore document but leave the auth user for now.
+          const userDocRef = doc(firestore, "users", userToDelete.id);
+          deleteDocumentNonBlocking(userDocRef);
+
           toast({
             title: "Usuario Eliminado",
-            description: `El usuario "${userToDelete!.username}" ha sido eliminado.`,
+            description: `El registro del usuario "${userToDelete.username}" ha sido eliminado de la base de datos. La cuenta de autenticación no fue eliminada.`,
           });
           router.refresh();
-        } else {
+        } catch (e: any) {
           toast({
             variant: "destructive",
             title: "Error al Eliminar",
-            description: result.error || "No se pudo eliminar el usuario.",
+            description: "No se pudo eliminar el registro del usuario. La cuenta de autenticación puede requerir una nueva autenticación.",
           });
+        } finally {
+          setIsDeleteConfirmOpen(false);
+          setUserToDelete(null);
         }
-        setIsDeleteConfirmOpen(false);
-        setUserToDelete(null);
       });
     }
   }
@@ -237,13 +260,15 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <ShieldQuestion className="h-5 w-5" />
-                        Sobre este Sistema de Permisos
+                        Sobre la Gestión de Usuarios
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                       La gestión de usuarios ahora está conectada a Firebase. Sin embargo, la creación, edición y eliminación de usuarios desde la app está deshabilitada temporalmente mientras se completa la migración a Firestore. Los datos que ves son de solo lectura.
-                    </p>
+                    <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                      <li>La creación de nuevos usuarios está deshabilitada en este entorno para mantener la seguridad de la sesión del administrador actual. Puedes añadir nuevos usuarios directamente desde la consola de Firebase Authentication.</li>
+                      <li>La edición de usuarios se limita a cambiar sus permisos. Cambiar correos o contraseñas requiere una nueva autenticación que no está implementada en este panel.</li>
+                      <li>La eliminación de usuarios solo borra su registro de la base de datos de Firestore, pero no elimina al usuario del sistema de autenticación de Firebase por razones de seguridad.</li>
+                    </ul>
                 </CardContent>
             </Card>
 
@@ -256,7 +281,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
             <DialogHeader>
                 <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                    Completa los detalles para crear una nueva cuenta de usuario. Esta función está deshabilitada.
+                    Completa los detalles para crear una nueva cuenta de usuario.
                 </DialogDescription>
             </DialogHeader>
             <AddUserForm onSubmit={handleAddUser} isPending={isPending} />
@@ -268,7 +293,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <DialogHeader>
                   <DialogTitle>Editar Usuario</DialogTitle>
                   <DialogDescription>
-                      Modifica los detalles del usuario. Esta función está deshabilitada.
+                      Modifica los permisos de acceso del usuario.
                   </DialogDescription>
               </DialogHeader>
               {userToEdit && (
@@ -286,7 +311,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción es permanente y está deshabilitada.
+              Esta acción eliminará el registro del usuario de la base de datos, pero no del sistema de autenticación.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -4,15 +4,7 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
-import type { User, Product, Loan } from '@/lib/types';
-
-const userSchema = z.object({
-  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres.").optional(), // Contraseña opcional para edición
-  role: z.enum(['admin', 'user']),
-  permissions: z.array(z.string()).min(1, { message: "Debes seleccionar al menos un permiso." }),
-});
+import type { Product, Loan } from '@/lib/types';
 
 const productSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
@@ -32,7 +24,6 @@ const loanSchema = z.object({
 });
 
 // JSON file paths are kept for reference but logic will be migrated to Firestore
-const usersFilePath = path.join(process.cwd(), 'src', 'lib', 'users.json');
 const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
 
@@ -51,24 +42,6 @@ async function readData<T>(filePath: string, defaultData: T): Promise<T> {
 async function writeData<T>(filePath: string, data: T): Promise<void> {
     await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
-
-
-// USER ACTIONS - TO BE MIGRATED TO FIRESTORE
-export async function saveUser(newUser: Omit<User, 'id'>): Promise<{ success: boolean, error?: string, data?: User }> {
-  // This logic will be replaced by Firestore operations.
-  return { success: false, error: "La creación de usuarios ha sido deshabilitada temporalmente durante la migración." };
-}
-
-export async function updateUser(userId: string, updatedData: Partial<Omit<User, 'id' | 'role'>>): Promise<{ success: boolean; error?: string; data?: User }> {
-    // This logic will be replaced by Firestore operations.
-    return { success: false, error: "La edición de usuarios ha sido deshabilitada temporalmente durante la migración." };
-}
-
-export async function deleteUser(userId: string): Promise<{ success: boolean; error?: string; data?: { userId: string } }> {
-    // This logic will be replaced by Firestore operations.
-    return { success: false, error: "La eliminación de usuarios ha sido deshabilitada temporalmente durante la migración." };
-}
-
 
 // PRODUCT ACTIONS
 export async function saveProduct(newProduct: Omit<Product, 'id'>): Promise<{ success: boolean, error?: string, data?: Product }> {
