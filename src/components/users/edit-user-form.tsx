@@ -25,6 +25,7 @@ const permissions = [
   { id: 'dashboard', label: 'Ver Panel Principal' },
   { id: 'inventory', label: 'Gestionar Inventario' },
   { id: 'loans', label: 'Gestionar Préstamos' },
+  { id: 'reports', label: 'Ver Reportes' },
 ] as const;
 
 const formSchema = z.object({

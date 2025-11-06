@@ -183,6 +183,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     dashboard: 'Panel',
     inventory: 'Inventario',
     loans: 'Préstamos',
+    reports: 'Reportes',
     settings: 'Configuración'
   };
 
@@ -236,7 +237,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex flex-row gap-1">
+                                  <div className="flex flex-row gap-1 flex-wrap">
                                     {user.role === 'admin' ? (
                                       <Badge>Todos</Badge>
                                     ) : user.permissions && user.permissions.length > 0 ? (

@@ -167,7 +167,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   </SidebarMenuButton>
               </SidebarMenuItem>
             )}
-            {profile.role === 'admin' && (
+            {canView('reports') && (
                <SidebarMenuItem>
                   <SidebarMenuButton
                       asChild
