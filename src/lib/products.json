@@ -35,6 +35,14 @@
       "quantity": 0,
       "reorderPoint": 5,
       "id": "mho171r5.3ua"
+    },
+    {
+      "id": "12342",
+      "name": "Martillo",
+      "category": "Herramientas",
+      "location": "Almacen 1",
+      "quantity": 2,
+      "reorderPoint": 1
     }
   ]
 }
