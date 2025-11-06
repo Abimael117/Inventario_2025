@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, Inbox } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, Inbox, Printer } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -106,9 +106,13 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
     handleGenerateReport();
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="print-hide">
         <div className="flex items-center gap-2">
           <Bot className="h-6 w-6 text-primary" />
           <CardTitle>Reporte de Inventario con IA</CardTitle>
@@ -120,10 +124,10 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
       <CardContent className="space-y-4">
         {report ? (
           <div className="space-y-4">
-            <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
+            <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
               <ReportViewer report={report} />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 print-hide">
               <Button variant="outline" size="sm" onClick={handleCloseReport}>
                 Cerrar
               </Button>
@@ -137,10 +141,14 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
                   'Volver a Generar'
                 )}
               </Button>
+              <Button size="sm" onClick={handlePrint} variant="default">
+                <Printer className="mr-2 h-4 w-4" />
+                Imprimir Reporte
+              </Button>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
+          <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center print-hide">
              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <Inbox className="h-8 w-8 text-primary" />
             </div>
