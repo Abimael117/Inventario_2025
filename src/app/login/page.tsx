@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, type FormEvent } from 'react';
@@ -17,8 +18,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 
 
 const DUMMY_DOMAIN = 'stockwise.local';
@@ -53,10 +54,12 @@ export default function LoginPage() {
                 uid: newAuthUser.uid,
                 name: 'Administrador',
                 username: 'admin',
-                role: 'admin',
-                permissions: ['dashboard', 'inventory', 'loans', 'settings'],
+                role: 'admin' as const,
+                permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
             };
-            await setDoc(doc(firestore, "users", newAuthUser.uid), adminUserDoc);
+            // Use non-blocking write for the user document
+            const userDocRef = doc(firestore, "users", newAuthUser.uid);
+            setDocumentNonBlocking(userDocRef, adminUserDoc, {});
             router.replace('/dashboard');
           } catch (creationError) {
              setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');

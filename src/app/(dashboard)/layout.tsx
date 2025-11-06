@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert } from "lucide-react";
+import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert, FileText } from "lucide-react";
 import React, { useEffect, useState } from 'react';
 
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -65,6 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         'dashboard': 'dashboard',
         'inventory': 'inventory',
         'loans': 'loans',
+        'reports': 'reports',
         'settings': 'settings'
       };
       
@@ -162,6 +163,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <Link href="/loans">
                           <ArrowRightLeft />
                           <span>Préstamos</span>
+                      </Link>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {profile.role === 'admin' && (
+               <SidebarMenuItem>
+                  <SidebarMenuButton
+                      asChild
+                      isActive={pathname.startsWith("/reports")}
+                      tooltip="Reportes"
+                  >
+                      <Link href="/reports">
+                          <FileText />
+                          <span>Reportes</span>
                       </Link>
                   </SidebarMenuButton>
               </SidebarMenuItem>
