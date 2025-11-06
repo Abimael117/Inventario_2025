@@ -54,6 +54,12 @@ const generateInventoryReportFlow = ai.defineFlow(
   },
   async input => {
     const { output } = await prompt(input);
-    return output!;
+    
+    if (!output || !output.report) {
+      throw new Error('La IA no pudo generar un reporte válido.');
+    }
+    
+    return output;
   }
 );
+
