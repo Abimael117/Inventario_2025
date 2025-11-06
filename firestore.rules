@@ -30,13 +30,15 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows authenticated users to read and write their own profile, but only admins can list all users.
+     * @description Allows authenticated users to manage their own profile.
      * @path /users/{userId}
      * @allow get, update, delete: if isOwner(userId);
-     * @allow list, create: if isSignedIn();
+     * @allow create: if isSignedIn();
+     * @allow list: if isSignedIn();
      */
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow read, list: if isSignedIn();
+      allow create, update: if isOwner(userId);
     }
 
     /**
@@ -165,3 +167,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
