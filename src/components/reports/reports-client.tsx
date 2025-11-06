@@ -78,6 +78,15 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
     });
   };
 
+  const handleCloseReport = () => {
+    setReport('');
+  };
+
+  const handleRegenerateReport = () => {
+    setReport('');
+    handleGenerateReport();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -95,9 +104,21 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
               <MarkdownViewer content={report} />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setReport('')}>
-              Generar Nuevo Reporte
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleCloseReport}>
+                Cerrar
+              </Button>
+               <Button size="sm" onClick={handleRegenerateReport} disabled={isPending}>
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  'Volver a Generar'
+                )}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
