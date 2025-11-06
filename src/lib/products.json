@@ -8,6 +8,24 @@
       "quantity": 10,
       "reorderPoint": 10,
       "id": "mhmx2zor.ns"
+    },
+    {
+      "name": "Papel",
+      "sku": "122",
+      "category": "Limpieza",
+      "location": "Almacen 1",
+      "quantity": 250,
+      "reorderPoint": 5,
+      "id": "mho0pm5q.mq8"
+    },
+    {
+      "name": "Esferas",
+      "sku": "124",
+      "category": "Iluminacion",
+      "location": "Almacen 1",
+      "quantity": 50,
+      "reorderPoint": 10,
+      "id": "mho0r41a.6pq"
     }
   ]
 }

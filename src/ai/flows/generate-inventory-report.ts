@@ -44,6 +44,9 @@ Texto del resumen general.
 ### Nivel Bajo (Requiere Reorden)
 * **Nombre del Producto**: Cantidad actual
 
+## PRODUCTOS EN EXISTENCIA
+* **Nombre del Producto**: Cantidad actual
+
 ## PRÉSTAMOS ACTIVOS
 * **Nombre del Producto**: Cantidad Prestada, Solicitante: **Nombre del Solicitante**
 
