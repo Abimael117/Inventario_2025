@@ -18,7 +18,7 @@ const GenerateInventoryReportInputSchema = z.object({
 export type GenerateInventoryReportInput = z.infer<typeof GenerateInventoryReportInputSchema>;
 
 const GenerateInventoryReportOutputSchema = z.object({
-  report: z.string().describe('Un resumen narrativo en español del estado del inventario. Debe identificar claramente los productos con stock bajo (cantidad <= punto de reorden), los productos agotados (cantidad = 0), y listar los productos que se encuentran actualmente en préstamo, mencionando quién lo solicitó.'),
+  report: z.string().describe('Un resumen narrativo y profesional en español del estado del inventario. Debe seguir una estructura de encabezados, identificar claramente los productos críticos y en préstamo, y finalizar con recomendaciones.'),
 });
 export type GenerateInventoryReportOutput = z.infer<typeof GenerateInventoryReportOutputSchema>;
 
@@ -30,15 +30,29 @@ const prompt = ai.definePrompt({
   name: 'generateInventoryReportPrompt',
   input: { schema: GenerateInventoryReportInputSchema },
   output: { schema: GenerateInventoryReportOutputSchema },
-  prompt: `Eres un asistente de gestión de inventario. Tu tarea es analizar los datos de productos y préstamos para generar un reporte ejecutivo en español.
+  prompt: `Actúa como un analista de inventario experto para un sistema de gestión de un ayuntamiento. Tu tarea es generar un reporte ejecutivo profesional y bien estructurado en español, basado en los datos de productos y préstamos proporcionados.
 
-El reporte debe ser claro, conciso y accionable.
+El tono debe ser formal y directo, orientado a la toma de decisiones. Estructura el reporte utilizando los siguientes apartados con encabezados claros:
 
-Primero, analiza los datos de los productos. Identifica y lista los productos cuyo stock es bajo o crítico (cantidad actual es menor o igual al punto de reorden). Separa claramente los que tienen stock bajo de los que están completamente agotados (cantidad igual a 0).
+1.  **ESTADO GENERAL DEL INVENTARIO**:
+    *   Comienza con un breve resumen del estado actual.
 
-Segundo, analiza los datos de los préstamos activos. Lista cada producto que está actualmente prestado, la cantidad prestada y quién lo solicitó.
+2.  **ALERTAS DE STOCK**:
+    *   Identifica los productos que requieren atención inmediata.
+    *   Crea una subsección "Nivel Crítico (Agotados)" para productos con cantidad 0.
+    *   Crea una subsección "Nivel Bajo (Requiere Reorden)" para productos con cantidad menor or igual a su punto de reorden.
+    *   Para cada producto, lista su nombre y la cantidad actual.
+    *   Si no hay alertas, indícalo claramente.
 
-Finalmente, estructura el reporte en un solo texto coherente. Si no hay alertas de stock o préstamos activos, indícalo claramente. No inventes información.
+3.  **PRÉSTAMOS ACTIVOS**:
+    *   Lista todos los productos que se encuentran actualmente con el estado "Prestado".
+    *   Para cada uno, especifica: Nombre del Producto, Cantidad Prestada y Solicitante.
+    *   Si no hay préstamos activos, menciónalo explícitamente.
+
+4.  **RECOMENDACIONES**:
+    *   Basado en el análisis, proporciona un breve punto de acción, como "Se recomienda contactar a proveedores para reabastecer los productos en estado crítico y bajo" o "Realizar seguimiento de los préstamos activos".
+
+No inventes información. Basa tu reporte únicamente en los datos proporcionados.
 
 Datos de Productos: {{{productsData}}}
 Datos de Préstamos Activos: {{{loansData}}}
@@ -62,4 +76,3 @@ const generateInventoryReportFlow = ai.defineFlow(
     return output;
   }
 );
-
