@@ -28,7 +28,7 @@ const permissions = [
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
-  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo letras, números y guiones bajos."),
+  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo se permiten letras, números y guiones bajos (_)."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   permissions: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Debes seleccionar al menos un permiso.",
