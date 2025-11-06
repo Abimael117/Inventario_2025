@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Trash2, ShieldQuestion, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, ShieldQuestion, Loader2, Edit } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -38,9 +38,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect } from 'react';
+import { EditUserForm } from '@/components/users/edit-user-form';
+import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { saveUser, deleteUser } from '@/app/actions';
+import { saveUser, deleteUser, updateUser } from '@/app/actions';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 
@@ -52,14 +53,12 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-
-  useEffect(() => {
-    setUsers(initialUsers);
-  }, [initialUsers]);
 
   const handleAddUser = (newUser: Omit<User, 'id'>) => {
     startTransition(async () => {
@@ -81,6 +80,40 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
       }
     });
   };
+
+  const openEditDialog = (user: User) => {
+    if (user.role === 'admin') {
+        toast({
+            variant: "destructive",
+            title: "Acción no permitida",
+            description: "No se puede editar al usuario administrador principal.",
+        });
+        return;
+    }
+    setUserToEdit(user);
+    setIsEditUserOpen(true);
+  };
+
+  const handleUpdateUser = (userId: string, data: Partial<User>) => {
+    startTransition(async () => {
+        const result = await updateUser(userId, data);
+        if (result.success) {
+            toast({
+                title: "Usuario Actualizado",
+                description: `Los datos del usuario han sido actualizados.`,
+            });
+            setIsEditUserOpen(false);
+            router.refresh();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error al Actualizar",
+                description: result.error || "No se pudo actualizar el usuario.",
+            });
+        }
+    });
+  };
+
 
   const openDeleteDialog = (user: User) => {
     if (user.role === 'admin') {
@@ -140,7 +173,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
               <CardHeader>
                 <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade o elimina usuarios y gestiona sus permisos de acceso. Los cambios son permanentes.
+                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso. Los cambios son permanentes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -151,11 +184,11 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                             <TableHead>Usuario</TableHead>
                             <TableHead>Rol</TableHead>
                             <TableHead>Permisos</TableHead>
-                            <TableHead><span className="sr-only">Acciones</span></TableHead>
+                            <TableHead className='text-right'>Acciones</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.map(user => (
+                        {initialUsers.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
@@ -177,9 +210,19 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                                   <Button 
                                     variant="ghost" 
                                     size="icon" 
+                                    onClick={() => openEditDialog(user)}
+                                    disabled={user.role === 'admin' || isPending}
+                                    aria-label="Editar usuario"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
                                     onClick={() => openDeleteDialog(user)}
                                     disabled={user.role === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
+                                    className="text-destructive hover:text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
@@ -223,6 +266,24 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         </DialogContent>
       </Dialog>
       
+      <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Editar Usuario</DialogTitle>
+                  <DialogDescription>
+                      Modifica los detalles del usuario. La contraseña es opcional, solo se cambiará si introduces una nueva.
+                  </DialogDescription>
+              </DialogHeader>
+              {userToEdit && (
+                <EditUserForm 
+                    user={userToEdit} 
+                    onSubmit={(data) => handleUpdateUser(userToEdit.id, data)}
+                    isPending={isPending} 
+                />
+              )}
+          </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
