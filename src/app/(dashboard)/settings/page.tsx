@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useCollection } from '@/firebase';
-import { useFirestore } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 
 import AppHeader from '@/components/header';
@@ -12,7 +11,13 @@ import { Loader2 } from 'lucide-react';
 
 export default function SettingsPage() {
   const firestore = useFirestore();
-  const usersRef = collection(firestore, 'users');
+  
+  // Memoize the collection reference to prevent infinite re-renders
+  const usersRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+
   const { data: users, isLoading } = useCollection<User>(usersRef);
 
   if (isLoading) {
