@@ -1,15 +1,6 @@
 {
   "loans": [
     {
-      "productId": "mhmx2zor.ns",
-      "productName": "Lamparas",
-      "requester": "juan",
-      "loanDate": "2025-11-06T04:25:36.271Z",
-      "quantity": 90,
-      "id": "mhmxbtxg.cf",
-      "status": "Devuelto"
-    },
-    {
       "productId": "mho0r41a.6pq",
       "productName": "Esferas",
       "requester": "jose",

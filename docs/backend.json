@@ -219,6 +219,22 @@
         }
       },
       {
+        "path": "/loans/{loanId}",
+        "definition": {
+          "entityName": "Loan",
+          "schema": {
+            "$ref": "#/backend/entities/Loan"
+          },
+          "description": "Stores loan records for products. Includes loanId as a param.",
+          "params": [
+            {
+              "name": "loanId",
+              "description": "The unique identifier for the loan."
+            }
+          ]
+        }
+      },
+      {
         "path": "/products/{productId}/stockLevels/{stockLevelId}",
         "definition": {
           "entityName": "StockLevel",
@@ -279,6 +295,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules through denormalization. User-owned data (stock alerts) is segregated under user-specific paths. Core data such as Products, Locations are stored at the root for global access.  StockLevels and StockMovements, are stored as subcollections of Products, since they represent 1:N relationships with products.\n\n**Authorization Independence:**\nAuthorization independence is achieved by storing core authorization data directly within each document. For example, since StockAlerts are user specific, they are stored under /users/{userId}/stockAlerts/{stockAlertId}.\n\n**QAPs Support:**\nSegregation ensures that list operations are secure. Path-based ownership for user-specific alerts means that listing stock alerts under a user path is inherently limited to that user's alerts."
+    "reasoning": "The Firestore structure for StockWise is designed to provide a secure and scalable inventory management system. It prioritizes authorization independence and simplifies security rules through denormalization. User-owned data (stock alerts) is segregated under user-specific paths. Core data such as Products, Locations, and Loans are stored at the root for global access.  StockLevels and StockMovements, are stored as subcollections of Products, since they represent 1:N relationships with products.\n\n**Authorization Independence:**\nAuthorization independence is achieved by storing core authorization data directly within each document. For example, since StockAlerts are user specific, they are stored under /users/{userId}/stockAlerts/{stockAlertId}.\n\n**QAPs Support:**\nSegregation ensures that list operations are secure. Path-based ownership for user-specific alerts means that listing stock alerts under a user path is inherently limited to that user's alerts."
   }
 }

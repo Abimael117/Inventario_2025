@@ -2,7 +2,7 @@
  * @fileoverview Firestore Security Rules for StockWise.
  *
  * Core Philosophy:
- * This ruleset enforces a hybrid security model. Core data (Products, Locations)
+ * This ruleset enforces a hybrid security model. Core data (Products, Locations, Loans)
  * is publicly readable but writable only by authenticated users. User-specific
  * data (StockAlerts) is strictly owned by each user. Admins have elevated
  * privileges to manage other users.
@@ -10,6 +10,7 @@
  * Data Structure:
  * - /products/{productId}: Public product information.
  * - /locations/{locationId}: Public location information.
+ * - /loans/{loanId}: Loan records.
  * - /products/{productId}/stockLevels/{stockLevelId}: Stock levels for products.
  * - /users/{userId}: User profile information.
  * - /users/{userId}/stockAlerts/{stockAlertId}: User-specific stock alerts.
@@ -40,11 +41,11 @@ service cloud.firestore {
      * @description Allows anyone to read product information, but only authenticated users to create, update, or delete products.
      * @path /products/{productId}
      * @allow get, list: if true
-     * @allow create, update, delete: if isSignedIn();
+     * @allow write: if isSignedIn();
      */
     match /products/{productId} {
       allow read, list: if true;
-      allow create, update, delete: if isSignedIn();
+      allow write: if isSignedIn();
     }
 
     /**
@@ -54,8 +55,17 @@ service cloud.firestore {
      * @allow create, update, delete: if isSignedIn();
      */
     match /locations/{locationId} {
-      allow get, list: if true;
+      allow read, list: if true;
       allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Allows authenticated users to read and manage loans.
+     * @path /loans/{loanId}
+     * @allow read, write: if isSignedIn();
+     */
+    match /loans/{loanId} {
+      allow read, write: if isSignedIn();
     }
 
     /**
@@ -65,7 +75,7 @@ service cloud.firestore {
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId}/stockLevels/{stockLevelId} {
-      allow get, list: if true;
+      allow read, list: if true;
       allow create, update, delete: if isSignedIn();
     }
 
@@ -85,7 +95,7 @@ service cloud.firestore {
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId}/stockMovements/{stockMovementId} {
-      allow get, list: if true;
+      allow read, list: if true;
       allow create, update, delete: if isSignedIn();
     }
 

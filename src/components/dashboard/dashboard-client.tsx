@@ -1,7 +1,7 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Package, Warehouse, Loader2 } from "lucide-react";
+import { AlertTriangle, Package, Warehouse, Loader2, ArrowRightLeft } from "lucide-react";
 import { collection } from 'firebase/firestore';
 
 import type { Loan, Product } from "@/lib/types";
@@ -43,13 +43,15 @@ export default function DashboardClient() {
   const totalProducts = inventoryData.length;
   const totalStock = inventoryData.reduce((sum, p) => sum + p.quantity, 0);
   const lowStockItems = inventoryData.filter(
-    (p) => p.quantity <= p.reorderPoint
+    (p) => p.quantity <= p.reorderPoint && p.quantity > 0
   );
+  const outOfStockItems = inventoryData.filter(p => p.quantity === 0);
+  const activeLoans = loansData.filter(l => l.status === 'Prestado');
 
   const chartData = inventoryData.map(p => ({ name: p.name, quantity: p.quantity }));
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Productos Totales</CardTitle>
@@ -72,16 +74,26 @@ export default function DashboardClient() {
       </Card>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle>
+          <CardTitle className="text-sm font-medium">Alertas de Stock</CardTitle>
           <AlertTriangle className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{lowStockItems.length}</div>
-          <p className="text-xs text-muted-foreground">Artículos que necesitan ser reordenados</p>
+          <div className="text-2xl font-bold">{lowStockItems.length + outOfStockItems.length}</div>
+          <p className="text-xs text-muted-foreground">{lowStockItems.length} con stock bajo, {outOfStockItems.length} agotados</p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Préstamos Activos</CardTitle>
+          <ArrowRightLeft className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{activeLoans.length}</div>
+          <p className="text-xs text-muted-foreground">Productos actualmente en préstamo</p>
         </CardContent>
       </Card>
       
-      <Card className="lg:col-span-2">
+      <Card className="lg:col-span-3">
         <CardHeader>
           <CardTitle>Niveles de Inventario</CardTitle>
           <CardDescription>Cantidad de stock actual por producto.</CardDescription>
@@ -107,7 +119,7 @@ export default function DashboardClient() {
       <Card className="lg:col-span-1">
         <CardHeader>
           <CardTitle>Artículos con Stock Bajo</CardTitle>
-          <CardDescription>Estos productos están en su punto de reorden o por debajo.</CardDescription>
+          <CardDescription>Productos que necesitan ser reordenados.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -118,12 +130,22 @@ export default function DashboardClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {lowStockItems.length > 0 ? lowStockItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell className="text-right text-destructive font-bold">{item.quantity}</TableCell>
-                </TableRow>
-              )) : (
+              {lowStockItems.length > 0 || outOfStockItems.length > 0 ? (
+                <>
+                  {outOfStockItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-right text-destructive font-bold">{item.quantity}</TableCell>
+                    </TableRow>
+                  ))}
+                  {lowStockItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-right text-amber-600 font-bold">{item.quantity}</TableCell>
+                    </TableRow>
+                  ))}
+                </>
+              ) : (
                 <TableRow>
                   <TableCell colSpan={2} className="h-24 text-center text-muted-foreground">
                     Todos los niveles de stock están bien.

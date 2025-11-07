@@ -1,40 +1,64 @@
-'use server'
+'use client';
+
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
+import { useEffect, useState, useTransition } from 'react';
+import { seedLoans } from '@/app/actions';
+
 import LoansClient from "@/components/loans/loans-client";
 import type { Loan, Product } from '@/lib/types';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { useToast } from '@/hooks/use-toast';
 
-async function getLoans(): Promise<Loan[]> {
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
-    try {
-        const data = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(data).loans || [];
-    } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
-        console.error("Error reading loans", e);
-        return [];
+export default function LoansPage() {
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isSeeding, startSeedingTransition] = useTransition();
+  const [hasSeedingBeenAttempted, setHasSeedingBeenAttempted] = useState(false);
+
+  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+
+  const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
+  const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+
+  useEffect(() => {
+    if (!isLoadingLoans && loans?.length === 0 && !hasSeedingBeenAttempted) {
+        setHasSeedingBeenAttempted(true);
+        startSeedingTransition(async () => {
+            toast({
+                title: "Base de Datos Vacía",
+                description: "Migrando préstamos iniciales a la base de datos...",
+            });
+            const result = await seedLoans();
+            if (result.success && (result.count ?? 0) > 0) {
+                toast({
+                    title: "Migración Completa",
+                    description: `${result.count} préstamos han sido añadidos. Los datos aparecerán en breve.`,
+                });
+            } else if (result.error) {
+                toast({
+                    variant: "destructive",
+                    title: "Error en Migración",
+                    description: result.error,
+                });
+            }
+        });
     }
-}
-
-async function getProducts(): Promise<Product[]> {
-    const filePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
-    try {
-        const data = await fs.readFile(filePath, 'utf-8');
-        return JSON.parse(data).products || [];
-    } catch (e) {
-        if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
-        console.error("Error reading products", e);
-        return [];
-    }
-}
-
-export default async function LoansPage() {
-    const loansData = await getLoans();
-    const productsData = await getProducts();
+  }, [loans, isLoadingLoans, hasSeedingBeenAttempted, toast]);
+  
+  if (isLoadingLoans || isLoadingProducts || isSeeding) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+         <p className="text-muted-foreground mt-2">{isSeeding ? 'Migrando datos iniciales...' : 'Cargando datos...'}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col">
-        <LoansClient loans={loansData || []} products={productsData || []} />
+        <LoansClient loans={loans || []} products={products || []} />
     </div>
   );
 }
