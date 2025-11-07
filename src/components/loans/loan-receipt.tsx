@@ -17,16 +17,31 @@ type LoanReceiptProps = {
   setRecibidoPor: (value: string) => void;
 };
 
-// Helper function to parse YYYY-MM-DD or Date object without timezone issues
-const parseDate = (date: string | Date): Date => {
-  if (date instanceof Date) {
+// Robust helper function to parse date values
+const parseDate = (date: string | Date | null | undefined): Date => {
+  // If it's already a valid Date object, return it.
+  if (date instanceof Date && !isNaN(date.getTime())) {
     return date;
   }
-  // Handles 'YYYY-MM-DD' strings
-  const [year, month, day] = date.split('-').map(Number);
-  // The month is 0-indexed in JavaScript's Date, so subtract 1.
-  return new Date(year, month - 1, day);
-}
+  
+  // If it's a string, try to parse it.
+  if (typeof date === 'string') {
+    // Handles 'YYYY-MM-DD' strings by splitting and creating a new Date.
+    // The UTC constructor Date(year, month, day) prevents timezone shifts.
+    const parts = date.split('-').map(Number);
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
+        // The month is 0-indexed in JavaScript's Date, so subtract 1.
+        return new Date(Date.UTC(year, month - 1, day));
+      }
+    }
+  }
+
+  // If input is null, undefined, or an invalid string, return an invalid date.
+  // `format` from date-fns will handle this gracefully.
+  return new Date(NaN);
+};
 
 export function LoanReceipt({
   loan,
@@ -37,6 +52,8 @@ export function LoanReceipt({
 }: LoanReceiptProps) {
   // Use the helper to parse the date safely
   const loanDateObject = parseDate(loan.loanDate);
+  const formattedDate = format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es });
+
 
   return (
     <div className={cn('font-sans text-foreground bg-white p-10')}>
@@ -84,7 +101,7 @@ export function LoanReceipt({
           </div>
           <div>
             <p className="font-bold">Fecha de Salida:</p>
-            <p>{format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es })}</p>
+            <p>{formattedDate}</p>
           </div>
         </div>
       </main>
@@ -118,5 +135,3 @@ export function LoanReceipt({
     </div>
   );
 }
-
-    
