@@ -15,7 +15,7 @@ import type { User } from '@/lib/types';
  */
 export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) {
   try {
-    await initFirebaseAdminApp();
+    initFirebaseAdminApp();
     const auth = getAuth();
     const firestore = getFirestore();
 
