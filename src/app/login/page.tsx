@@ -15,11 +15,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc } from 'firebase/firestore';
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 
 const DUMMY_DOMAIN = 'stockwise.local';
@@ -35,6 +34,12 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (!auth || !firestore) {
+        setError('Los servicios de Firebase no están disponibles. Inténtalo de nuevo más tarde.');
+        setIsLoading(false);
+        return;
+    }
 
     const formData = new FormData(event.currentTarget);
     const username = formData.get('username') as string;
@@ -57,9 +62,11 @@ export default function LoginPage() {
                 role: 'admin' as const,
                 permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
             };
-            // Use non-blocking write for the user document
+            
+            // Use standard setDoc to create the user profile in Firestore
             const userDocRef = doc(firestore, "users", newAuthUser.uid);
-            setDocumentNonBlocking(userDocRef, adminUserDoc, {});
+            await setDoc(userDocRef, adminUserDoc);
+
             router.replace('/dashboard');
           } catch (creationError) {
              setError('No se pudo crear la cuenta de administrador. Inténtalo de nuevo.');

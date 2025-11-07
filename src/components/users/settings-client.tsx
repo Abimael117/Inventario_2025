@@ -43,9 +43,9 @@ import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useAuth, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useAuth, deleteDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
 type SettingsClientProps = {
@@ -86,7 +86,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        setDocumentNonBlocking(userDocRef, userDocData, {});
+        await setDoc(userDocRef, userDocData);
 
         toast({
           title: "Usuario Creado",
@@ -121,7 +121,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
 
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
      if (!firestore) return;
-    startTransition(() => {
+    startTransition(async () => {
         const userDocRef = doc(firestore, "users", userId);
         
         const dataToUpdate: Partial<User> = {};
@@ -136,7 +136,7 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
             return;
         }
 
-        setDocumentNonBlocking(userDocRef, dataToUpdate, { merge: true });
+        await setDoc(userDocRef, dataToUpdate, { merge: true });
         
         toast({
             title: "Usuario Actualizado",
