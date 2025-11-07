@@ -3,20 +3,36 @@
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { Loader2, PlusCircle, Download } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2, PlusCircle, Download, Trash2 } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from '@/components/header';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { deleteAllData } from '@/app/actions';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
+
 
   const productsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -24,6 +40,26 @@ export default function InventoryPage() {
   }, [firestore]);
 
   const { data: products, isLoading } = useCollection<Product>(productsRef);
+
+  const confirmDeleteAll = () => {
+    startTransition(async () => {
+        const result = await deleteAllData();
+        if (result.success) {
+            toast({
+                title: "Datos Eliminados",
+                description: "Se han borrado todos los productos, préstamos y movimientos.",
+            });
+            router.refresh();
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error al Eliminar",
+                description: result.error || "No se pudo completar la operación.",
+            });
+        }
+        setIsDeleteAllDialogOpen(false);
+    });
+  };
 
   const handleDownloadCsv = () => {
     if (!products) return;
@@ -78,6 +114,10 @@ export default function InventoryPage() {
           }}
         >
           <div className="flex items-center gap-2">
+            <Button variant="destructive" size="sm" onClick={() => setIsDeleteAllDialogOpen(true)} disabled={isPending || !products || products.length === 0}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Eliminar Todo
+            </Button>
             <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={!products || products.length === 0}>
               <Download className="h-4 w-4 mr-2" />
               Descargar CSV
@@ -90,6 +130,24 @@ export default function InventoryPage() {
         </AppHeader>
         <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} isAddDialogOpen={isAddDialogOpen} setIsAddDialogOpen={setIsAddDialogOpen} />
       </div>
+
+       <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={setIsDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción es irreversible y eliminará permanentemente TODOS los productos, préstamos y movimientos registrados en la base de datos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAll} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+              {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Sí, eliminar todo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

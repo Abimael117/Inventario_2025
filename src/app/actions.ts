@@ -105,6 +105,31 @@ export async function deleteProduct(productId: string): Promise<{ success: boole
     }
 }
 
+
+export async function deleteAllData(): Promise<{ success: boolean, error?: string }> {
+    try {
+        const { firestore } = await getSdks();
+        const batch = writeBatch(firestore);
+
+        const productsSnapshot = await getDocs(collection(firestore, 'products'));
+        productsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        const loansSnapshot = await getDocs(collection(firestore, 'loans'));
+        loansSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        const movementsSnapshot = await getDocs(collection(firestore, 'movements'));
+        movementsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        await batch.commit();
+        return { success: true };
+
+    } catch (error: any) {
+        console.error('Failed to delete all data from Firestore:', error);
+        return { success: false, error: error.message || 'No se pudo eliminar toda la información.' };
+    }
+}
+
+
 // STOCK ADJUSTMENT ACTION
 export async function adjustStock(productId: string, adjustmentData: { quantity: number; reason: string }): Promise<{ success: boolean; error?: string; }> {
   const result = stockAdjustmentSchema.safeParse(adjustmentData);
