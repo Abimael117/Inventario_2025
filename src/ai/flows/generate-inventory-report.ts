@@ -49,6 +49,8 @@ Analiza los siguientes datos y rellena los campos del schema de salida:
 - **activeLoans**: Lista los productos de los préstamos activos.
 - **recentMovementsSummary**: Analiza los movimientos de stock recientes. Enfócate en el último movimiento registrado. Describe la razón de ese ajuste en 1 o 2 frases. Si no hay movimientos, déjalo vacío.
 
+**Importante sobre las fechas**: Al analizar las fechas de los movimientos (campo 'date'), ignora siempre la parte de la hora y la zona horaria. Considera solo el día, mes y año para evitar errores de un día.
+
 No inventes información. Si una categoría no tiene productos (ej. no hay productos en nivel crítico), devuelve un array vacío o una cadena vacía.
 
 Datos de Productos: {{{productsData}}}
