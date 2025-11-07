@@ -136,7 +136,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
             <div className="rounded-md border bg-muted/30 p-4 leading-relaxed report-printable-area">
               <ReportViewer report={report} />
             </div>
-            <div className="flex w-full items-center justify-start gap-6 print-hide">
+            <div className="flex w-full items-center justify-between print-hide">
               <Button variant="outline" size="sm" onClick={handleCloseReport}>
                 Cerrar
               </Button>
@@ -158,7 +158,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
           </div>
         ) : (
           <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center print-hide">
-            <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex h-full flex-col items-center justify-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                 <FileText className="h-8 w-8 text-primary" />
               </div>
