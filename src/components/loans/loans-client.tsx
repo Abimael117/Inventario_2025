@@ -343,7 +343,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </AlertDialog>
 
         <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-3xl print-hide">
                 <DialogHeader>
                     <DialogTitle>Comprobante de Préstamo</DialogTitle>
                     <DialogDescription>
@@ -364,6 +364,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
         </Dialog>
 
       </div>
+       {/* This div is for the printable content, but it's not wrapped in the print-hide div */}
+       <div className="hidden print:block">
+            {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+       </div>
     </>
   );
 }
+

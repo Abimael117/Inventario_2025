@@ -7,41 +7,29 @@
     display: none !important;
   }
   
-  #printable-area {
-    display: block;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    padding: 0;
-    margin: 0;
+  /* Hide everything except the printable area */
+  body * {
+    visibility: hidden;
   }
-
-  #printable-area > div {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: 100vh;
-    box-shadow: none;
-    border: none;
-    border-radius: 0;
-  }
-
-  .report-printable-area, .report-printable-area * {
+  
+  #printable-area, #printable-area * {
     visibility: visible;
   }
   
-  .report-printable-area {
+  #printable-area {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    height: 100%;
+    height: auto;
+    padding: 0;
     margin: 0;
-    padding: 1rem;
     border: none !important;
-    background: white !important;
-    color: black !important;
-    box-shadow: none;
+    box-shadow: none !important;
+  }
+
+  /* Set page margins for printing */
+  @page {
+    margin: 1in;
   }
 }
