@@ -8,7 +8,7 @@ service cloud.firestore {
     // Permite acceso completo de lectura y escritura a CUALQUIER colección 
     // para CUALQUIER usuario que haya iniciado sesión.
     // Esto es apropiado para un panel de administración interno donde
-    // todos los usuarios son de confianza.
+    // todos los usuarios son de confianza y simplifica enormemente las operaciones.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
@@ -20,7 +20,9 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
+      // Un usuario solo puede modificar su propio perfil
       allow write: if request.auth.uid == userId;
+      // Nadie puede borrar un documento de usuario desde el cliente
       allow delete: if false;
     }
   }
