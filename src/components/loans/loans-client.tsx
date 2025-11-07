@@ -57,33 +57,6 @@ type LoansClientProps = {
   products: Product[];
 };
 
-// Robust helper function to parse date values
-const parseDate = (date: string | Date | null | undefined): Date => {
-  // If it's already a valid Date object, return it.
-  if (date instanceof Date && !isNaN(date.getTime())) {
-    return date;
-  }
-  
-  // If it's a string, try to parse it.
-  if (typeof date === 'string') {
-    // Handles 'YYYY-MM-DD' strings by splitting and creating a new Date.
-    // The UTC constructor Date(year, month, day) prevents timezone shifts.
-    const parts = date.split('-').map(Number);
-    if (parts.length === 3) {
-      const [year, month, day] = parts;
-      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-        // The month is 0-indexed in JavaScript's Date, so subtract 1.
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-    }
-  }
-
-  // If input is null, undefined, or an invalid string, return an invalid date.
-  // `format` from date-fns will handle this gracefully.
-  return new Date(NaN);
-};
-
-
 export default function LoansClient({ loans, products }: LoansClientProps) {
   const router = useRouter();
   const firestore = useFirestore();
@@ -224,13 +197,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   };
 
   const sortedLoans = [...loans].sort((a, b) => {
-    // We need to parse our 'YYYY-MM-DD' strings into actual Date objects for sorting
-    const dateA = parseDate(a.loanDate);
-    const dateB = parseDate(b.loanDate);
-    // Handle invalid dates by pushing them to the end
-    if (isNaN(dateA.getTime())) return 1;
-    if (isNaN(dateB.getTime())) return -1;
-    return dateB.getTime() - dateA.getTime();
+    // A simple string comparison works because the format is YYYY-MM-DD.
+    return b.loanDate.localeCompare(a.loanDate);
   });
 
 
@@ -269,7 +237,9 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                           <TableBody>
                             {sortedLoans.length > 0 ? (
                               sortedLoans.map((loan) => {
-                                const formattedDate = format(parseDate(loan.loanDate), "d 'de' MMMM, yyyy", { locale: es });
+                                const [year, month, day] = loan.loanDate.split('-').map(Number);
+                                const dateObject = new Date(Date.UTC(year, month - 1, day));
+                                const formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es });
                                 return (
                                 <TableRow key={loan.id}>
                                 <TableCell className="font-medium">{loan.productName}</TableCell>
@@ -392,5 +362,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     </>
   );
 }
+
+    
 
     

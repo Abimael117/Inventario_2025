@@ -17,32 +17,6 @@ type LoanReceiptProps = {
   setRecibidoPor: (value: string) => void;
 };
 
-// Robust helper function to parse date values
-const parseDate = (date: string | Date | null | undefined): Date => {
-  // If it's already a valid Date object, return it.
-  if (date instanceof Date && !isNaN(date.getTime())) {
-    return date;
-  }
-  
-  // If it's a string, try to parse it.
-  if (typeof date === 'string') {
-    // Handles 'YYYY-MM-DD' strings by splitting and creating a new Date.
-    // The UTC constructor Date(year, month, day) prevents timezone shifts.
-    const parts = date.split('-').map(Number);
-    if (parts.length === 3) {
-      const [year, month, day] = parts;
-      if (!isNaN(year) && !isNaN(month) && !isNaN(day)) {
-        // The month is 0-indexed in JavaScript's Date, so subtract 1.
-        return new Date(Date.UTC(year, month - 1, day));
-      }
-    }
-  }
-
-  // If input is null, undefined, or an invalid string, return an invalid date.
-  // `format` from date-fns will handle this gracefully.
-  return new Date(NaN);
-};
-
 export function LoanReceipt({
   loan,
   entregadoPor,
@@ -50,9 +24,10 @@ export function LoanReceipt({
   setEntregadoPor,
   setRecibidoPor,
 }: LoanReceiptProps) {
-  // Use the helper to parse the date safely
-  const loanDateObject = parseDate(loan.loanDate);
-  const formattedDate = format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es });
+    const [year, month, day] = loan.loanDate.split('-').map(Number);
+    // Using UTC to prevent timezone shifts. Month is 0-indexed.
+    const loanDateObject = new Date(Date.UTC(year, month - 1, day));
+    const formattedDate = format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es });
 
 
   return (
@@ -135,3 +110,5 @@ export function LoanReceipt({
     </div>
   );
 }
+
+    
