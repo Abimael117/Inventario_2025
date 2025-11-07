@@ -2,30 +2,13 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
-  if (getApps().length) {
-    return getSdks(getApp());
-  }
-
-  let firebaseApp: FirebaseApp;
-  try {
-    // This will succeed in environments where Firebase Hosting provides the configuration.
-    firebaseApp = initializeApp();
-  } catch (e) {
-    // This will fail in local development or other environments.
-    // In that case, we fall back to using the explicit config object.
-    console.warn(
-      'Automatic Firebase initialization failed. Falling back to firebaseConfig. This is normal in local development.',
-      e
-    );
-    firebaseApp = initializeApp(firebaseConfig);
-  }
-
-  return getSdks(firebaseApp);
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return getSdks(app);
 }
 
 export function getSdks(firebaseApp: FirebaseApp) {
