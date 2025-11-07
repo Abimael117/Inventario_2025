@@ -40,11 +40,11 @@ service cloud.firestore {
     /**
      * @description Allows anyone to read product information, but only authenticated users to create, update, or delete products.
      * @path /products/{productId}
-     * @allow get, list: if true
+     * @allow get, list: if true;
      * @allow create, update, delete: if isSignedIn();
      */
     match /products/{productId} {
-      allow read, list: if true;
+      allow get, list: if true;
       allow create, update, delete: if isSignedIn();
     }
 
