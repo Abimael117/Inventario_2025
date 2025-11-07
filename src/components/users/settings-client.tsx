@@ -47,7 +47,6 @@ import { useFirestore, useAuth } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
-import { updateUserAction } from '@/actions/users';
 
 type SettingsClientProps = {
   initialUsers: User[];
@@ -120,22 +119,26 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'password'>>) => {
      startTransition(async () => {
-        const result = await updateUserAction(userId, data);
-        if (result.success) {
-            toast({
-                title: "Usuario Actualizado",
-                description: `Los datos del usuario han sido actualizados.`,
-            });
-            setIsEditUserOpen(false);
-            router.refresh();
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Error al Actualizar",
-                description: result.error || "No se pudo actualizar el usuario.",
-            });
+        try {
+          if (!firestore) throw new Error("Firestore not available");
+          
+          const userDocRef = doc(firestore, 'users', userId);
+          await setDoc(userDocRef, data, { merge: true });
+
+          toast({
+              title: "Usuario Actualizado",
+              description: `Los datos del usuario han sido actualizados.`,
+          });
+          setIsEditUserOpen(false);
+          router.refresh();
+        } catch (error: any) {
+           toast({
+              variant: "destructive",
+              title: "Error al Actualizar",
+              description: error.message || "No se pudo actualizar el usuario.",
+          });
         }
     });
   };
@@ -159,8 +162,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
         try {
             const userDocRef = doc(firestore, "users", userToDelete.uid);
             await deleteDoc(userDocRef);
-            // A server action would be needed to delete the auth user, which is complex.
-            // For now, we only delete the Firestore profile. The user won't be able to log in effectively.
+            // NOTE: Deleting the auth user requires admin privileges and is complex to do securely from the client.
+            // For this app, we only delete the Firestore profile. The user won't be able to log in effectively.
             toast({
                 title: "Usuario Eliminado",
                 description: `El perfil del usuario "${userToDelete.username}" ha sido eliminado.`,
@@ -285,8 +288,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La actualización de contraseñas y otros datos sensibles se realiza de forma segura a través de una Acción de Servidor de Next.js.</li>
-                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). La cuenta de autenticación no se elimina para evitar complejidades. Para una eliminación completa, se debe hacer desde la Consola de Firebase.</li>
+                      <li>La actualización de contraseñas no está disponible desde esta pantalla por razones de seguridad. Debe hacerse desde la Consola de Firebase.</li>
+                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). La cuenta de autenticación no se elimina. Para una eliminación completa, se debe hacer desde la Consola de Firebase.</li>
                     </ul>
                 </CardContent>
             </Card>
