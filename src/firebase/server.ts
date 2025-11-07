@@ -5,7 +5,6 @@ import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { headers } from 'next/headers';
 import { experimental_taintObjectReference } from 'react';
 
 // Este polyfill es necesario para el entorno de servidor de Node.js.
@@ -16,27 +15,21 @@ if (typeof atob === 'undefined') {
 /**
  * Inicializa los SDK de Firebase en el servidor de forma segura.
  * Esta función se llama al inicio de cada Server Action.
+ * Acepta un token de ID opcional para autenticar la solicitud.
  */
-export async function getSdks() {
+export async function getSdks(idToken?: string) {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const firestore = getFirestore(app);
 
   try {
-    const headersList = headers();
-    // Lee la cabecera 'x-session-cookie' que nuestro middleware ha añadido.
-    const sessionCookie = headersList.get('x-session-cookie');
-    
-    if (sessionCookie) {
-      // Si la cabecera con la cookie existe, inicia sesión en el servidor con ella.
-      // NOTA: En una app de producción real, se acuñaría un token personalizado.
-      // Aquí, reutilizamos el token de sesión por simplicidad.
-      await signInWithCustomToken(auth, sessionCookie);
-      
+    if (idToken) {
+      // Si se proporciona un token, inicia sesión en el servidor con él.
+      await signInWithCustomToken(auth, idToken);
     } else {
-        // Si no hay cookie de sesión, es un fallo crítico.
-        // Esto no debería ocurrir en una acción iniciada por un usuario logueado.
-        throw new Error('Server-side auth error: No session cookie found.');
+        // Permitir la ejecución sin autenticación para ciertas acciones (como el seeder).
+        // Las reglas de seguridad de Firestore se encargarán de proteger los datos si es necesario.
+        console.warn('Server-side SDKs initialized without a user token.');
     }
   } catch (error) {
     console.error('Server-side auth error:', error);

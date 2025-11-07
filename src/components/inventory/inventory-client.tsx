@@ -47,9 +47,11 @@ import { AddProductForm } from "./add-product-form";
 import { EditProductForm } from "./edit-product-form";
 import { AdjustStockForm } from "./adjust-stock-form";
 import { saveProduct, updateProduct, deleteProduct, adjustStock } from "@/app/actions";
+import { useUser } from "@/firebase";
 
 export default function InventoryClient({ data, searchQuery, onAddProductClick, isAddDialogOpen, setIsAddDialogOpen }: { data: Product[], searchQuery: string, onAddProductClick: () => void, isAddDialogOpen: boolean, setIsAddDialogOpen: (isOpen: boolean) => void; }) {
   const router = useRouter();
+  const { user } = useUser();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAdjustDialogOpen, setIsAdjustDialogOpen] = useState(false);
@@ -58,6 +60,30 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const withUserToken = async <T,>(action: (idToken: string, ...args: any[]) => Promise<T>, ...args: any[]): Promise<T | null> => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "No autenticado",
+        description: "Debes iniciar sesión para realizar esta acción.",
+      });
+      return null;
+    }
+    try {
+      const idToken = await user.getIdToken(true);
+      return await action(idToken, ...args);
+    } catch (error) {
+      console.error("Error getting id token", error);
+       toast({
+        variant: "destructive",
+        title: "Error de autenticación",
+        description: "No se pudo verificar tu sesión. Por favor, inicia sesión de nuevo.",
+      });
+      return null;
+    }
+  };
+
 
   const handleEditClick = (product: Product) => {
     setProductToEdit(product);
@@ -77,14 +103,14 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   const confirmDelete = () => {
     if (productToDelete) {
       startTransition(async () => {
-        const result = await deleteProduct(productToDelete.id);
-        if (result.success) {
+        const result = await withUserToken(deleteProduct, productToDelete.id);
+        if (result?.success) {
           toast({
             title: "Producto Eliminado",
             description: `El producto "${productToDelete.name}" ha sido eliminado.`,
           });
           router.refresh();
-        } else {
+        } else if (result) {
           toast({
             variant: "destructive",
             title: "Error al Eliminar",
@@ -99,15 +125,15 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   
   const handleAddProduct = (newProductData: Product) => {
     startTransition(async () => {
-      const result = await saveProduct(newProductData);
-      if (result.success) {
+      const result = await withUserToken(saveProduct, newProductData);
+      if (result?.success) {
         toast({
           title: "Producto Añadido",
           description: `El producto "${newProductData.name}" ha sido guardado.`,
         });
         setIsAddDialogOpen(false);
         router.refresh();
-      } else {
+      } else if (result) {
         toast({
           variant: "destructive",
           title: "Error al Guardar",
@@ -120,8 +146,8 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   const handleEditProduct = (editedProductData: Partial<Omit<Product, 'id'>>) => {
     if (productToEdit) {
       startTransition(async () => {
-        const result = await updateProduct(productToEdit.id, editedProductData);
-        if (result.success && result.data) {
+        const result = await withUserToken(updateProduct, productToEdit.id, editedProductData);
+        if (result?.success && result.data) {
           toast({
             title: "Producto Actualizado",
             description: `El producto "${result.data.name}" ha sido actualizado.`,
@@ -129,7 +155,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
           setIsEditDialogOpen(false);
           setProductToEdit(null);
           router.refresh();
-        } else {
+        } else if (result) {
           toast({
             variant: "destructive",
             title: "Error al Actualizar",
@@ -143,8 +169,8 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
   const handleAdjustStock = (adjustmentData: { quantity: number, reason: string }) => {
     if (productToAdjust) {
       startTransition(async () => {
-        const result = await adjustStock(productToAdjust.id, adjustmentData);
-        if (result.success) {
+        const result = await withUserToken(adjustStock, productToAdjust.id, adjustmentData);
+        if (result?.success) {
           toast({
             title: "Stock Ajustado",
             description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
@@ -152,7 +178,7 @@ export default function InventoryClient({ data, searchQuery, onAddProductClick, 
           setIsAdjustDialogOpen(false);
           setProductToAdjust(null);
           router.refresh();
-        } else {
+        } else if (result) {
           toast({
             variant: "destructive",
             title: "Error al Ajustar",
