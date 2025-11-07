@@ -288,8 +288,8 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>La actualización de contraseñas no está disponible desde esta pantalla por razones de seguridad. Debe hacerse desde la Consola de Firebase.</li>
-                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). La cuenta de autenticación no se elimina. Para una eliminación completa, se debe hacer desde la Consola de Firebase.</li>
+                      <li>La actualización de contraseñas no está disponible en esta pantalla por razones de seguridad. Debe hacerse desde la <strong>Consola de Firebase</strong>.</li>
+                       <li>La eliminación de usuarios solo borra su perfil de la base de datos (Firestore). Para una eliminación completa, se debe hacer desde la <strong>Consola de Firebase</strong>.</li>
                     </ul>
                 </CardContent>
             </Card>
