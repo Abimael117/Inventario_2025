@@ -44,7 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth } from '@/firebase';
-import { createUserWithEmailAndPassword, deleteUser } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import { updateUserAction } from '@/actions/users';

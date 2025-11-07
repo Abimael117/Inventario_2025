@@ -32,10 +32,13 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
       await auth.updateUser(uid, authUpdatePayload);
     }
     
-    // Update Firestore permissions and name
-    const firestoreUpdatePayload: { name?: string; permissions?: string[] } = {};
+    // Update Firestore document
+    const firestoreUpdatePayload: { [key: string]: any } = {};
     if (data.name) {
         firestoreUpdatePayload.name = data.name;
+    }
+    if (data.username) {
+        firestoreUpdatePayload.username = data.username;
     }
     if (data.permissions) {
         firestoreUpdatePayload.permissions = data.permissions;
