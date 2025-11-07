@@ -1,9 +1,11 @@
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
-import { AlertTriangle, Package, Warehouse } from "lucide-react";
+import { AlertTriangle, Package, Warehouse, Loader2 } from "lucide-react";
+import { collection } from 'firebase/firestore';
 
 import type { Loan, Product } from "@/lib/types";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -13,10 +15,6 @@ import {
   ChartConfig
 } from "@/components/ui/chart";
 
-type DashboardClientProps = {
-  inventoryData: Product[];
-  recentChanges: Loan[];
-};
 
 const chartConfig = {
   quantity: {
@@ -25,10 +23,22 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export default function DashboardClient({
-  inventoryData,
-  recentChanges,
-}: DashboardClientProps) {
+export default function DashboardClient() {
+  const firestore = useFirestore();
+
+  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  
+  const { data: inventoryData, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
+  const { data: loansData, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
+
+  if (isLoadingProducts || isLoadingLoans || !inventoryData || !loansData) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const totalProducts = inventoryData.length;
   const totalStock = inventoryData.reduce((sum, p) => sum + p.quantity, 0);
