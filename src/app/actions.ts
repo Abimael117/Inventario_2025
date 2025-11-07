@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
-import { getFirestore, collection, writeBatch } from 'firebase/firestore';
+import { getFirestore, collection, writeBatch, doc } from 'firebase/firestore'; // Import 'doc'
 import { getSdks } from '@/firebase/server';
 
 const productSchema = z.object({
@@ -32,7 +32,7 @@ const stockAdjustmentSchema = z.object({
 });
 
 
-// JSON file paths are kept for reference but logic will be migrated to Firestore
+// JSON file paths
 const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'products.json');
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'loans.json');
 const movementsFilePath = path.join(process.cwd(), 'src', 'lib', 'movements.json');
@@ -61,13 +61,18 @@ export async function seedProducts(): Promise<{ success: boolean; error?: string
         const productsData = await readData<{ products: Product[] }>(productsFilePath, { products: [] });
 
         if (!productsData.products || productsData.products.length === 0) {
-            return { success: true, count: 0 };
+            return { success: true, count: 0, error: 'No products found in products.json to seed.' };
         }
 
         const batch = writeBatch(firestore);
         const productsRef = collection(firestore, 'products');
 
         productsData.products.forEach((product) => {
+            // Ensure product has a valid ID, if not, Firestore auto-generates one but here we expect one.
+            if(!product.id) {
+                console.warn(`Skipping product without ID: ${product.name}`);
+                return;
+            }
             const docRef = doc(productsRef, product.id);
             batch.set(docRef, product);
         });
@@ -301,3 +306,5 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
         return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
     }
 }
+
+    

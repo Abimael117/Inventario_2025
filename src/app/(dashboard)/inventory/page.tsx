@@ -16,6 +16,8 @@ export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSeeding, startSeedingTransition] = useTransition();
+  // State to prevent re-seeding in the same session
+  const [hasSeeded, setHasSeeded] = useState(false);
 
   const productsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -25,19 +27,21 @@ export default function InventoryPage() {
   const { data: products, isLoading } = useCollection<Product>(productsRef);
   
   useEffect(() => {
-    // Only run this logic once when the data has been loaded and is empty.
-    if (!isLoading && products && products.length === 0 && !isSeeding) {
+    // Only run this logic once when data has loaded, is empty, and we haven't tried seeding yet.
+    if (!isLoading && products && products.length === 0 && !isSeeding && !hasSeeded) {
+        setHasSeeded(true); // Mark that we are attempting to seed
         startSeedingTransition(async () => {
             toast({
                 title: "Base de Datos Vacía",
                 description: "Migrando productos iniciales a la base de datos...",
             });
             const result = await seedProducts();
-            if (result.success) {
+            if (result.success && (result.count ?? 0) > 0) {
                 toast({
                     title: "Migración Completa",
-                    description: `${result.count} productos han sido añadidos a la base de datos.`,
+                    description: `${result.count} productos han sido añadidos a la base de datos. La página se recargará.`,
                 });
+                // No need to refresh, useCollection will update automatically
             } else {
                 toast({
                     variant: "destructive",
@@ -47,7 +51,7 @@ export default function InventoryPage() {
             }
         });
     }
-  }, [products, isLoading, isSeeding, toast]);
+  }, [products, isLoading, isSeeding, hasSeeded, toast]);
 
   if (isLoading || isSeeding) {
     return (
@@ -69,3 +73,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
