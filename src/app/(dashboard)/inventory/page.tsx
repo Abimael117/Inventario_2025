@@ -42,11 +42,11 @@ export default function InventoryPage() {
                     description: `${result.count} productos han sido añadidos a la base de datos. La página se recargará.`,
                 });
                 // No need to refresh, useCollection will update automatically
-            } else {
+            } else if (result.error) {
                 toast({
                     variant: "destructive",
                     title: "Error en Migración",
-                    description: result.error || "No se pudieron migrar los productos iniciales.",
+                    description: result.error,
                 });
             }
         });
@@ -73,5 +73,3 @@ export default function InventoryPage() {
     </div>
   );
 }
-
-    

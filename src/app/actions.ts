@@ -6,7 +6,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import type { Product, Loan, StockMovement } from '@/lib/types';
-import { getFirestore, collection, writeBatch, doc } from 'firebase/firestore'; // Import 'doc'
+import { collection, writeBatch, doc } from 'firebase/firestore';
 import { getSdks } from '@/firebase/server';
 
 const productSchema = z.object({
@@ -68,7 +68,6 @@ export async function seedProducts(): Promise<{ success: boolean; error?: string
         const productsRef = collection(firestore, 'products');
 
         productsData.products.forEach((product) => {
-            // Ensure product has a valid ID, if not, Firestore auto-generates one but here we expect one.
             if(!product.id) {
                 console.warn(`Skipping product without ID: ${product.name}`);
                 return;
@@ -306,5 +305,3 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
         return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
     }
 }
-
-    
