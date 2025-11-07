@@ -127,7 +127,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                     transaction.update(productRef, { quantity: newQuantity });
                 }
 
-                const returnDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+                const returnDate = format(new Date(), "yyyy-MM-dd");
                 transaction.update(loanRef, { status: 'Devuelto', returnDate: returnDate });
             });
              toast({
@@ -201,7 +201,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
 
   return (
     <>
-      <div className="flex flex-1 flex-col">
+      <div className="flex flex-1 flex-col print-hide">
         <AppHeader title="Préstamos">
             <div className="flex items-center gap-2">
                 <Button size="sm" onClick={() => setIsAddDialogOpen(true)} disabled={isPending}>

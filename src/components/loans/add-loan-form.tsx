@@ -79,10 +79,7 @@ export function AddLoanForm({ onSubmit, products, isPending }: AddLoanFormProps)
       return;
     }
     
-    const year = values.loanDate.getFullYear();
-    const month = (values.loanDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = values.loanDate.getDate().toString().padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
+    const formattedDate = format(values.loanDate, "yyyy-MM-dd");
 
     onSubmit({
         productId: values.productId,
