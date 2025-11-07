@@ -1,3 +1,4 @@
+
 'use server';
 
 import { promises as fs } from 'fs';
@@ -92,7 +93,7 @@ export async function seedProducts(): Promise<{ success: boolean; error?: string
 
 
 // PRODUCT ACTIONS
-export async function saveProduct(idToken: string, newProduct: Product): Promise<{ success: boolean, error?: string, data?: Product }> {
+export async function saveProduct(newProduct: Product): Promise<{ success: boolean, error?: string, data?: Product }> {
   const result = productSchema.safeParse(newProduct);
 
   if (!result.success) {
@@ -100,7 +101,7 @@ export async function saveProduct(idToken: string, newProduct: Product): Promise
     return { success: false, error: firstError || "Datos de producto inválidos." };
   }
   
-  const { firestore } = await getSdks(idToken);
+  const { firestore } = await getSdks();
   try {
     const productRef = doc(firestore, 'products', result.data.id);
     
@@ -119,7 +120,7 @@ export async function saveProduct(idToken: string, newProduct: Product): Promise
   }
 }
 
-export async function updateProduct(idToken: string, productId: string, updatedData: Partial<Omit<Product, 'id'>>): Promise<{ success: boolean; error?: string; data?: Product }> {
+export async function updateProduct(productId: string, updatedData: Partial<Omit<Product, 'id'>>): Promise<{ success: boolean; error?: string; data?: Product }> {
     const updateSchema = productSchema.omit({ id: true }).partial();
     const result = updateSchema.safeParse(updatedData);
 
@@ -132,7 +133,7 @@ export async function updateProduct(idToken: string, productId: string, updatedD
         return { success: false, error: "No hay datos para actualizar." };
     }
 
-    const { firestore } = await getSdks(idToken);
+    const { firestore } = await getSdks();
     try {
         const productRef = doc(firestore, 'products', productId);
 
@@ -148,8 +149,8 @@ export async function updateProduct(idToken: string, productId: string, updatedD
     }
 }
 
-export async function deleteProduct(idToken: string, productId: string): Promise<{ success: boolean; error?: string; }> {
-    const { firestore } = await getSdks(idToken);
+export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
+    const { firestore } = await getSdks();
     try {
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
@@ -168,7 +169,7 @@ export async function deleteProduct(idToken: string, productId: string): Promise
 }
 
 // STOCK ADJUSTMENT ACTION
-export async function adjustStock(idToken: string, productId: string, adjustmentData: { quantity: number; reason: string }): Promise<{ success: boolean; error?: string; }> {
+export async function adjustStock(productId: string, adjustmentData: { quantity: number; reason: string }): Promise<{ success: boolean; error?: string; }> {
   const result = stockAdjustmentSchema.safeParse(adjustmentData);
 
   if (!result.success) {
@@ -176,7 +177,7 @@ export async function adjustStock(idToken: string, productId: string, adjustment
     return { success: false, error: firstError || "Datos de ajuste inválidos." };
   }
 
-  const { firestore } = await getSdks(idToken);
+  const { firestore } = await getSdks();
   try {
     const productRef = doc(firestore, 'products', productId);
     
@@ -251,14 +252,14 @@ export async function seedLoans(): Promise<{ success: boolean; error?: string; c
 }
 
 // LOAN ACTIONS
-export async function saveLoan(idToken: string, loanData: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean, error?: string, data?: Loan }> {
+export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean, error?: string, data?: Loan }> {
     const result = loanSchema.safeParse(loanData);
     if (!result.success) {
         const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
         return { success: false, error: firstError || "Datos de préstamo inválidos." };
     }
     
-    const { firestore } = await getSdks(idToken);
+    const { firestore } = await getSdks();
 
     try {
         const newLoanRef = doc(collection(firestore, 'loans'));
@@ -298,8 +299,8 @@ export async function saveLoan(idToken: string, loanData: Omit<Loan, 'id' | 'sta
     }
 }
 
-export async function updateLoanStatus(idToken: string, loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = await getSdks(idToken);
+export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
+    const { firestore } = await getSdks();
     
     try {
         const loanRef = doc(firestore, 'loans', loanId);
@@ -339,8 +340,8 @@ export async function updateLoanStatus(idToken: string, loanId: string, status: 
     }
 }
 
-export async function deleteLoan(idToken: string, loanId: string): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = await getSdks(idToken);
+export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
+    const { firestore } = await getSdks();
     try {
         const loanRef = doc(firestore, 'loans', loanId);
         const loanDoc = await getDoc(loanRef);

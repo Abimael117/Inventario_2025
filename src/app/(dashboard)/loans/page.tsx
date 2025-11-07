@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
@@ -13,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function LoansPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const { user } = useUser();
   const [isSeeding, startSeedingTransition] = useTransition();
   const [hasSeedingBeenAttempted, setHasSeedingBeenAttempted] = useState(false);
 

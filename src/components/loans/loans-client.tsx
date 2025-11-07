@@ -71,32 +71,9 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const [recibidoPor, setRecibidoPor] = useState('');
   const { toast } = useToast();
 
-  const withUserToken = async <T,>(action: (idToken: string, ...args: any[]) => Promise<T>, ...args: any[]): Promise<T | null> => {
-    if (!user) {
-      toast({
-        variant: "destructive",
-        title: "No autenticado",
-        description: "Debes iniciar sesión para realizar esta acción.",
-      });
-      return null;
-    }
-    try {
-      const idToken = await user.getIdToken(true);
-      return await action(idToken, ...args);
-    } catch (error) {
-      console.error("Error getting id token", error);
-       toast({
-        variant: "destructive",
-        title: "Error de autenticación",
-        description: "No se pudo verificar tu sesión. Por favor, inicia sesión de nuevo.",
-      });
-      return null;
-    }
-  };
-
   const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status'>) => {
     startTransition(async () => {
-        const result = await withUserToken(saveLoan, loanData);
+        const result = await saveLoan(loanData);
         if (result?.success) {
             toast({
                 title: "Préstamo Registrado",
@@ -116,7 +93,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   
   const handleMarkAsReturned = async (loan: Loan) => {
     startTransition(async () => {
-        const result = await withUserToken(updateLoanStatus, loan.id, "Devuelto");
+        const result = await updateLoanStatus(loan.id, "Devuelto");
         if (result?.success) {
             toast({
                 title: "Préstamo Actualizado",
@@ -148,7 +125,7 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   const confirmDelete = () => {
     if (loanToDelete) {
       startTransition(async () => {
-        const result = await withUserToken(deleteLoan, loanToDelete.id);
+        const result = await deleteLoan(loanToDelete.id);
         if (result?.success) {
           toast({
             title: "Préstamo Eliminado",

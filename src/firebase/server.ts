@@ -2,10 +2,11 @@
 'use server';
 
 import { firebaseConfig } from '@/firebase/config';
-import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithCustomToken } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { experimental_taintObjectReference } from 'react';
+import { headers } from 'next/headers';
 
 // Este polyfill es necesario para el entorno de servidor de Node.js.
 if (typeof atob === 'undefined') {
@@ -15,21 +16,22 @@ if (typeof atob === 'undefined') {
 /**
  * Inicializa los SDK de Firebase en el servidor de forma segura.
  * Esta función se llama al inicio de cada Server Action.
- * Acepta un token de ID opcional para autenticar la solicitud.
  */
-export async function getSdks(idToken?: string) {
+export async function getSdks() {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const firestore = getFirestore(app);
 
   try {
-    if (idToken) {
-      // Si se proporciona un token, inicia sesión en el servidor con él.
-      await signInWithCustomToken(auth, idToken);
+    const sessionCookie = headers().get('x-session-cookie');
+    
+    if (sessionCookie) {
+      const decodedCookie = JSON.parse(atob(sessionCookie));
+      // Usamos el token del usuario para autenticarnos en el servidor en su nombre.
+      await signInWithCustomToken(auth, decodedCookie.token);
     } else {
-        // Permitir la ejecución sin autenticación para ciertas acciones (como el seeder).
-        // Las reglas de seguridad de Firestore se encargarán de proteger los datos si es necesario.
-        console.warn('Server-side SDKs initialized without a user token.');
+      // Permitir la ejecución sin autenticación para ciertas acciones (como el seeder).
+      // Las reglas de seguridad de Firestore se encargarán de proteger los datos.
     }
   } catch (error) {
     console.error('Server-side auth error:', error);
