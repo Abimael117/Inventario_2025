@@ -3,22 +3,36 @@
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-import { Loader2, PlusCircle, Download } from 'lucide-react';
+import { Loader2, PlusCircle, Download, Trash2 } from 'lucide-react';
 import { useEffect, useState, useTransition } from 'react';
-import { seedProducts } from '@/app/actions';
+import { seedProducts, deleteAllProductsAndData } from '@/app/actions';
+import { useRouter } from "next/navigation";
 
 import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from '@/components/header';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function InventoryPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const router = useRouter();
   const [isSeeding, startSeedingTransition] = useTransition();
+  const [isDeleting, startDeletingTransition] = useTransition();
   const [hasSeedingBeenAttempted, setHasSeedingBeenAttempted] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   const productsRef = useMemoFirebase(() => {
@@ -85,7 +99,30 @@ export default function InventoryPage() {
     }
   };
 
-  if (isLoading || isSeeding) {
+  const confirmDeleteAll = () => {
+    startDeletingTransition(async () => {
+      const result = await deleteAllProductsAndData();
+      if (result.success) {
+        toast({
+          title: "Limpieza Completa",
+          description: "Todos los productos, préstamos y movimientos han sido eliminados.",
+        });
+        setHasSeedingBeenAttempted(false); // Allow seeding again
+        router.refresh();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al Eliminar",
+          description: result.error || "No se pudieron eliminar todos los datos.",
+        });
+      }
+      setIsDeleteAllConfirmOpen(false);
+    });
+  };
+
+  const isLoadingData = isLoading || isSeeding;
+
+  if (isLoadingData) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Inventario" />
@@ -100,27 +137,56 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-      <AppHeader
-        title="Inventario"
-        search={{
-          value: searchQuery,
-          onChange: (e) => setSearchQuery(e.target.value),
-          placeholder: "Buscar por nombre, ID, categoría...",
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={!products || products.length === 0}>
-            <Download className="h-4 w-4 mr-2" />
-            Descargar CSV
-          </Button>
-          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Añadir Producto
-          </Button>
-        </div>
-      </AppHeader>
-      <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} isAddDialogOpen={isAddDialogOpen} setIsAddDialogOpen={setIsAddDialogOpen} />
-    </div>
+    <>
+      <div className="flex flex-1 flex-col">
+        <AppHeader
+          title="Inventario"
+          search={{
+            value: searchQuery,
+            onChange: (e) => setSearchQuery(e.target.value),
+            placeholder: "Buscar por nombre, ID, categoría...",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleDownloadCsv} disabled={!products || products.length === 0}>
+              <Download className="h-4 w-4 mr-2" />
+              Descargar CSV
+            </Button>
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Añadir Producto
+            </Button>
+             <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setIsDeleteAllConfirmOpen(true)}
+              disabled={!products || products.length === 0 || isDeleting}
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              {isDeleting ? 'Eliminando...' : 'Eliminar Todo'}
+            </Button>
+          </div>
+        </AppHeader>
+        <InventoryClient data={products || []} searchQuery={searchQuery} onAddProductClick={() => setIsAddDialogOpen(true)} isAddDialogOpen={isAddDialogOpen} setIsAddDialogOpen={setIsAddDialogOpen} />
+      </div>
+
+      <AlertDialog open={isDeleteAllConfirmOpen} onOpenChange={setIsDeleteAllConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás absolutamente seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Esto eliminará permanentemente TODOS los productos, préstamos y movimientos de la base de datos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+              {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isDeleting ? 'Eliminando...' : 'Sí, eliminar todo'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

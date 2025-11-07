@@ -350,3 +350,38 @@ export async function deleteLoan(loanId: string): Promise<{ success: boolean; er
         return { success: false, error: error.message || 'An unknown error occurred' };
     }
 }
+
+
+export async function deleteAllProductsAndData(): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { firestore } = await getAuthenticatedSdks();
+
+    // Delete all collections in parallel
+    await Promise.all([
+      clearCollection(firestore, 'products'),
+      clearCollection(firestore, 'loans'),
+      clearCollection(firestore, 'movements'),
+    ]);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to delete all data:', error);
+    return { success: false, error: error.message || 'Could not delete all data.' };
+  }
+}
+
+async function clearCollection(firestore: any, collectionPath: string) {
+  const collectionRef = collection(firestore, collectionPath);
+  const snapshot = await getDocs(collectionRef);
+  
+  if (snapshot.empty) {
+    return;
+  }
+  
+  const batch = writeBatch(firestore);
+  snapshot.docs.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  
+  await batch.commit();
+}
