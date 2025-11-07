@@ -13,20 +13,7 @@ import { getFirestore } from 'firebase/firestore';
  * @returns An object containing the initialized `firestore`, `auth`, and `firebaseApp` instances.
  */
 export function getSdks() {
-  // Use getApps() to check if Firebase has already been initialized.
-  if (!getApps().length) {
-    // If not initialized, initialize with the config object.
-    // This is the correct approach for server-side code (Server Actions, API routes).
-    const firebaseApp = initializeApp(firebaseConfig);
-    return {
-        firebaseApp: firebaseApp,
-        auth: getAuth(firebaseApp),
-        firestore: getFirestore(firebaseApp)
-    };
-  }
-  
-  // If already initialized, get the existing app instance and return the SDKs.
-  const app = getApp();
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   return {
       firebaseApp: app,
       auth: getAuth(app),
