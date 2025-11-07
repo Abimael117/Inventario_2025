@@ -196,9 +196,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     }, 100);
   };
 
-  const sortedLoans = [...loans].sort((a, b) => {
-    // A simple string comparison works because the format is YYYY-MM-DD.
-    return b.loanDate.localeCompare(a.loanDate);
+  const sortedLoans = (loans || []).sort((a, b) => {
+    // Gracefully handle cases where loanDate might be missing or invalid
+    const dateA = a.loanDate || '';
+    const dateB = b.loanDate || '';
+    return dateB.localeCompare(dateA);
   });
 
 
@@ -235,11 +237,21 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                           </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {sortedLoans.length > 0 ? (
+                            {sortedLoans && sortedLoans.length > 0 ? (
                               sortedLoans.map((loan) => {
-                                const [year, month, day] = loan.loanDate.split('-').map(Number);
-                                const dateObject = new Date(Date.UTC(year, month - 1, day));
-                                const formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es });
+                                let formattedDate = "Fecha inválida";
+                                if (loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
+                                    try {
+                                        const [year, month, day] = loan.loanDate.split('-').map(Number);
+                                        const dateObject = new Date(Date.UTC(year, month - 1, day));
+                                        if (!isNaN(dateObject.getTime())) {
+                                            formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es });
+                                        }
+                                    } catch (e) {
+                                        console.error("Failed to parse date:", loan.loanDate, e);
+                                    }
+                                }
+                                
                                 return (
                                 <TableRow key={loan.id}>
                                 <TableCell className="font-medium">{loan.productName}</TableCell>
@@ -362,7 +374,5 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
     </>
   );
 }
-
-    
 
     

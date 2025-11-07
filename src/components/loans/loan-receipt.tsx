@@ -24,10 +24,20 @@ export function LoanReceipt({
   setEntregadoPor,
   setRecibidoPor,
 }: LoanReceiptProps) {
-    const [year, month, day] = loan.loanDate.split('-').map(Number);
-    // Using UTC to prevent timezone shifts. Month is 0-indexed.
-    const loanDateObject = new Date(Date.UTC(year, month - 1, day));
-    const formattedDate = format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es });
+
+    let formattedDate = "Fecha inválida";
+    if (loan && loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
+        try {
+            const [year, month, day] = loan.loanDate.split('-').map(Number);
+            // Using UTC to prevent timezone shifts. Month is 0-indexed.
+            const loanDateObject = new Date(Date.UTC(year, month - 1, day));
+             if (!isNaN(loanDateObject.getTime())) {
+                formattedDate = format(loanDateObject, "d 'de' MMMM, yyyy", { locale: es });
+            }
+        } catch (e) {
+            console.error("Failed to parse date in receipt:", loan.loanDate, e);
+        }
+    }
 
 
   return (
