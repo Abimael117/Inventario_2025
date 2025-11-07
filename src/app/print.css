@@ -1,19 +1,15 @@
 @media print {
-  body {
-    background: none;
-  }
-
-  /* Ocultar todo lo que esté marcado para no imprimirse */
-  .print-hide {
+  /* Regla 1: Oculta absolutamente todo por defecto */
+  body > * {
     display: none !important;
   }
 
-  /* Asegurarse de que el contenedor del contenido imprimible no restrinja a su hijo */
-  .printable-content-container {
-    display: contents; /* Esto hace que el contenedor se comporte como si no estuviera, permitiendo que el hijo se expanda */
+  /* Regla 2: Muestra solo el contenedor de impresión y su contenido */
+  .printable-content, .printable-content * {
+    display: block !important;
   }
 
-  /* Hacer que el área de impresión sea el único contenido visible */
+  /* Regla 3: Posiciona el contenedor de impresión para que ocupe toda la página */
   .printable-content {
     position: absolute;
     left: 0;
@@ -27,14 +23,14 @@
     background: white !important;
     color: black !important;
   }
-
-  /* Quitar el fondo del diálogo para que no aparezca en la impresión */
+  
+  /* Asegura que el fondo del componente específico sea transparente */
   .bg-white.text-black {
     background: transparent !important;
     color: black !important;
   }
 
-  /* Márgenes para la página impresa */
+  /* Márgenes estándar para la página impresa */
   @page {
     margin: 1in;
     size: letter;

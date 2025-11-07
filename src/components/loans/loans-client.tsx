@@ -202,16 +202,15 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
   return (
     <>
       <div className="flex flex-1 flex-col">
-        <div className="print-hide">
-          <AppHeader title="Préstamos">
+        <AppHeader title="Préstamos">
             <div className="flex items-center gap-2">
                 <Button size="sm" onClick={() => setIsAddDialogOpen(true)} disabled={isPending}>
                     <PlusCircle className="h-4 w-4 mr-2" />
                     Registrar Préstamo
                 </Button>
             </div>
-          </AppHeader>
-          <main className="flex-1 p-4 md:p-6">
+        </AppHeader>
+        <main className="flex-1 p-4 md:p-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Historial de Préstamos</CardTitle>
@@ -312,61 +311,64 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                     </div>
                 </CardContent>
             </Card>
-          </main>
-        </div>
-
-        <Dialog open={isAddDialogOpen} onOpenChange={!isPending ? setIsAddDialogOpen : undefined}>
-            <DialogContent className="sm:max-w-[425px] print-hide">
-            <DialogHeader>
-                <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
-                <DialogDescription>
-                Rellena los detalles del nuevo préstamo. El stock del producto se actualizará automáticamente.
-                </DialogDescription>
-            </DialogHeader>
-            <AddLoanForm onSubmit={handleAddLoan} products={products} isPending={isPending} />
-            </DialogContent>
-        </Dialog>
-        
-        <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? setIsDeleteDialogOpen : undefined}>
-            <AlertDialogContent className="print-hide">
-            <AlertDialogHeader>
-                <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Esta acción eliminará permanentemente el registro del préstamo para "{loanToDelete?.productName}". Esta acción solo debe realizarse en préstamos ya devueltos.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
-                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Eliminar"}
-                </AlertDialogAction>
-            </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-
-        <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
-            <DialogContent className="max-w-3xl print-hide">
-                <DialogHeader>
-                    <DialogTitle>Comprobante de Préstamo</DialogTitle>
-                    <DialogDescription>
-                        Esta es una vista previa del comprobante que se va a imprimir.
-                    </DialogDescription>
-                </DialogHeader>
-                {/* This div is for the printable content, but it's not wrapped in the print-hide div */}
-                <div className="printable-content">
-                    {loanToPrint && <LoanReceipt loan={loanToPrint} />}
-                </div>
-                <DialogFooter className="print-hide">
-                    <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cerrar</Button>
-                    <Button onClick={handlePrint}>
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
+        </main>
       </div>
+
+      {/* Contenedor solo para impresión, oculto en la pantalla */}
+      <div className="printable-content">
+          {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+      </div>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={!isPending ? setIsAddDialogOpen : undefined}>
+          <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+              <DialogTitle>Registrar Nuevo Préstamo</DialogTitle>
+              <DialogDescription>
+              Rellena los detalles del nuevo préstamo. El stock del producto se actualizará automáticamente.
+              </DialogDescription>
+          </DialogHeader>
+          <AddLoanForm onSubmit={handleAddLoan} products={products} isPending={isPending} />
+          </DialogContent>
+      </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? setIsDeleteDialogOpen : undefined}>
+          <AlertDialogContent>
+          <AlertDialogHeader>
+              <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+              <AlertDialogDescription>
+                  Esta acción eliminará permanentemente el registro del préstamo para "{loanToDelete?.productName}". Esta acción solo debe realizarse en préstamos ya devueltos.
+              </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+                {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Eliminar"}
+              </AlertDialogAction>
+          </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen}>
+          <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                  <DialogTitle>Comprobante de Préstamo</DialogTitle>
+                  <DialogDescription>
+                      Esta es una vista previa del comprobante que se va a imprimir.
+                  </DialogDescription>
+              </DialogHeader>
+              {/* Este div es para la VISTA PREVIA en pantalla */}
+              <div>
+                  {loanToPrint && <LoanReceipt loan={loanToPrint} />}
+              </div>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsPrintDialogOpen(false)}>Cerrar</Button>
+                  <Button onClick={handlePrint}>
+                      <Printer className="mr-2 h-4 w-4" />
+                      Imprimir
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </>
   );
 }

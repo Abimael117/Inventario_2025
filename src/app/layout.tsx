@@ -28,9 +28,7 @@ export default function RootLayout({
         )}
       >
         <FirebaseClientProvider>
-          <div className="printable-content-container">
-            {children}
-          </div>
+          {children}
           <Toaster />
         </FirebaseClientProvider>
       </body>
