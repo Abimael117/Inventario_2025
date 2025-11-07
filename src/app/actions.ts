@@ -217,8 +217,8 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
     return { success: true };
 
   } catch (e: any) {
-    console.error("Failed to adjust stock:", e);
-    return { success: false, error: e.message || "Ocurrió un error desconocido." };
+    console.error('Failed to adjust stock:', e);
+    return { success: false, error: e.message || 'Ocurrió un error desconocido al ajustar el stock.' };
   }
 }
 
@@ -238,14 +238,18 @@ export async function seedLoans(): Promise<{ success: boolean; error?: string; c
 
         let seededCount = 0;
         for (const loan of loansData.loans) {
-             const docRef = doc(loansRef, loan.id);
-             const docSnap = await getDoc(docRef);
-             if (!docSnap.exists()) {
+            if(!loan.id) {
+                 console.warn(`Skipping loan without ID for product: ${loan.productName}`);
+                 continue;
+            }
+            const docRef = doc(loansRef, loan.id);
+            const docSnap = await getDoc(docRef);
+            if (!docSnap.exists()) {
                 batch.set(docRef, loan);
                 seededCount++;
-             }
+            }
         }
-
+        
         if (seededCount > 0) {
             await batch.commit();
         }
@@ -257,111 +261,92 @@ export async function seedLoans(): Promise<{ success: boolean; error?: string; c
     }
 }
 
+
 // LOAN ACTIONS
-export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean, error?: string, data?: Loan }> {
-    const result = loanSchema.safeParse(loanData);
-    if (!result.success) {
-        const firstError = Object.values(result.error.flatten().fieldErrors)[0]?.[0];
-        return { success: false, error: firstError || "Datos de préstamo inválidos." };
-    }
-    
+export async function saveLoan(loan: Omit<Loan, 'id' | 'status'>): Promise<{ success: boolean; error?: string; data?: Loan }> {
+    const newLoanData = {
+        ...loan,
+        status: 'Prestado' as const,
+    };
+
     try {
         const { firestore } = await getAuthenticatedSdks();
-        const newLoanRef = doc(collection(firestore, 'loans'));
-        const newLoanId = newLoanRef.id;
-        
-        await runTransaction(firestore, async (transaction) => {
-            const productRef = doc(firestore, 'products', result.data.productId);
-            const productDoc = await transaction.get(productRef);
+        const productRef = doc(firestore, 'products', loan.productId);
+        const loanRef = doc(collection(firestore, 'loans'));
 
+        await runTransaction(firestore, async (transaction) => {
+            const productDoc = await transaction.get(productRef);
             if (!productDoc.exists()) {
-                throw new Error("El producto seleccionado ya no existe.");
+                throw new Error("El producto que intentas prestar no existe.");
             }
 
             const product = productDoc.data() as Product;
-            if (product.quantity < result.data.quantity) {
-                throw new Error(`Stock insuficiente. Solo quedan ${product.quantity} unidades.`);
+            if (product.quantity < loan.quantity) {
+                throw new Error(`Stock insuficiente. Solo quedan ${product.quantity} unidades de "${product.name}".`);
             }
-            
-            const newQuantity = product.quantity - result.data.quantity;
-            transaction.update(productRef, { quantity: newQuantity });
 
-            const newLoan: Loan = {
-                ...result.data,
-                id: newLoanId,
-                status: "Prestado",
-            };
-            transaction.set(newLoanRef, newLoan);
+            const newQuantity = product.quantity - loan.quantity;
+            transaction.update(productRef, { quantity: newQuantity });
+            transaction.set(loanRef, { ...newLoanData, id: loanRef.id });
         });
 
-        const savedLoan = await getDoc(newLoanRef);
+        const finalData = { ...newLoanData, id: loanRef.id };
+        return { success: true, data: finalData };
 
-        return { success: true, data: savedLoan.data() as Loan };
-
-    } catch (e: any) {
-        console.error("Failed to save loan:", e);
-        return { success: false, error: e.message || "Ocurrió un error desconocido." };
+    } catch (error: any) {
+        console.error('Failed to save loan:', error);
+        return { success: false, error: error.message || 'No se pudo guardar el préstamo.' };
     }
 }
 
-export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
+export async function updateLoanStatus(loanId: string, status: 'Devuelto'): Promise<{ success: boolean; error?: string }> {
+    if (status !== 'Devuelto') {
+        return { success: false, error: "Estado no válido." };
+    }
+
     try {
         const { firestore } = await getAuthenticatedSdks();
         const loanRef = doc(firestore, 'loans', loanId);
-        
+
         await runTransaction(firestore, async (transaction) => {
             const loanDoc = await transaction.get(loanRef);
-            if (!loanDoc.exists()) {
-                throw new Error('No se encontró el préstamo.');
+            if (!loanDoc.exists() || loanDoc.data().status === 'Devuelto') {
+                throw new Error("Este préstamo no se puede devolver o ya ha sido devuelto.");
             }
 
             const loan = loanDoc.data() as Loan;
-            if (loan.status === status) {
-                 return; // No change needed
+            const productRef = doc(firestore, 'products', loan.productId);
+            const productDoc = await transaction.get(productRef);
+
+            if (productDoc.exists()) {
+                const newQuantity = (productDoc.data().quantity || 0) + loan.quantity;
+                transaction.update(productRef, { quantity: newQuantity });
             }
 
-            // Only update product stock if loan is being returned
-            if (status === 'Devuelto' && loan.status === 'Prestado') {
-                const productRef = doc(firestore, 'products', loan.productId);
-                const productDoc = await transaction.get(productRef);
-                if (productDoc.exists()) {
-                    const newQuantity = (productDoc.data().quantity || 0) + loan.quantity;
-                    transaction.update(productRef, { quantity: newQuantity });
-                } else {
-                    // If product was deleted, we can't restock it, but we can still mark loan as returned.
-                    console.warn(`Product with ID ${loan.productId} not found for restocking.`);
-                }
-            }
-            
-            transaction.update(loanRef, { status: status, returnDate: new Date().toISOString() });
+            transaction.update(loanRef, { status: 'Devuelto', returnDate: new Date().toISOString() });
         });
 
         return { success: true };
-
-    } catch (e: any) {
-        console.error('Failed to update loan status:', e);
-        return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
+    } catch (error: any) {
+        console.error('Failed to update loan status:', error);
+        return { success: false, error: error.message || 'No se pudo actualizar el préstamo.' };
     }
 }
 
-export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
+export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string; }> {
     try {
         const { firestore } = await getAuthenticatedSdks();
         const loanRef = doc(firestore, 'loans', loanId);
-        const loanDoc = await getDoc(loanRef);
+        
+        const loanSnap = await getDoc(loanRef);
+        if (loanSnap.exists() && loanSnap.data().status === 'Prestado') {
+             return { success: false, error: 'No se puede eliminar un préstamo que está activo. Primero márcalo como "Devuelto".' };
+        }
 
-        if (!loanDoc.exists()) {
-            return { success: false, error: 'No se encontró el préstamo a eliminar.' };
-        }
-        
-        if (loanDoc.data().status === 'Prestado') {
-             return { success: false, error: 'No se puede eliminar un préstamo activo. Primero debe marcarse como "Devuelto".' };
-        }
-        
         await deleteDoc(loanRef);
         return { success: true };
-    } catch (e: any) {
-        console.error('Failed to delete loan:', e);
-        return { success: false, error: e.message || 'Ocurrió un error desconocido.' };
+    } catch (error: any) {
+        console.error('Failed to delete loan:', error);
+        return { success: false, error: error.message || 'An unknown error occurred' };
     }
 }
