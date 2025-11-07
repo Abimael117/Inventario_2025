@@ -2,10 +2,9 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, writeBatch } from 'firebase/firestore';
-import { Loader2, PlusCircle, Download, Trash2 } from 'lucide-react';
-import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { collection } from 'firebase/firestore';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from '@/components/header';
@@ -25,11 +24,7 @@ import {
 
 export default function InventoryPage() {
   const firestore = useFirestore();
-  const { toast } = useToast();
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isPending, startTransition] = useTransition();
-  const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
 
   const productsRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -37,40 +32,6 @@ export default function InventoryPage() {
   }, [firestore]);
 
   const { data: products, isLoading } = useCollection<Product>(productsRef);
-
-  const confirmDeleteAll = () => {
-    if (!firestore || !products || products.length === 0) return;
-
-    startTransition(async () => {
-        const batch = writeBatch(firestore);
-        
-        const productsSnapshot = await getDocs(collection(firestore, 'products'));
-        productsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        const loansSnapshot = await getDocs(collection(firestore, 'loans'));
-        loansSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        const movementsSnapshot = await getDocs(collection(firestore, 'movements'));
-        movementsSnapshot.forEach(doc => batch.delete(doc.ref));
-
-        try {
-            await batch.commit();
-            toast({
-                title: "Datos Eliminados",
-                description: "Se han borrado todos los productos, préstamos y movimientos.",
-            });
-            router.refresh();
-        } catch(error: any) {
-             toast({
-                variant: "destructive",
-                title: "Error al Eliminar",
-                description: error.message || "No se pudo completar la operación.",
-            });
-        } finally {
-            setIsDeleteAllDialogOpen(false);
-        }
-    });
-  };
 
   const handleDownloadCsv = () => {
     if (!products) return;
@@ -92,27 +53,9 @@ export default function InventoryPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      toast({
-        title: "Descarga Iniciada",
-        description: "Tu archivo CSV de inventario se está descargando.",
-      });
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <AppHeader title="Inventario" />
-        <main className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Cargando inventario...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
+  
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -125,7 +68,18 @@ export default function InventoryPage() {
           }}
         >
         </AppHeader>
-        <InventoryClient data={products || []} searchQuery={searchQuery} />
+        
+        {isLoading ? (
+          <main className="flex flex-1 items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground">Cargando inventario...</p>
+            </div>
+          </main>
+        ) : (
+          <InventoryClient data={products || []} searchQuery={searchQuery} />
+        )}
+
       </div>
     </>
   );
