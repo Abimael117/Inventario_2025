@@ -1,6 +1,7 @@
 
 'use server';
 
+import { headers } from 'next/headers';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
@@ -37,6 +38,14 @@ const productsFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'product
 const loansFilePath = path.join(process.cwd(), 'src', 'lib', 'data', 'loans.json');
 
 
+async function getAuthenticatedSdks(actionName: string) {
+    const mutableHeaders = headers();
+    mutableHeaders.set('x-action-from-client', 'true');
+    mutableHeaders.set('x-action-name', actionName);
+    return getSdks();
+}
+
+
 // HELPERS
 async function readData<T>(filePath: string): Promise<T | null> {
     try {
@@ -54,7 +63,7 @@ async function readData<T>(filePath: string): Promise<T | null> {
 
 // PRODUCT SEEDING ACTION
 export async function seedProducts(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks();
+    const { firestore } = await getSdks(); // Seeder puede no necesitar auth
     try {
         const productsData = await readData<{ products: Product[] }>(productsFilePath);
 
@@ -101,8 +110,8 @@ export async function saveProduct(newProduct: Product): Promise<{ success: boole
     return { success: false, error: firstError || "Datos de producto inválidos." };
   }
   
-  const { firestore } = await getSdks();
   try {
+    const { firestore } = await getAuthenticatedSdks('saveProduct');
     const productRef = doc(firestore, 'products', result.data.id);
     
     const docSnap = await getDoc(productRef);
@@ -133,8 +142,8 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
         return { success: false, error: "No hay datos para actualizar." };
     }
 
-    const { firestore } = await getSdks();
     try {
+        const { firestore } = await getAuthenticatedSdks('updateProduct');
         const productRef = doc(firestore, 'products', productId);
 
         await setDoc(productRef, result.data, { merge: true });
@@ -150,8 +159,8 @@ export async function updateProduct(productId: string, updatedData: Partial<Omit
 }
 
 export async function deleteProduct(productId: string): Promise<{ success: boolean; error?: string; }> {
-    const { firestore } = await getSdks();
     try {
+        const { firestore } = await getAuthenticatedSdks('deleteProduct');
         const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productId), where('status', '==', 'Prestado'));
         const activeLoansSnapshot = await getDocs(loansQuery);
         
@@ -177,8 +186,8 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
     return { success: false, error: firstError || "Datos de ajuste inválidos." };
   }
 
-  const { firestore } = await getSdks();
   try {
+    const { firestore } = await getAuthenticatedSdks('adjustStock');
     const productRef = doc(firestore, 'products', productId);
     
     await runTransaction(firestore, async (transaction) => {
@@ -219,7 +228,7 @@ export async function adjustStock(productId: string, adjustmentData: { quantity:
 
 // LOAN SEEDING ACTION
 export async function seedLoans(): Promise<{ success: boolean; error?: string; count?: number }> {
-    const { firestore } = await getSdks();
+    const { firestore } = await getSdks(); // Seeder puede no necesitar auth
     try {
         const loansData = await readData<{ loans: Loan[] }>(loansFilePath);
 
@@ -259,9 +268,8 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
         return { success: false, error: firstError || "Datos de préstamo inválidos." };
     }
     
-    const { firestore } = await getSdks();
-
     try {
+        const { firestore } = await getAuthenticatedSdks('saveLoan');
         const newLoanRef = doc(collection(firestore, 'loans'));
         const newLoanId = newLoanRef.id;
         
@@ -300,9 +308,8 @@ export async function saveLoan(loanData: Omit<Loan, 'id' | 'status'>): Promise<{
 }
 
 export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Devuelto'): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = await getSdks();
-    
     try {
+        const { firestore } = await getAuthenticatedSdks('updateLoanStatus');
         const loanRef = doc(firestore, 'loans', loanId);
         
         await runTransaction(firestore, async (transaction) => {
@@ -341,8 +348,8 @@ export async function updateLoanStatus(loanId: string, status: 'Prestado' | 'Dev
 }
 
 export async function deleteLoan(loanId: string): Promise<{ success: boolean; error?: string }> {
-    const { firestore } = await getSdks();
     try {
+        const { firestore } = await getAuthenticatedSdks('deleteLoan');
         const loanRef = doc(firestore, 'loans', loanId);
         const loanDoc = await getDoc(loanRef);
 
