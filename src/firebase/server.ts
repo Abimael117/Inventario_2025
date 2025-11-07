@@ -8,34 +8,14 @@ import { getFirestore } from 'firebase/firestore';
 import { headers } from 'next/headers';
 import { experimental_taintObjectReference } from 'react';
 
-// This is a polyfill for the 'atob' function, which is not available in the Node.js server environment.
+// Este polyfill es necesario para el entorno de servidor de Node.js.
 if (typeof atob === 'undefined') {
   global.atob = (b64: string) => Buffer.from(b64, 'base64').toString('binary');
 }
 
 /**
- * Parses a JWT token to extract its payload without verifying the signature.
- * This is used to get the user's UID from the session cookie.
- */
-const parseJwt = (token: string) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    console.error("Error parsing JWT", e);
-    return null;
-  }
-};
-
-/**
- * Initializes and returns Firebase SDK instances for server-side use.
- * This function handles authentication by reading the Firebase session cookie
- * and creating a custom token for the user.
+ * Inicializa los SDK de Firebase en el servidor de forma segura.
+ * Esta función se llama al inicio de cada Server Action.
  */
 export async function getSdks() {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -44,31 +24,27 @@ export async function getSdks() {
 
   try {
     const headersList = headers();
+    // Lee la cabecera 'x-session-cookie' que nuestro middleware ha añadido.
     const sessionCookie = headersList.get('x-session-cookie');
     
     if (sessionCookie) {
-      // If a session cookie is present, we try to authenticate with it.
-      const decodedToken = parseJwt(sessionCookie);
-      
-      // We sign in with a custom token.
-      // NOTE: In a real production app, you would mint a custom token on your backend
-      // and sign in with that. For this internal tool, we are re-using the session token
-      // for simplicity, but this is not standard practice.
+      // Si la cabecera con la cookie existe, inicia sesión en el servidor con ella.
+      // NOTA: En una app de producción real, se acuñaría un token personalizado.
+      // Aquí, reutilizamos el token de sesión por simplicidad.
       await signInWithCustomToken(auth, sessionCookie);
       
     } else {
-        // This is a critical failure if no session is found for a server action
-        // that requires auth. We throw to make it clear.
+        // Si no hay cookie de sesión, es un fallo crítico.
+        // Esto no debería ocurrir en una acción iniciada por un usuario logueado.
         throw new Error('Server-side auth error: No session cookie found.');
     }
   } catch (error) {
     console.error('Server-side auth error:', error);
-    // If auth fails, we should not proceed.
-    // Propagate the error to let the caller handle it.
+    // Propaga el error para detener la ejecución de la acción.
     throw error;
   }
   
-  // Mark the returned objects as tainted to prevent them from being passed to the client
+  // Marca los objetos para evitar que se envíen al cliente.
   experimental_taintObjectReference(
     'Do not pass server-side SDKs to the client!',
     auth

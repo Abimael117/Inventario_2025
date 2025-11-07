@@ -1,16 +1,10 @@
 
 import type {NextConfig} from 'next';
-import {headerRewrites} from './src/app/config';
 
 const nextConfig: NextConfig = {
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
-  },
-  async rewrites() {
-    return {
-      beforeFiles: headerRewrites,
-    };
   },
   eslint: {
     ignoreDuringBuilds: true,
