@@ -4,8 +4,9 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 // This is a simplified, less secure way to load credentials for environments
 // like Firebase Gen 2 functions where GOOGLE_APPLICATION_CREDENTIALS might not be set.
 // It directly uses the environment variables you set.
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+const serviceAccount = serviceAccountString
+  ? JSON.parse(serviceAccountString)
   : undefined;
 
 /**
