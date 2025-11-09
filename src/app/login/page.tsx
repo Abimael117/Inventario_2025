@@ -16,47 +16,52 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, type Auth } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
 
 
 const DUMMY_DOMAIN = 'decd.local';
 
-async function createInitialUsers(auth: any, firestore: any) {
-    try {
-        // Attempt to create admin user
-        const { user: adminAuthUser } = await createUserWithEmailAndPassword(auth, `admin@${DUMMY_DOMAIN}`, 'password123');
-        const adminUserDoc = {
-            uid: adminAuthUser.uid,
-            name: 'Administrador',
-            username: 'admin',
-            role: 'admin' as const,
-            permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
-        };
-        await setDoc(doc(firestore, "users", adminAuthUser.uid), adminUserDoc);
-    } catch (error: any) {
-        if (error.code !== 'auth/email-already-in-use') {
-             console.error("Error creating admin user:", error);
-        }
-    }
+async function createInitialUsers(auth: Auth, firestore: Firestore) {
+  const adminEmail = `admin@${DUMMY_DOMAIN}`;
+  const educacionEmail = `educacion@${DUMMY_DOMAIN}`;
 
+  // Helper function to create a user only if they don't exist
+  const createUserIfNotExists = async (email: string, password: string, userData: any) => {
     try {
-        // Attempt to create test user 'educacion'
-        const { user: educacionAuthUser } = await createUserWithEmailAndPassword(auth, `educacion@${DUMMY_DOMAIN}`, '123456');
-        const educacionUserDoc = {
-            uid: educacionAuthUser.uid,
-            name: 'Centro educativo',
-            username: 'educacion',
-            role: 'user' as const,
-            permissions: ['dashboard', 'inventory', 'loans'],
-        };
-        await setDoc(doc(firestore, "users", educacionAuthUser.uid), educacionUserDoc);
+      // Try to create the user. This will fail if the email is already in use.
+      const { user: authUser } = await createUserWithEmailAndPassword(auth, email, password);
+      // If creation succeeds, set their profile in Firestore.
+      await setDoc(doc(firestore, "users", authUser.uid), { ...userData, uid: authUser.uid });
     } catch (error: any) {
-        if (error.code !== 'auth/email-already-in-use') {
-             console.error("Error creating educacion user:", error);
-        }
+      // If the user already exists, we can ignore the error.
+      // Otherwise, we should log it for debugging.
+      if (error.code !== 'auth/email-already-in-use') {
+        console.error(`Error creating initial user ${email}:`, error);
+      }
     }
+  };
+
+  // Define admin user data
+  const adminUserData = {
+    name: 'Administrador',
+    username: 'admin',
+    role: 'admin' as const,
+    permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
+  };
+
+  // Define educacion user data
+  const educacionUserData = {
+    name: 'Centro educativo',
+    username: 'educacion',
+    role: 'user' as const,
+    permissions: ['dashboard', 'inventory', 'loans'],
+  };
+
+  // Create both users if they don't exist
+  await createUserIfNotExists(adminEmail, 'password123', adminUserData);
+  await createUserIfNotExists(educacionEmail, '123456', educacionUserData);
 }
 
 
