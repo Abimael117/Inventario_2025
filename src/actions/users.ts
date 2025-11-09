@@ -17,7 +17,6 @@ export async function ensureInitialUsers() {
         const auth = getAuth();
         const firestore = getFirestore();
 
-        // --- User data definitions ---
         const adminUserData = {
             email: 'admin@decd.local',
             password: 'password123',
@@ -44,43 +43,35 @@ export async function ensureInitialUsers() {
             },
         };
         
-        // --- Helper function to process each user ---
         const processUser = async (userData: typeof adminUserData) => {
             let uid: string;
             try {
-                // 1. Check if user exists in Auth
                 const userRecord = await auth.getUserByEmail(userData.email);
                 uid = userRecord.uid;
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
-                    // 2. If not, create user in Auth
                     const newUserRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
                         displayName: userData.displayName,
                     });
                     uid = newUserRecord.uid;
-                    // Set custom claims if any
                     if (userData.customClaims) {
                         await auth.setCustomUserClaims(uid, userData.customClaims);
                     }
                 } else {
-                    // Rethrow other auth errors
                     throw error;
                 }
             }
 
-            // 3. Check if user profile exists in Firestore
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
-                // 4. If not, create profile in Firestore
                 await userDocRef.set({ ...userData.firestoreProfile, uid });
             }
         };
 
-        // --- Process both initial users ---
         await processUser(adminUserData);
         await processUser(educacionUserData);
 
@@ -88,8 +79,6 @@ export async function ensureInitialUsers() {
 
     } catch (error: any) {
         console.error("Error ensuring initial users:", error);
-        // This is a background task, so we don't want to throw an error to the user
-        // unless absolutely necessary. We log it on the server.
         return { error: 'Failed to set up initial users on the server.' };
     }
 }
@@ -116,12 +105,10 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
       authUpdatePayload.password = data.password;
     }
 
-    // Update Firebase Auth if there's anything to update
     if (Object.keys(authUpdatePayload).length > 0) {
       await auth.updateUser(uid, authUpdatePayload);
     }
     
-    // Update Firestore document
     const firestoreUpdatePayload: { [key: string]: any } = {};
     if (data.name) {
         firestoreUpdatePayload.name = data.name;
@@ -134,7 +121,6 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     }
     if (data.role) {
         firestoreUpdatePayload.role = data.role;
-        // Also update the custom claim
         await auth.setCustomUserClaims(uid, { role: data.role });
     }
     
@@ -145,7 +131,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating user:", error); // Log the full error on the server
+    console.error("Error updating user:", error);
     let message = 'No se pudo actualizar el usuario.';
     if (error.code === 'auth/user-not-found') {
         message = 'El usuario no fue encontrado en el sistema de autenticación.'

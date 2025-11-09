@@ -33,6 +33,7 @@ const permissions = [
   { id: 'inventory', label: 'Gestionar Inventario' },
   { id: 'loans', label: 'Gestionar Préstamos' },
   { id: 'reports', label: 'Ver Reportes' },
+  { id: 'settings', label: 'Ver Configuración' },
 ] as const;
 
 const formSchema = z.object({
@@ -59,7 +60,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
       name: user.name || "",
       username: user.username || "",
       role: user.role || 'user',
-      permissions: user.role === 'admin' ? permissions.map(p => p.id) : user.permissions || [],
+      permissions: user.permissions || [],
     },
   });
 
@@ -70,7 +71,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
       name: user.name,
       username: user.username,
       role: user.role,
-      permissions: user.role === 'admin' ? permissions.map(p => p.id) : user.permissions,
+      permissions: user.permissions,
     });
   }, [user, form]);
   
@@ -82,19 +83,14 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
 
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    const dataToSubmit: Partial<Omit<User, 'id' | 'password'>> = {
+    const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
       username: values.username,
     };
     
     if (!isPrincipalAdmin) {
       dataToSubmit.role = values.role;
-      if (values.role === 'user') {
-        dataToSubmit.permissions = values.permissions;
-      } else {
-        // Admin always has all permissions
-        dataToSubmit.permissions = permissions.map(p => p.id);
-      }
+      dataToSubmit.permissions = values.permissions;
     }
     
     onSubmit(dataToSubmit);
@@ -154,57 +150,50 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
           )}
         />
 
-        {role === 'user' && (
-          <FormField
-            control={form.control}
-            name="permissions"
-            render={() => (
-              <FormItem>
-                <div className="mb-4">
-                  <FormLabel className="text-base">Permisos de Acceso</FormLabel>
-                  <FormDescription>
-                    Selecciona a qué secciones puede acceder el usuario.
-                  </FormDescription>
-                </div>
-                {permissions.map((item) => (
-                  <FormField
+        <FormItem>
+          <div className="mb-4">
+            <FormLabel className="text-base">Permisos de Acceso</FormLabel>
+            <FormDescription>
+              Selecciona a qué secciones puede acceder el usuario.
+            </FormDescription>
+          </div>
+          {permissions.map((item) => (
+            <FormField
+              key={item.id}
+              control={form.control}
+              name="permissions"
+              render={({ field }) => {
+                return (
+                  <FormItem
                     key={item.id}
-                    control={form.control}
-                    name="permissions"
-                    render={({ field }) => {
-                      return (
-                        <FormItem
-                          key={item.id}
-                          className="flex flex-row items-start space-x-3 space-y-0"
-                        >
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value?.includes(item.id)}
-                              onCheckedChange={(checked) => {
-                                return checked
-                                  ? field.onChange([...field.value, item.id])
-                                  : field.onChange(
-                                      field.value?.filter(
-                                        (value) => value !== item.id
-                                      )
-                                    );
-                              }}
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            {item.label}
-                          </FormLabel>
-                        </FormItem>
-                      );
-                    }}
-                  />
-                ))}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-         {role === 'admin' && <FormDescription className="mt-2">El administrador siempre tiene todos los permisos.</FormDescription>}
+                    className="flex flex-row items-start space-x-3 space-y-0"
+                  >
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value?.includes(item.id)}
+                        onCheckedChange={(checked) => {
+                          return checked
+                            ? field.onChange([...field.value, item.id])
+                            : field.onChange(
+                                field.value?.filter(
+                                  (value) => value !== item.id
+                                )
+                              );
+                        }}
+                        disabled={role === 'admin'}
+                      />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      {item.label}
+                    </FormLabel>
+                  </FormItem>
+                );
+              }}
+            />
+          ))}
+          <FormMessage />
+        </FormItem>
+         {role === 'admin' && <FormDescription className="mt-2 text-xs">El administrador siempre tiene todos los permisos.</FormDescription>}
         
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
