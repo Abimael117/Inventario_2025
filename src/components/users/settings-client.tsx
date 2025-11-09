@@ -124,7 +124,7 @@ export default function SettingsClient() {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Omit<User, 'id' | 'password' | 'uid'>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
         // Construct the payload explicitly to ensure all required fields are sent
         const payload = {
@@ -153,7 +153,7 @@ export default function SettingsClient() {
   };
 
   const openDeleteDialog = (user: User) => {
-    if (user.role === 'admin') {
+    if (user.username === 'admin') {
       toast({
         variant: "destructive",
         title: "Acción no permitida",

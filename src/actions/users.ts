@@ -94,59 +94,49 @@ export async function ensureInitialUsers() {
  * @param data The user data to update, must include role and permissions.
  * @returns An object indicating success or an error message.
  */
-export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid'>>) {
+export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid' | 'password'>>) {
   try {
     initFirebaseAdminApp();
     const auth = getAuth();
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
 
-    const authUpdatePayload: { displayName?: string; password?: string } = {};
+    // 1. Auth Update (Only display name, password is not handled here)
     if (data.name) {
-      authUpdatePayload.displayName = data.name;
-    }
-    if (data.password) {
-      authUpdatePayload.password = data.password;
+      await auth.updateUser(uid, { displayName: data.name });
     }
 
-    if (Object.keys(authUpdatePayload).length > 0) {
-      await auth.updateUser(uid, authUpdatePayload);
-    }
-    
-    // This is the payload to update the Firestore document.
-    // It's built from the provided data.
+    // 2. Firestore Document Update
     const firestoreUpdatePayload: { [key: string]: any } = {};
+    if (data.name) {
+      firestoreUpdatePayload.name = data.name;
+    }
+    // Username is not updatable, so we don't include it.
 
-    if (data.name) firestoreUpdatePayload.name = data.name;
-    if (data.username) firestoreUpdatePayload.username = data.username;
-    
-    // Always include role and permissions in the update payload.
-    // The client should always send the full state of these.
+    // Handle role and permissions
     if (data.role) {
       firestoreUpdatePayload.role = data.role;
-       if (data.role === 'admin') {
-         // If role is admin, force all permissions.
-         firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
-       } else {
-         // If role is user, save the specific permissions array.
-         firestoreUpdatePayload.permissions = data.permissions || [];
-       }
-    } else {
-      // If role is not changing, still update permissions.
-      // Make sure data.permissions is an array before using .includes()
-      const currentPermissions = data.permissions || [];
-      if (currentPermissions) {
-        firestoreUpdatePayload.permissions = currentPermissions;
+      if (data.role === 'admin') {
+        // Admins always get all permissions
+        firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
+      } else {
+        // For 'user', save the specific permissions they have.
+        // Ensure permissions is an array, even if it's empty.
+        firestoreUpdatePayload.permissions = data.permissions || [];
       }
+    } else if (data.permissions) {
+      // If role isn't changing, but permissions are, update them.
+      firestoreUpdatePayload.permissions = data.permissions;
     }
-
+    
     if (Object.keys(firestoreUpdatePayload).length > 0) {
-        await userDocRef.update(firestoreUpdatePayload);
+      await userDocRef.update(firestoreUpdatePayload);
     }
 
+    // 3. Custom Claims Update
     // After updating Firestore, ensure custom claims are in sync with the new role.
     if (data.role) {
-        await auth.setCustomUserClaims(uid, { role: data.role });
+      await auth.setCustomUserClaims(uid, { role: data.role });
     }
 
     return { success: true };
@@ -154,11 +144,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     console.error("Error updating user:", error);
     let message = 'No se pudo actualizar el usuario.';
     if (error.code === 'auth/user-not-found') {
-        message = 'El usuario no fue encontrado en el sistema de autenticación.'
-    } else if (error.code === 'auth/weak-password') {
-      message = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-    } else if (error.code === 'auth/invalid-password') {
-        message = 'La contraseña proporcionada no es válida.';
+      message = 'El usuario no fue encontrado en el sistema de autenticación.';
     } else {
       message = error.message || message;
     }
