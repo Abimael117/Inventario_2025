@@ -101,12 +101,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
 
-    // 1. Auth Update (Only display name, as other properties are sensitive)
-    if (data.name) {
-      await auth.updateUser(uid, { displayName: data.name });
-    }
-
-    // 2. Firestore Document Update Payload - Make it robust.
+    // 1. Firestore Document Update Payload - Make it robust.
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
     if (data.name) {
@@ -132,6 +127,11 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     // Only perform the update if there's something to update.
     if (Object.keys(firestoreUpdatePayload).length > 0) {
       await userDocRef.update(firestoreUpdatePayload);
+    }
+    
+    // 2. Auth Update (Only display name, as other properties are sensitive)
+    if (data.name) {
+      await auth.updateUser(uid, { displayName: data.name });
     }
 
     // 3. Custom Claims Update - Sync role if it was provided.
