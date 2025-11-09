@@ -6,6 +6,9 @@ import { getAuth } from 'firebase-admin/auth';
 import { initFirebaseAdminApp } from '@/firebase/server';
 import type { User } from '@/lib/types';
 
+// Initialize Firebase Admin SDK once when the module is loaded
+initFirebaseAdminApp();
+
 /**
  * Ensures that the initial 'admin' and 'educacion' users exist in both
  * Firebase Auth and Firestore, creating them only if they are missing.
@@ -13,7 +16,6 @@ import type { User } from '@/lib/types';
  */
 export async function ensureInitialUsers() {
     try {
-        initFirebaseAdminApp();
         const auth = getAuth();
         const firestore = getFirestore();
 
@@ -96,7 +98,6 @@ export async function ensureInitialUsers() {
  */
 export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid' | 'password'>>) {
   try {
-    initFirebaseAdminApp();
     const auth = getAuth();
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
