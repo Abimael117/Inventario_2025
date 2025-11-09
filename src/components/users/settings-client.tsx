@@ -39,25 +39,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AddUserForm } from '@/components/users/add-user-form';
 import { EditUserForm } from '@/components/users/edit-user-form';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useAuth } from '@/firebase';
+import { useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
-type SettingsClientProps = {
-  initialUsers: User[];
-};
+const DUMMY_DOMAIN = 'decd.local';
 
-const DUMMY_DOMAIN = 'stockwise.local';
-
-export default function SettingsClient({ initialUsers }: SettingsClientProps) {
+export default function SettingsClient() {
   const router = useRouter();
   const firestore = useFirestore();
   const auth = useAuth();
+
+  const usersRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
+  }, [firestore]);
+
+  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
   
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -191,15 +194,33 @@ export default function SettingsClient({ initialUsers }: SettingsClientProps) {
     settings: 'Configuración'
   };
 
-  const sortedUsers = [...initialUsers].sort((a, b) => {
-    if (a.role === 'admin' && b.role !== 'admin') {
-      return -1; // admin comes first
-    }
-    if (a.role !== 'admin' && b.role === 'admin') {
-      return 1;
-    }
-    return a.name.localeCompare(b.name); // sort other users by name
-  });
+  const sortedUsers = useMemo(() => {
+    if (!users) return [];
+    return [...users].sort((a, b) => {
+      if (a.role === 'admin' && b.role !== 'admin') {
+        return -1; // admin comes first
+      }
+      if (a.role !== 'admin' && b.role === 'admin') {
+        return 1;
+      }
+      return a.name.localeCompare(b.name); // sort other users by name
+    });
+  }, [users]);
+
+
+  if (isLoadingUsers) {
+    return (
+      <div className="flex flex-1 flex-col">
+        <AppHeader title="Configuración" />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Cargando usuarios...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <>
