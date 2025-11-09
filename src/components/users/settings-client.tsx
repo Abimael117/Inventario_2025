@@ -47,6 +47,8 @@ import { useFirestore, useAuth, useCollection, useMemoFirebase } from '@/firebas
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
+import { updateUserAction } from '@/actions/users';
+
 
 const DUMMY_DOMAIN = 'decd.local';
 
@@ -122,25 +124,20 @@ export default function SettingsClient() {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'role' | 'password'>>) => {
+  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
-        try {
-          if (!firestore) throw new Error("Firestore not available");
-          
-          const userDocRef = doc(firestore, 'users', userId);
-          await setDoc(userDocRef, data, { merge: true });
-
-          toast({
+        const result = await updateUserAction(userId, data);
+        if (result.success) {
+           toast({
               title: "Usuario Actualizado",
               description: `Los datos del usuario han sido actualizados.`,
           });
           setIsEditUserOpen(false);
-          router.refresh();
-        } catch (error: any) {
-           toast({
+        } else {
+            toast({
               variant: "destructive",
               title: "Error al Actualizar",
-              description: error.message || "No se pudo actualizar el usuario.",
+              description: result.error || "No se pudo actualizar el usuario.",
           });
         }
     });
@@ -180,7 +177,6 @@ export default function SettingsClient() {
         } finally {
             setIsDeleteConfirmOpen(false);
             setUserToDelete(null);
-            router.refresh();
         }
       });
     }
@@ -286,7 +282,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.role === 'admin' || isPending}
+                                    disabled={user.username === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >

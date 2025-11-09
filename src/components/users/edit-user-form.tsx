@@ -17,6 +17,13 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { User } from "@/lib/types";
@@ -31,6 +38,7 @@ const permissions = [
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo se permiten letras, números y guiones bajos (_)."),
+  role: z.enum(['admin', 'user']),
   permissions: z.array(z.string()).refine(value => value.some(item => item), {
     message: "Debes seleccionar al menos un permiso.",
   }),
@@ -38,39 +46,55 @@ const formSchema = z.object({
 
 type EditUserFormProps = {
   user: User;
-  onSubmit: (data: Partial<Omit<User, 'id' | 'role' | 'password'>>) => void;
+  onSubmit: (data: Partial<Omit<User, 'id' | 'password'>>) => void;
   isPending: boolean;
 };
 
 export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
-  const isAdmin = user.role === 'admin';
+  const isPrincipalAdmin = user.username === 'admin';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: user.name || "",
       username: user.username || "",
-      permissions: isAdmin ? permissions.map(p => p.id) : user.permissions || [],
+      role: user.role || 'user',
+      permissions: user.role === 'admin' ? permissions.map(p => p.id) : user.permissions || [],
     },
   });
+
+  const role = form.watch('role');
 
   useEffect(() => {
     form.reset({
       name: user.name,
       username: user.username,
-      permissions: isAdmin ? permissions.map(p => p.id) : user.permissions,
+      role: user.role,
+      permissions: user.role === 'admin' ? permissions.map(p => p.id) : user.permissions,
     });
-  }, [user, form, isAdmin]);
+  }, [user, form]);
+  
+  useEffect(() => {
+    if (role === 'admin') {
+      form.setValue('permissions', permissions.map(p => p.id));
+    }
+  }, [role, form]);
 
 
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    const dataToSubmit: Partial<Omit<User, 'id' | 'role' | 'password'>> = {
+    const dataToSubmit: Partial<Omit<User, 'id' | 'password'>> = {
       name: values.name,
       username: values.username,
     };
     
-    if (!isAdmin) {
-      dataToSubmit.permissions = values.permissions;
+    if (!isPrincipalAdmin) {
+      dataToSubmit.role = values.role;
+      if (values.role === 'user') {
+        dataToSubmit.permissions = values.permissions;
+      } else {
+        // Admin always has all permissions
+        dataToSubmit.permissions = permissions.map(p => p.id);
+      }
     }
     
     onSubmit(dataToSubmit);
@@ -106,56 +130,82 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
-          name="permissions"
-          render={() => (
+          name="role"
+          render={({ field }) => (
             <FormItem>
-              <div className="mb-4">
-                <FormLabel className="text-base">Permisos de Acceso</FormLabel>
-                <FormDescription>
-                  Selecciona a qué secciones puede acceder el usuario.
-                </FormDescription>
-              </div>
-              {permissions.map((item) => (
-                <FormField
-                  key={item.id}
-                  control={form.control}
-                  name="permissions"
-                  render={({ field }) => {
-                    return (
-                      <FormItem
-                        key={item.id}
-                        className="flex flex-row items-start space-x-3 space-y-0"
-                      >
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value?.includes(item.id)}
-                            onCheckedChange={(checked) => {
-                              return checked
-                                ? field.onChange([...field.value, item.id])
-                                : field.onChange(
-                                    field.value?.filter(
-                                      (value) => value !== item.id
-                                    )
-                                  );
-                            }}
-                            disabled={isAdmin}
-                          />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                          {item.label}
-                        </FormLabel>
-                      </FormItem>
-                    );
-                  }}
-                />
-              ))}
-               {isAdmin && <FormDescription className="mt-2">El administrador siempre tiene todos los permisos.</FormDescription>}
+              <FormLabel>Rol</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isPrincipalAdmin}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un rol" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="user">Usuario</SelectItem>
+                </SelectContent>
+              </Select>
+              {isPrincipalAdmin && <FormDescription>El rol del administrador principal no se puede cambiar.</FormDescription>}
               <FormMessage />
             </FormItem>
           )}
         />
+
+        {role === 'user' && (
+          <FormField
+            control={form.control}
+            name="permissions"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel className="text-base">Permisos de Acceso</FormLabel>
+                  <FormDescription>
+                    Selecciona a qué secciones puede acceder el usuario.
+                  </FormDescription>
+                </div>
+                {permissions.map((item) => (
+                  <FormField
+                    key={item.id}
+                    control={form.control}
+                    name="permissions"
+                    render={({ field }) => {
+                      return (
+                        <FormItem
+                          key={item.id}
+                          className="flex flex-row items-start space-x-3 space-y-0"
+                        >
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value?.includes(item.id)}
+                              onCheckedChange={(checked) => {
+                                return checked
+                                  ? field.onChange([...field.value, item.id])
+                                  : field.onChange(
+                                      field.value?.filter(
+                                        (value) => value !== item.id
+                                      )
+                                    );
+                              }}
+                              disabled={role === 'admin'}
+                            />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {item.label}
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    }}
+                  />
+                ))}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+         {role === 'admin' && <FormDescription className="mt-2">El administrador siempre tiene todos los permisos.</FormDescription>}
         
         <Button type="submit" className="w-full" disabled={isPending}>
           {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

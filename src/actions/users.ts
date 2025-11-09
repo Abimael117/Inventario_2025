@@ -13,7 +13,7 @@ import type { User } from '@/lib/types';
  * @param data The user data to update.
  * @returns An object indicating success or an error message.
  */
-export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'role' | 'uid'>>) {
+export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid'>>) {
   try {
     initFirebaseAdminApp();
     const auth = getAuth();
@@ -42,6 +42,9 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     }
     if (data.permissions) {
         firestoreUpdatePayload.permissions = data.permissions;
+    }
+    if (data.role) {
+        firestoreUpdatePayload.role = data.role;
     }
     
     if (Object.keys(firestoreUpdatePayload).length > 0) {
