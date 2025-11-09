@@ -2,7 +2,7 @@
 'use server';
 
 import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, UserRecord } from 'firebase-admin/auth';
 import { initFirebaseAdminApp } from '@/firebase/server';
 import type { User } from '@/lib/types';
 
@@ -20,18 +20,20 @@ export async function ensureInitialUsers() {
         const firestore = getFirestore();
 
         const processUser = async (userData: any) => {
-            let userRecord;
+            let userRecord: UserRecord;
             
-            // 1. Check if user exists in Auth. Create if not.
+            // 1. Get user from Auth. Create if not found.
             try {
                 userRecord = await auth.getUserByEmail(userData.email);
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
+                    console.log(`User ${userData.email} not found in Auth, creating...`);
                     userRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
                         displayName: userData.displayName,
                     });
+                     console.log(`User ${userData.email} created in Auth with UID: ${userRecord.uid}`);
                 } else {
                     // Re-throw other auth errors
                     throw error;
@@ -40,15 +42,24 @@ export async function ensureInitialUsers() {
             
             const uid = userRecord.uid;
 
-            // 2. Set Custom Claims in Auth
+            // 2. Set Custom Claims in Auth (idempotent)
             await auth.setCustomUserClaims(uid, userData.customClaims);
 
-            // 3. Check if user profile exists in Firestore. Create if not.
+            // 3. Check if user profile exists in Firestore. Create ONLY if it doesn't exist.
             const userDocRef = firestore.collection('users').doc(uid);
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
-                await userDocRef.set({ ...userData.firestoreProfile, uid });
+                console.log(`User profile for UID ${uid} not found in Firestore, creating...`);
+                // Ensure the UID from Auth is stored in the document.
+                const profileData = {
+                  ...userData.firestoreProfile,
+                  uid: uid,
+                };
+                await userDocRef.set(profileData);
+                console.log(`User profile for UID ${uid} created in Firestore.`);
+            } else {
+                 console.log(`User profile for UID ${uid} already exists in Firestore. No action needed.`);
             }
         };
 
