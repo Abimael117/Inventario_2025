@@ -134,6 +134,8 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     }
     if (data.role) {
         firestoreUpdatePayload.role = data.role;
+        // Also update the custom claim
+        await auth.setCustomUserClaims(uid, { role: data.role });
     }
     
     if (Object.keys(firestoreUpdatePayload).length > 0) {
