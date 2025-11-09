@@ -24,18 +24,19 @@ import { doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
 const DUMMY_DOMAIN = 'decd.local';
 
 async function createInitialUsers(auth: Auth, firestore: Firestore) {
-  // Helper to ensure a user exists in both Auth and Firestore, but only if they don't exist in Firestore.
+  // Helper to ensure a user exists in both Auth and Firestore.
   const ensureUserExists = async (username: string, password: string, userData: any) => {
     const email = `${username}@${DUMMY_DOMAIN}`;
     
     try {
       // First, try to create the Auth user. This is the simplest way to check for Auth existence.
       // It will fail with 'auth/email-already-in-use' if the auth user exists.
-      const { user: authUser } = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
       // If we reach here, the user did NOT exist in Auth.
       // Now, we must create their Firestore document.
-      await setDoc(doc(firestore, "users", authUser.uid), { ...userData, uid: authUser.uid });
+      const userDocRef = doc(firestore, "users", userCredential.user.uid);
+      await setDoc(userDocRef, { ...userData, uid: userCredential.user.uid });
       
     } catch (error: any) {
       if (error.code === 'auth/email-already-in-use') {
