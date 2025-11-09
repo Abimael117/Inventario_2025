@@ -1,14 +1,10 @@
 
-import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
-
-// This function will now rely on Application Default Credentials (ADC)
-// which is the standard and secure way in Google Cloud environments.
-// It no longer needs to parse the FIREBASE_SERVICE_ACCOUNT environment variable.
+import { initializeApp, getApps, App, applicationDefault } from 'firebase-admin/app';
 
 /**
  * Initializes the Firebase Admin App, ensuring it's only done once.
- * This version is simplified to rely on Application Default Credentials (ADC),
- * which is automatically handled in environments like App Hosting or Cloud Functions.
+ * This version uses Application Default Credentials (ADC),
+ * which is automatically handled in managed Google Cloud environments like App Hosting.
  * @returns The initialized Firebase Admin App instance.
  */
 export function initFirebaseAdminApp(): App {
@@ -17,8 +13,9 @@ export function initFirebaseAdminApp(): App {
     return getApps()[0];
   }
   
-  // Initialize the app. In a managed environment like App Hosting,
-  // 'initializeApp()' with no arguments will automatically use the
-  // project's service account via ADC.
-  return initializeApp();
+  // Initialize the app using applicationDefault(), which is the robust
+  // way to use ADC in a managed environment.
+  return initializeApp({
+    credential: applicationDefault(),
+  });
 }
