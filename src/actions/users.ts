@@ -27,13 +27,11 @@ export async function ensureInitialUsers() {
                 userRecord = await auth.getUserByEmail(userData.email);
             } catch (error: any) {
                 if (error.code === 'auth/user-not-found') {
-                    console.log(`Usuario ${userData.email} no encontrado en Auth, creando...`);
                     userRecord = await auth.createUser({
                         email: userData.email,
                         password: userData.password,
                         displayName: userData.displayName,
                     });
-                     console.log(`Usuario ${userData.email} creado en Auth con UID: ${userRecord.uid}`);
                 } else {
                     // Volver a lanzar otros errores de autenticación
                     throw error;
@@ -50,16 +48,12 @@ export async function ensureInitialUsers() {
             const docSnap = await userDocRef.get();
 
             if (!docSnap.exists) {
-                console.log(`Perfil de usuario para UID ${uid} no encontrado en Firestore, creando...`);
                 // Asegurarse de que el UID de Auth se almacena en el documento.
                 const profileData = {
                   ...userData.firestoreProfile,
-                  uid: uid, // Este es el campo clave que faltaba
+                  uid: uid, 
                 };
                 await userDocRef.set(profileData);
-                console.log(`Perfil de usuario para UID ${uid} creado en Firestore.`);
-            } else {
-                 console.log(`Perfil de usuario para UID ${uid} ya existe en Firestore. No se necesita acción.`);
             }
         };
 
@@ -117,17 +111,16 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
     // Construir el payload para la actualización de Firestore
-    if (data.name) {
+    if (data.name !== undefined) {
       firestoreUpdatePayload.name = data.name;
     }
     
-    // Siempre actualizar los permisos. Si es undefined o null, se convierte en un array vacío.
-    firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
+    if (data.permissions !== undefined) {
+      firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
+    }
     
-    // Esta lógica maneja un posible campo 'role', aunque no está actualmente en la UI.
-    if (data.role) {
+    if (data.role !== undefined) {
        firestoreUpdatePayload.role = data.role;
-       // Los administradores obtienen todos los permisos.
        if (data.role === 'admin') {
          firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
        }
@@ -139,12 +132,12 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     }
     
     // Actualizar el nombre de visualización de Auth si se proporciona
-    if (data.name) {
+    if (data.name !== undefined) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
     // Actualizar los custom claims de Auth (rol) si se proporciona
-    if (data.role) {
+    if (data.role !== undefined) {
       await auth.setCustomUserClaims(uid, { role: data.role });
     }
 
