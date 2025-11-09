@@ -174,14 +174,13 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
                           checked={field.value?.includes(item.id)}
                           onCheckedChange={(checked) => {
                             return checked
-                              ? field.onChange([...field.value, item.id])
+                              ? field.onChange([...(field.value || []), item.id])
                               : field.onChange(
-                                  field.value?.filter(
+                                  (field.value || []).filter(
                                     (value) => value !== item.id
                                   )
                                 );
                           }}
-                          disabled={role === 'admin'}
                         />
                       </FormControl>
                       <FormLabel className="font-normal">

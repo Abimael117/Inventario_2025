@@ -93,22 +93,13 @@ export default function SettingsClient() {
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
-        setDoc(userDocRef, userDocData)
-          .then(() => {
-              toast({
-                  title: "Usuario Creado",
-                  description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
-              });
-              setIsAddUserOpen(false);
-          })
-          .catch(async (serverError) => {
-              const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'create',
-                  requestResourceData: userDocData,
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          });
+        await setDoc(userDocRef, userDocData);
+        
+        toast({
+            title: "Usuario Creado",
+            description: `El usuario "${newUser.username}" ha sido creado con éxito.`,
+        });
+        setIsAddUserOpen(false);
 
       } catch (error: any) {
         let description = "No se pudo crear el usuario. Inténtalo de nuevo.";
@@ -119,11 +110,22 @@ export default function SettingsClient() {
             description = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
           }
         }
-        toast({
-          variant: "destructive",
-          title: "Error al Crear Usuario",
-          description,
-        });
+        
+        const isPermissionError = error.code === 'permission-denied';
+        if(isPermissionError){
+            const userDocRef = doc(firestore, "users", "new_user_placeholder");
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            toast({
+              variant: "destructive",
+              title: "Error al Crear Usuario",
+              description,
+            });
+        }
       }
     });
   };
@@ -170,8 +172,6 @@ export default function SettingsClient() {
       startTransition(() => {
         const userDocRef = doc(firestore, "users", userToDelete.uid);
         
-        // NOTE: Deleting the auth user requires admin privileges and is complex to do securely from the client.
-        // For this app, we only delete the Firestore profile. The user won't be able to log in effectively.
         deleteDoc(userDocRef)
             .then(() => {
                 toast({
