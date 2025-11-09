@@ -21,6 +21,7 @@ export async function ensureInitialUsers() {
 
         const processUser = async (userData: any) => {
             let userRecord;
+            
             // 1. Check if user exists in Auth. Create if not.
             try {
                 userRecord = await auth.getUserByEmail(userData.email);
