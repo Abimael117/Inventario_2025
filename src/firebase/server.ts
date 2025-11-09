@@ -5,9 +5,18 @@ import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 // like Firebase Gen 2 functions where GOOGLE_APPLICATION_CREDENTIALS might not be set.
 // It directly uses the environment variables you set.
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-const serviceAccount = serviceAccountString && serviceAccountString.trim() !== ''
-  ? JSON.parse(serviceAccountString)
-  : undefined;
+let serviceAccount: any;
+if (serviceAccountString && serviceAccountString.trim() !== '') {
+    try {
+        serviceAccount = JSON.parse(serviceAccountString);
+    } catch (e) {
+        console.warn("FIREBASE_SERVICE_ACCOUNT environment variable is not valid JSON. Ignoring.");
+        serviceAccount = undefined;
+    }
+} else {
+    serviceAccount = undefined;
+}
+
 
 /**
  * Initializes the Firebase Admin App, ensuring it's only done once.
