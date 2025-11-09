@@ -124,15 +124,24 @@ export default function SettingsClient() {
     setIsEditUserOpen(true);
   };
 
-  const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
+  const handleUpdateUser = (userId: string, data: Omit<User, 'id' | 'password' | 'uid'>) => {
      startTransition(async () => {
-        const result = await updateUserAction(userId, data);
+        // Construct the payload explicitly to ensure all required fields are sent
+        const payload = {
+            name: data.name,
+            username: data.username,
+            role: data.role,
+            permissions: data.permissions,
+        };
+
+        const result = await updateUserAction(userId, payload);
         if (result.success) {
            toast({
               title: "Usuario Actualizado",
               description: `Los datos del usuario han sido actualizados.`,
           });
           setIsEditUserOpen(false);
+          // router.refresh(); This might not be needed if useCollection updates automatically
         } else {
             toast({
               variant: "destructive",
@@ -337,7 +346,7 @@ export default function SettingsClient() {
               {userToEdit && (
                 <EditUserForm 
                     user={userToEdit} 
-                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data)}
+                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data as any)}
                     isPending={isPending} 
                 />
               )}

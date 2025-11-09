@@ -91,7 +91,7 @@ export async function ensureInitialUsers() {
  * Updates a user's details in both Firebase Auth and Firestore.
  * This is a server-side action to ensure security.
  * @param uid The UID of the user to update.
- * @param data The user data to update.
+ * @param data The user data to update, must include role and permissions.
  * @returns An object indicating success or an error message.
  */
 export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid'>>) {
@@ -99,6 +99,7 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     initFirebaseAdminApp();
     const auth = getAuth();
     const firestore = getFirestore();
+    const userDocRef = firestore.collection('users').doc(uid);
 
     const authUpdatePayload: { displayName?: string; password?: string } = {};
     if (data.name) {
@@ -112,26 +113,38 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
       await auth.updateUser(uid, authUpdatePayload);
     }
     
+    // This is the payload to update the Firestore document.
+    // It's built from the provided data.
     const firestoreUpdatePayload: { [key: string]: any } = {};
-    if (data.name) {
-        firestoreUpdatePayload.name = data.name;
-    }
-    if (data.username) {
-        firestoreUpdatePayload.username = data.username;
-    }
-    // Always include permissions in the payload if they are provided.
-    if (data.permissions) {
-        firestoreUpdatePayload.permissions = data.permissions;
-    }
-    if (data.role) {
-        firestoreUpdatePayload.role = data.role;
-        // If role is updated, also update the custom claim
-        await auth.setCustomUserClaims(uid, { role: data.role });
-    }
+
+    if (data.name) firestoreUpdatePayload.name = data.name;
+    if (data.username) firestoreUpdatePayload.username = data.username;
     
+    // Always include role and permissions in the update payload.
+    // The client should always send the full state of these.
+    if (data.role) {
+      firestoreUpdatePayload.role = data.role;
+       if (data.role === 'admin') {
+         // If role is admin, force all permissions.
+         firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
+       } else {
+         // If role is user, save the specific permissions array.
+         firestoreUpdatePayload.permissions = data.permissions || [];
+       }
+    } else {
+      // If role is not changing, still update permissions.
+      if (data.permissions) {
+        firestoreUpdatePayload.permissions = data.permissions;
+      }
+    }
+
     if (Object.keys(firestoreUpdatePayload).length > 0) {
-        const userDocRef = firestore.collection('users').doc(uid);
         await userDocRef.update(firestoreUpdatePayload);
+    }
+
+    // After updating Firestore, ensure custom claims are in sync with the new role.
+    if (data.role) {
+        await auth.setCustomUserClaims(uid, { role: data.role });
     }
 
     return { success: true };
@@ -144,6 +157,8 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
       message = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
     } else if (error.code === 'auth/invalid-password') {
         message = 'La contraseña proporcionada no es válida.';
+    } else {
+      message = error.message || message;
     }
     return { error: message };
   }
