@@ -189,7 +189,6 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
                                       )
                                     );
                               }}
-                              disabled={role === 'admin'}
                             />
                           </FormControl>
                           <FormLabel className="font-normal">
