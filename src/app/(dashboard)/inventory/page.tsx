@@ -11,6 +11,7 @@ import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from '@/components/header';
 import type { Product, StockMovement } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError, errorEmitter } from '@/firebase';
 
 export default function InventoryPage() {
   const firestore = useFirestore();
@@ -67,36 +68,39 @@ export default function InventoryPage() {
   const confirmDelete = () => {
     if (productToDelete && firestore) {
       startTransition(async () => {
-        try {
-            const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
-            const activeLoansSnapshot = await getDocs(loansQuery);
-            
-            if (!activeLoansSnapshot.empty) {
-                toast({
-                    variant: "destructive",
-                    title: "Error al Eliminar",
-                    description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
-                });
-                return;
-            }
-    
-            const productRef = doc(firestore, 'products', productToDelete.id);
-            await deleteDoc(productRef);
+        const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
+        const activeLoansSnapshot = await getDocs(loansQuery);
+        
+        if (!activeLoansSnapshot.empty) {
+            toast({
+                variant: "destructive",
+                title: "Error al Eliminar",
+                description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
+            });
+            setIsDeleteDialogOpen(false);
+            setProductToDelete(null);
+            return;
+        }
 
+        const productRef = doc(firestore, 'products', productToDelete.id);
+        deleteDoc(productRef)
+          .then(() => {
             toast({
                 title: "Producto Eliminado",
                 description: `El producto "${productToDelete.name}" ha sido eliminado.`,
             });
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Eliminar",
-            description: error.message || "No se pudo eliminar el producto.",
-          });
-        } finally {
+          })
+          .catch(async (serverError) => {
+              const permissionError = new FirestorePermissionError({
+                  path: productRef.path,
+                  operation: 'delete',
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          })
+          .finally(() => {
             setIsDeleteDialogOpen(false);
             setProductToDelete(null);
-        }
+          });
       });
     }
   };
@@ -104,102 +108,116 @@ export default function InventoryPage() {
   const handleAddProduct = (newProductData: Product) => {
      if (!firestore) return;
     startTransition(async () => {
-      try {
-        const productRef = doc(firestore, 'products', newProductData.id);
-        const docSnap = await getDoc(productRef);
-        if (docSnap.exists()) {
-            toast({
-                variant: "destructive",
-                title: "Error al Guardar",
-                description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
-            });
-            return;
-        }
-
-        await setDoc(productRef, newProductData);
-        toast({
-          title: "Producto Añadido",
-          description: `El producto "${newProductData.name}" ha sido guardado.`,
-        });
-        setIsAddDialogOpen(false);
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error al Guardar",
-          description: error.message || "No se pudo guardar el producto.",
-        });
+      const productRef = doc(firestore, 'products', newProductData.id);
+      const docSnap = await getDoc(productRef);
+      if (docSnap.exists()) {
+          toast({
+              variant: "destructive",
+              title: "Error al Guardar",
+              description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
+          });
+          return;
       }
+
+      setDoc(productRef, newProductData)
+        .then(() => {
+          toast({
+            title: "Producto Añadido",
+            description: `El producto "${newProductData.name}" ha sido guardado.`,
+          });
+          setIsAddDialogOpen(false);
+        })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: productRef.path,
+                operation: 'create',
+                requestResourceData: newProductData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
     });
   };
 
   const handleEditProduct = (editedProductData: Partial<Omit<Product, 'id'>>) => {
     if (productToEdit && firestore) {
-      startTransition(async () => {
-        try {
-            const productRef = doc(firestore, 'products', productToEdit.id);
-            await setDoc(productRef, editedProductData, { merge: true });
-            toast({
-                title: "Producto Actualizado",
-                description: `El producto ha sido actualizado.`,
-            });
-            setIsEditDialogOpen(false);
-            setProductToEdit(null);
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Actualizar",
-            description: error.message || "No se pudo actualizar el producto.",
+      startTransition(() => {
+        const productRef = doc(firestore, 'products', productToEdit.id);
+        setDoc(productRef, editedProductData, { merge: true })
+          .then(() => {
+              toast({
+                  title: "Producto Actualizado",
+                  description: `El producto ha sido actualizado.`,
+              });
+              setIsEditDialogOpen(false);
+              setProductToEdit(null);
+          })
+          .catch(async (serverError) => {
+              const permissionError = new FirestorePermissionError({
+                  path: productRef.path,
+                  operation: 'update',
+                  requestResourceData: editedProductData,
+              });
+              errorEmitter.emit('permission-error', permissionError);
           });
-        }
       });
     }
   };
 
   const handleAdjustStock = (adjustmentData: { quantity: number, reason: string }) => {
     if (productToAdjust && firestore) {
-      startTransition(async () => {
-        try {
-            const productRef = doc(firestore, 'products', productToAdjust.id);
-            await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    throw new Error("No se encontró el producto.");
-                }
+      startTransition(() => {
+        const productRef = doc(firestore, 'products', productToAdjust.id);
+        
+        runTransaction(firestore, async (transaction) => {
+            const productDoc = await transaction.get(productRef);
+            if (!productDoc.exists()) {
+                throw new Error("No se encontró el producto.");
+            }
 
-                const product = productDoc.data() as Product;
-                if (adjustmentData.quantity > product.quantity) {
-                    throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
-                }
+            const product = productDoc.data() as Product;
+            if (adjustmentData.quantity > product.quantity) {
+                throw new Error(`Stock insuficiente. Solo hay ${product.quantity} unidades.`);
+            }
 
-                const newQuantity = product.quantity - adjustmentData.quantity;
-                transaction.update(productRef, { quantity: newQuantity });
+            const newQuantity = product.quantity - adjustmentData.quantity;
+            transaction.update(productRef, { quantity: newQuantity });
 
-                const movementRef = doc(collection(firestore, `movements`));
-                const newMovement: StockMovement = {
-                    id: movementRef.id,
-                    productId: product.id,
-                    productName: product.name,
-                    quantity: adjustmentData.quantity,
-                    type: 'descuento',
-                    reason: adjustmentData.reason,
-                    date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
-                };
-                transaction.set(movementRef, newMovement);
-            });
-
+            const movementRef = doc(collection(firestore, `movements`));
+            const newMovement: StockMovement = {
+                id: movementRef.id,
+                productId: product.id,
+                productName: product.name,
+                quantity: adjustmentData.quantity,
+                type: 'descuento',
+                reason: adjustmentData.reason,
+                date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
+            };
+            transaction.set(movementRef, newMovement);
+        })
+        .then(() => {
             toast({
                 title: "Stock Ajustado",
                 description: `Se descontaron ${adjustmentData.quantity} unidades de "${productToAdjust.name}".`,
             });
             setIsAdjustDialogOpen(false);
             setProductToAdjust(null);
-        } catch (error: any) {
-          toast({
-            variant: "destructive",
-            title: "Error al Ajustar",
-            description: error.message || "No se pudo ajustar el stock.",
-          });
-        }
+        })
+        .catch(async (error: any) => {
+            if (error.code) { // Check if it's a Firestore error
+                const permissionError = new FirestorePermissionError({
+                    path: productRef.path,
+                    operation: 'write', // transaction is a write operation
+                    requestResourceData: { quantity: `-${adjustmentData.quantity}`, reason: adjustmentData.reason }
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                toast({
+                  variant: "destructive",
+                  title: "Error al Ajustar",
+                  description: error.message || "No se pudo ajustar el stock.",
+                });
+            }
+        });
       });
     }
   };

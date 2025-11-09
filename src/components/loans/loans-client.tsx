@@ -1,15 +1,12 @@
 
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useRouter } from 'next/navigation';
-import { doc, setDoc, deleteDoc, collection, runTransaction, getDoc } from 'firebase/firestore';
 
 import type { Loan, Product } from "@/lib/types";
-import { useFirestore } from '@/firebase';
 import AppHeader from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,137 +43,39 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
 
 type LoansClientProps = {
   loans: Loan[];
   products: Product[];
+  isPending: boolean;
+  isAddDialogOpen: boolean;
+  setIsAddDialogOpen: (isOpen: boolean) => void;
+  isDeleteDialogOpen: boolean;
+  loanToDelete: Loan | null;
+  onAddLoan: (loanData: Omit<Loan, 'id' | 'status'>) => void;
+  onMarkAsReturned: (loan: Loan) => void;
+  onDeleteClick: (loan: Loan) => void;
+  onConfirmDelete: () => void;
+  onCancelDelete: () => void;
 };
 
-export default function LoansClient({ loans, products }: LoansClientProps) {
-  const router = useRouter();
-  const firestore = useFirestore();
-  const [isPending, startTransition] = useTransition();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
-  const { toast } = useToast();
-
-  const handleAddLoan = async (loanData: Omit<Loan, 'id' | 'status'>) => {
-    if (!firestore) return;
-    startTransition(async () => {
-        try {
-            const productRef = doc(firestore, 'products', loanData.productId);
-            const loanRef = doc(collection(firestore, 'loans'));
-
-            await runTransaction(firestore, async (transaction) => {
-                const productDoc = await transaction.get(productRef);
-                if (!productDoc.exists()) {
-                    throw new Error("El producto que intentas prestar no existe.");
-                }
-
-                const product = productDoc.data() as Product;
-                if (product.quantity < loanData.quantity) {
-                    throw new Error(`Stock insuficiente. Solo quedan ${product.quantity} unidades de "${product.name}".`);
-                }
-
-                const newQuantity = product.quantity - loanData.quantity;
-                transaction.update(productRef, { quantity: newQuantity });
-                transaction.set(loanRef, { ...loanData, status: 'Prestado', id: loanRef.id });
-            });
-
-            toast({
-                title: "Préstamo Registrado",
-                description: `El préstamo para "${loanData.productName}" ha sido guardado.`,
-            });
-            setIsAddDialogOpen(false);
-            router.refresh();
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error al registrar",
-                description: error.message || "No se pudo registrar el préstamo.",
-            });
-        }
-    });
-  };
-  
-  const handleMarkAsReturned = async (loan: Loan) => {
-    if (!firestore) return;
-    startTransition(async () => {
-        try {
-            const loanRef = doc(firestore, 'loans', loan.id);
-            await runTransaction(firestore, async (transaction) => {
-                const loanDoc = await transaction.get(loanRef);
-                if (!loanDoc.exists() || loanDoc.data().status === 'Devuelto') {
-                    throw new Error("Este préstamo no se puede devolver o ya ha sido devuelto.");
-                }
-
-                const loanData = loanDoc.data() as Loan;
-                const productRef = doc(firestore, 'products', loanData.productId);
-                const productDoc = await transaction.get(productRef);
-
-                if (productDoc.exists()) {
-                    const newQuantity = (productDoc.data().quantity || 0) + loanData.quantity;
-                    transaction.update(productRef, { quantity: newQuantity });
-                }
-
-                const returnDate = format(new Date(), "yyyy-MM-dd");
-                transaction.update(loanRef, { status: 'Devuelto', returnDate: returnDate });
-            });
-             toast({
-                title: "Préstamo Actualizado",
-                description: "El producto ha sido marcado como devuelto y el stock ha sido repuesto.",
-            });
-            router.refresh();
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error al actualizar",
-                description: error.message || "No se pudo actualizar el estado del préstamo.",
-            });
-        }
-    });
-  };
-
-  const handleDeleteClick = (loan: Loan) => {
-    setLoanToDelete(loan);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = () => {
-    if (loanToDelete && firestore) {
-      startTransition(async () => {
-        try {
-            const loanRef = doc(firestore, 'loans', loanToDelete.id);
-            const loanSnap = await getDoc(loanRef);
-            if (loanSnap.exists() && loanSnap.data().status === 'Prestado') {
-                 toast({ variant: "destructive", title: "Acción no permitida", description: 'No se puede eliminar un préstamo que está activo. Primero márcalo como "Devuelto".' });
-                 return;
-            }
-
-            await deleteDoc(loanRef);
-            toast({
-                title: "Préstamo Eliminado",
-                description: `El registro del préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
-            });
-            router.refresh();
-        } catch(error: any) {
-             toast({
-                variant: "destructive",
-                title: "Error al eliminar",
-                description: error.message || "No se pudo eliminar el registro del préstamo.",
-            });
-        } finally {
-            setIsDeleteDialogOpen(false);
-            setLoanToDelete(null);
-        }
-      });
-    }
-  };
-
+export default function LoansClient({ 
+    loans, 
+    products, 
+    isPending, 
+    isAddDialogOpen, 
+    setIsAddDialogOpen,
+    isDeleteDialogOpen,
+    loanToDelete,
+    onAddLoan,
+    onMarkAsReturned,
+    onDeleteClick,
+    onConfirmDelete,
+    onCancelDelete
+}: LoansClientProps) {
+ 
   const sortedLoans = (loans || []).sort((a, b) => {
     const dateA = a.loanDate || '';
     const dateB = b.loanDate || '';
@@ -262,14 +161,14 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
                                       <DropdownMenuContent align="end">
                                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                                           <DropdownMenuItem 
-                                              onSelect={() => handleMarkAsReturned(loan)}
+                                              onSelect={() => onMarkAsReturned(loan)}
                                               disabled={loan.status === 'Devuelto' || isPending}
                                           >
                                               <CheckCircle className="mr-2 h-4 w-4" /> Marcar como Devuelto
                                           </DropdownMenuItem>
                                           <DropdownMenuSeparator />
                                           <DropdownMenuItem
-                                            onSelect={() => handleDeleteClick(loan)}
+                                            onSelect={() => onDeleteClick(loan)}
                                             disabled={loan.status !== 'Devuelto' || isPending}
                                             className="text-destructive focus:bg-destructive/10 focus:text-destructive"
                                           >
@@ -304,11 +203,11 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
               Rellena los detalles del nuevo préstamo. El stock del producto se actualizará automáticamente.
               </DialogDescription>
           </DialogHeader>
-          <AddLoanForm onSubmit={handleAddLoan} products={products} isPending={isPending} />
+          <AddLoanForm onSubmit={onAddLoan} products={products} isPending={isPending} />
           </DialogContent>
       </Dialog>
       
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? setIsDeleteDialogOpen : undefined}>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={!isPending ? onCancelDelete : undefined}>
           <AlertDialogContent>
           <AlertDialogHeader>
               <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
@@ -317,8 +216,8 @@ export default function LoansClient({ loans, products }: LoansClientProps) {
               </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
+              <AlertDialogCancel onClick={onCancelDelete}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
                 {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Eliminar"}
               </AlertDialogAction>
           </AlertDialogFooter>
