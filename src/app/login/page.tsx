@@ -42,19 +42,19 @@ async function createInitialUsers(auth: any, firestore: any) {
     }
 
     try {
-        // Attempt to create test user 'pedro'
-        const { user: pedroAuthUser } = await createUserWithEmailAndPassword(auth, `pedro@${DUMMY_DOMAIN}`, '123456');
-        const pedroUserDoc = {
-            uid: pedroAuthUser.uid,
-            name: 'Pedro Prueba',
-            username: 'pedro',
+        // Attempt to create test user 'educacion'
+        const { user: educacionAuthUser } = await createUserWithEmailAndPassword(auth, `educacion@${DUMMY_DOMAIN}`, '123456');
+        const educacionUserDoc = {
+            uid: educacionAuthUser.uid,
+            name: 'Centro educativo',
+            username: 'educacion',
             role: 'user' as const,
             permissions: ['dashboard', 'inventory', 'loans'],
         };
-        await setDoc(doc(firestore, "users", pedroAuthUser.uid), pedroUserDoc);
+        await setDoc(doc(firestore, "users", educacionAuthUser.uid), educacionUserDoc);
     } catch (error: any) {
         if (error.code !== 'auth/email-already-in-use') {
-             console.error("Error creating pedro user:", error);
+             console.error("Error creating educacion user:", error);
         }
     }
 }
@@ -171,7 +171,7 @@ export default function LoginPage() {
           </CardContent>
         </Card>
         <p className="px-8 text-center text-sm text-muted-foreground">
-          Usuarios de prueba: <strong>admin</strong> (pass: password123) y <strong>pedro</strong> (pass: 123456).
+          Usuarios de prueba: <strong>admin</strong> (pass: password123) y <strong>educacion</strong> (pass: 123456).
         </p>
       </div>
     </main>
