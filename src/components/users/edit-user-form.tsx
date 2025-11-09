@@ -31,7 +31,6 @@ const permissions = [
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
   username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres.").regex(/^[a-zA-Z0-9_]+$/, "Solo se permiten letras, números y guiones bajos (_)."),
-  role: z.enum(['admin', 'user']),
   permissions: z.array(z.string()),
 });
 
@@ -49,35 +48,24 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     defaultValues: {
       name: user.name || "",
       username: user.username || "",
-      role: user.role || 'user',
       permissions: user.permissions || [],
     },
   });
-
-  const role = form.watch('role');
 
   useEffect(() => {
     form.reset({
       name: user.name,
       username: user.username,
-      role: user.role,
       permissions: user.permissions,
     });
   }, [user, form]);
   
-  useEffect(() => {
-    if (role === 'admin') {
-      form.setValue('permissions', ['dashboard', 'inventory', 'loans', 'reports', 'settings']);
-    }
-  }, [role, form]);
-
-
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
+    // Correctly build the submission data with ALL relevant form values.
     const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
-      username: values.username,
-      role: values.role,
-      permissions: values.permissions || [],
+      // Pass permissions, which could be an empty array.
+      permissions: values.permissions || [], 
     };
     
     onSubmit(dataToSubmit);

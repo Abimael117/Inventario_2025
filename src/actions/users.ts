@@ -91,7 +91,7 @@ export async function ensureInitialUsers() {
  * Updates a user's details in both Firebase Auth and Firestore.
  * This is a server-side action to ensure security.
  * @param uid The UID of the user to update.
- * @param data The user data to update, must include role and permissions.
+ * @param data The user data to update.
  * @returns An object indicating success or an error message.
  */
 export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id' | 'uid' | 'password'>>) {
@@ -101,39 +101,38 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     const firestore = getFirestore();
     const userDocRef = firestore.collection('users').doc(uid);
 
-    // 1. Auth Update (Only display name)
+    // 1. Auth Update (Only display name, as other properties are sensitive)
     if (data.name) {
       await auth.updateUser(uid, { displayName: data.name });
     }
 
-    // 2. Firestore Document Update Payload
+    // 2. Firestore Document Update Payload - Make it robust.
     const firestoreUpdatePayload: { [key: string]: any } = {};
 
-    if (data.name) firestoreUpdatePayload.name = data.name;
-    
-    // Only update role and permissions if they are provided
-    if (data.role) {
-      firestoreUpdatePayload.role = data.role;
-      // If role is admin, force all permissions
-      if (data.role === 'admin') {
-        firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
-      } else {
-        // For 'user', save the specific permissions they have.
-        // Ensure permissions is an array, even if it's empty.
-        firestoreUpdatePayload.permissions = data.permissions || [];
-      }
-    } else if (data.permissions) {
-      // If role isn't changing, but permissions are, update them.
-      // This handles the case where you only edit permissions for a 'user'
-      firestoreUpdatePayload.permissions = data.permissions;
+    if (data.name) {
+      firestoreUpdatePayload.name = data.name;
     }
     
+    // Crucially, handle permissions. It should be an array.
+    if (data.permissions !== undefined) {
+      firestoreUpdatePayload.permissions = Array.isArray(data.permissions) ? data.permissions : [];
+    }
+    
+    // Also handle role, if it's being passed.
+    if (data.role) {
+       firestoreUpdatePayload.role = data.role;
+       // If role is admin, force all permissions
+       if (data.role === 'admin') {
+         firestoreUpdatePayload.permissions = ['dashboard', 'inventory', 'loans', 'reports', 'settings'];
+       }
+    }
+
+    // Only perform the update if there's something to update.
     if (Object.keys(firestoreUpdatePayload).length > 0) {
       await userDocRef.update(firestoreUpdatePayload);
     }
 
-    // 3. Custom Claims Update
-    // After updating Firestore, ensure custom claims are in sync with the new role.
+    // 3. Custom Claims Update - Sync role if it was provided.
     if (data.role) {
       await auth.setCustomUserClaims(uid, { role: data.role });
     }
