@@ -1,38 +1,24 @@
 
 import { initializeApp, getApps, App, cert } from 'firebase-admin/app';
 
-// This is a simplified, less secure way to load credentials for environments
-// like Firebase Gen 2 functions where GOOGLE_APPLICATION_CREDENTIALS might not be set.
-// It directly uses the environment variables you set.
-const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-let serviceAccount: any;
-if (serviceAccountString && serviceAccountString.trim() !== '') {
-    try {
-        serviceAccount = JSON.parse(serviceAccountString);
-    } catch (e) {
-        console.warn("FIREBASE_SERVICE_ACCOUNT environment variable is not valid JSON. Ignoring.");
-        serviceAccount = undefined;
-    }
-} else {
-    serviceAccount = undefined;
-}
-
+// This function will now rely on Application Default Credentials (ADC)
+// which is the standard and secure way in Google Cloud environments.
+// It no longer needs to parse the FIREBASE_SERVICE_ACCOUNT environment variable.
 
 /**
  * Initializes the Firebase Admin App, ensuring it's only done once.
+ * This version is simplified to rely on Application Default Credentials (ADC),
+ * which is automatically handled in environments like App Hosting or Cloud Functions.
  * @returns The initialized Firebase Admin App instance.
  */
 export function initFirebaseAdminApp(): App {
-  // If the app named '[DEFAULT]' already exists, return it.
+  // If the app named '[DEFAULT]' already exists, return it to prevent re-initialization.
   if (getApps().length) {
     return getApps()[0];
   }
   
-  // If service account JSON is available, use it. Otherwise, rely on ADC.
-  const credential = serviceAccount ? cert(serviceAccount) : undefined;
-  
-  // Initialize the app. If credential is undefined, it will use Application Default Credentials.
-  return initializeApp({
-    credential
-  });
+  // Initialize the app. In a managed environment like App Hosting,
+  // 'initializeApp()' with no arguments will automatically use the
+  // project's service account via ADC.
+  return initializeApp();
 }

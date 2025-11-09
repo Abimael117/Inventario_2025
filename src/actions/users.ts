@@ -56,12 +56,15 @@ export async function ensureInitialUsers() {
                         displayName: userData.displayName,
                     });
                     uid = newUserRecord.uid;
-                    if (userData.customClaims) {
-                        await auth.setCustomUserClaims(uid, userData.customClaims);
-                    }
                 } else {
+                    // Re-throw other errors
                     throw error;
                 }
+            }
+            
+            // Now that we have a UID, set claims regardless of user existence before
+            if (userData.customClaims) {
+                await auth.setCustomUserClaims(uid, userData.customClaims);
             }
 
             const userDocRef = firestore.collection('users').doc(uid);
@@ -143,3 +146,4 @@ export async function updateUserAction(uid: string, data: Partial<Omit<User, 'id
     return { error: message };
   }
 }
+
