@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Boxes, ShieldAlert, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,76 +16,43 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, type Auth } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc, getDoc, type Firestore } from 'firebase/firestore';
+import { ensureInitialUsers } from '@/actions/users';
 
 
 const DUMMY_DOMAIN = 'decd.local';
 
-async function createInitialUsers(auth: Auth, firestore: Firestore) {
-  // Helper to ensure a user exists in both Auth and Firestore without duplicates.
-  const ensureUserExists = async (username: string, password: string, userData: any) => {
-    const email = `${username}@${DUMMY_DOMAIN}`;
-    
-    try {
-      // Step 1: Create the Auth user. It will fail if it already exists, which is fine.
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // If we reach here, the auth user was created. Now create their Firestore document.
-      const userDocRef = doc(firestore, "users", userCredential.user.uid);
-      // Check if doc exists to prevent overwriting, though it shouldn't for a new auth user.
-      const docSnap = await getDoc(userDocRef);
-      if (!docSnap.exists()) {
-        await setDoc(userDocRef, { ...userData, uid: userCredential.user.uid });
-      }
-
-    } catch (error: any) {
-      if (error.code === 'auth/email-already-in-use') {
-        // This is expected after the first run. The auth user exists.
-        // We DO NOT attempt to create the firestore doc here, as we can't get the UID easily.
-        // We rely on the fact that it was created correctly on the very first run.
-        // This logic is simplified to prevent race conditions or duplicate doc creations.
-      } else {
-        // Log other unexpected errors during initial setup.
-        console.error(`Error ensuring initial user ${username}:`, error);
-      }
-    }
-  };
-
-  const adminUserData = {
-    name: 'Administrador',
-    username: 'admin',
-    role: 'admin' as const,
-    permissions: ['dashboard', 'inventory', 'loans', 'reports', 'settings'],
-  };
-
-  const educacionUserData = {
-    name: 'Centro educativo',
-    username: 'educacion',
-    role: 'user' as const,
-    permissions: ['dashboard', 'inventory', 'loans'],
-  };
-
-  // Create both users. The function is designed to be safe to call multiple times.
-  await ensureUserExists('admin', 'password123', adminUserData);
-  await ensureUserExists('educacion', '123456', educacionUserData);
-}
-
-
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
-  const firestore = useFirestore();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSetupDone, setIsSetupDone] = useState(false);
+
+  // Run the initial user setup on the server once when the component mounts.
+  useEffect(() => {
+    async function runSetup() {
+      await ensureInitialUsers();
+      setIsSetupDone(true);
+    }
+    runSetup();
+  }, []);
+
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (!isSetupDone) {
+        // Prevent login attempts until server-side setup is complete.
+        setError('El sistema se está iniciando. Por favor, espera un momento...');
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
 
-    if (!auth || !firestore) {
+    if (!auth) {
         setError('Los servicios de Firebase no están disponibles. Inténtalo de nuevo más tarde.');
         setIsLoading(false);
         return;
@@ -97,11 +64,6 @@ export default function LoginPage() {
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     try {
-      // First, silently ensure the initial users exist.
-      // This is now safe to run on every login attempt.
-      await createInitialUsers(auth, firestore);
-      
-      // After ensuring users exist, attempt to sign in.
       await signInWithEmailAndPassword(auth, email, password);
       router.replace('/dashboard');
 
@@ -176,9 +138,9 @@ export default function LoginPage() {
                   defaultValue="password123"
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Accediendo...' : 'Entrar'}
+              <Button type="submit" className="w-full" disabled={isLoading || !isSetupDone}>
+                {(isLoading || !isSetupDone) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Accediendo...' : !isSetupDone ? 'Configurando...' : 'Entrar'}
               </Button>
             </form>
           </CardContent>
