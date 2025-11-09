@@ -33,7 +33,6 @@ const permissions = [
   { id: 'inventory', label: 'Gestionar Inventario' },
   { id: 'loans', label: 'Gestionar Préstamos' },
   { id: 'reports', label: 'Ver Reportes' },
-  // { id: 'settings', label: 'Ver Configuración' }, // Removed as it's admin-only
 ] as const;
 
 const formSchema = z.object({

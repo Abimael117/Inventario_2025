@@ -279,7 +279,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openEditDialog(user)}
-                                    disabled={isPending || user.role === 'admin'}
+                                    disabled={isPending || user.username === 'admin'}
                                     aria-label="Editar usuario"
                                   >
                                     <Edit className="h-4 w-4" />
@@ -288,7 +288,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.role === 'admin' || isPending}
+                                    disabled={user.username === 'admin' || isPending}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >
