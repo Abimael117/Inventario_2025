@@ -101,6 +101,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return name.substring(0, 2).toUpperCase();
   }
 
+  const getUserAvatar = (profile: User) => {
+    if (profile.username === 'admin') {
+      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
+    }
+    // Simple logic to alternate avatars for other users
+    if (profile.username.length % 2 === 0) {
+      return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=U&font=roboto';
+    }
+    return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=U&font=roboto';
+  };
+
   if (isUserLoading || isProfileLoading || !user || !profile) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -113,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return profile.role === 'admin' || profile.permissions?.includes(permission);
   }
 
-  const userRoleDisplay = profile.role === 'admin' ? profile.username : 'Usuario';
+  const userRoleDisplay = profile.role === 'admin' ? 'Administrador' : 'Usuario';
 
   return (
     <SidebarProvider>
@@ -205,8 +216,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <div className="flex items-center gap-3 px-2 py-1 rounded-md hover:bg-sidebar-accent cursor-pointer">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={`https://picsum.photos/seed/${profile.username}/40/40`} alt={profile.name} data-ai-hint="person avatar" />
+                      <Avatar className="h-8 w-8 bg-sidebar-accent">
+                        <AvatarImage src={getUserAvatar(profile)} alt={profile.name} data-ai-hint="person avatar" />
                         <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col truncate">
