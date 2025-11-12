@@ -64,7 +64,7 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
   useEffect(() => {
     // Uncomment the line below to run the admin setup.
     // After running once successfully, this file will be updated to comment it out again.
-    // setupAdmin();
+    setupAdmin();
   }, []);
 
   return (
