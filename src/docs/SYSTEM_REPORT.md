@@ -76,15 +76,6 @@ El sistema utiliza un "flow" de Genkit para la generación de reportes, definido
 
 ---
 
-## 6.0 Capacidades de Exportación
-
-La aplicación integra la librería **xlsx** para permitir la exportación de datos a formato Excel.
-
-- **Inventario General:** Desde la página de inventario, los usuarios pueden descargar un archivo `inventario.xlsx` con la lista completa de productos y sus detalles.
-- **Reporte Automático:** Al generar el reporte de IA, el sistema dispara automáticamente la descarga de un archivo `reporte-inventario.xlsx`. Esto combina el análisis cualitativo de la IA con la capacidad de trabajar los datos brutos en una hoja de cálculo, ofreciendo una solución completa de análisis.
-
----
-
-## 7.0 Conclusión
+## 6.0 Conclusión
 
 El sistema de gestión para la **Dirección de Educación, Cultura y Deporte** es una aplicación robusta, escalable y segura que demuestra la potencia de combinar un framework moderno como Next.js con los servicios gestionados de Firebase y la inteligencia de los modelos de lenguaje de Google. Su arquitectura en tiempo real y su enfoque en la experiencia de usuario la convierten en una herramienta eficaz para la gestión de inventarios moderna.
