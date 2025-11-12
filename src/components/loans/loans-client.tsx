@@ -7,7 +7,6 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 import type { Loan, Product } from "@/lib/types";
-import AppHeader from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -45,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddLoanForm } from "./add-loan-form";
+import AppHeader from "../header";
 
 type LoansClientProps = {
   loans: Loan[];

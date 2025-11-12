@@ -6,11 +6,9 @@ import { collection, doc, setDoc, deleteDoc, runTransaction, getDoc } from 'fire
 import { Loader2 } from 'lucide-react';
 import { useTransition, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PlusCircle } from 'lucide-react';
 
 import LoansClient from "@/components/loans/loans-client";
 import AppHeader from '@/components/header';
-import { Button } from '@/components/ui/button';
 import type { Loan, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
@@ -167,38 +165,32 @@ export default function LoansPage() {
   
   if (isLoadingLoans || isLoadingProducts) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center">
+      <div className="flex flex-1 flex-col">
         <AppHeader title="Préstamos" />
         <main className="flex flex-1 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground mt-2">Cargando datos...</p>
+            <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Cargando datos...</p>
+            </div>
         </main>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col">
-        <AppHeader title="Préstamos">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)} disabled={isPending}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Registrar Préstamo
-            </Button>
-        </AppHeader>
-        <LoansClient 
-            loans={loans || []} 
-            products={products || []}
-            isPending={isPending}
-            isAddDialogOpen={isAddDialogOpen}
-            setIsAddDialogOpen={setIsAddDialogOpen}
-            isDeleteDialogOpen={isDeleteDialogOpen}
-            loanToDelete={loanToDelete}
-            onAddLoan={handleAddLoan}
-            onMarkAsReturned={handleMarkAsReturned}
-            onDeleteClick={handleDeleteClick}
-            onConfirmDelete={confirmDelete}
-            onCancelDelete={() => setIsDeleteDialogOpen(false)}
-        />
-    </div>
+    <LoansClient 
+        loans={loans || []} 
+        products={products || []}
+        isPending={isPending}
+        isAddDialogOpen={isAddDialogOpen}
+        setIsAddDialogOpen={setIsAddDialogOpen}
+        isDeleteDialogOpen={isDeleteDialogOpen}
+        loanToDelete={loanToDelete}
+        onAddLoan={handleAddLoan}
+        onMarkAsReturned={handleMarkAsReturned}
+        onDeleteClick={handleDeleteClick}
+        onConfirmDelete={confirmDelete}
+        onCancelDelete={() => setIsDeleteDialogOpen(false)}
+    />
   );
 }
