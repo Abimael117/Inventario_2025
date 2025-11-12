@@ -34,4 +34,11 @@ export default function ReportsPage() {
             </div>
         ) : (
             <ReportsClient
-            products={products || []}
+              products={products || []}
+              loans={loans || []}
+            />
+        )}
+      </main>
+    </div>
+  );
+}
