@@ -19,19 +19,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
-  SidebarInset,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Icons } from "@/components/icons";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/types";
 
@@ -78,43 +67,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setHasAccess(false);
       }
     } else if (!isUserLoading && !isProfileLoading) {
-        // If there's a user but no profile, or vice versa, something is wrong.
-        // For now, deny access. A more robust solution might log this error.
         setHasAccess(false);
     }
   }, [user, profile, pathname, isUserLoading, isProfileLoading]);
-
-
-  const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
-    // The useEffect hook will handle the redirection
-  };
-
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    const names = name.split(' ');
-    if (names.length > 1) {
-      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  }
-
-  const getUserAvatar = (profile: User) => {
-    if (profile.username === 'admin') {
-      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
-    }
-
-    switch(profile.gender) {
-        case 'male':
-            return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=H&font=roboto';
-        case 'female':
-            return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=M&font=roboto';
-        default:
-             return 'https://placehold.co/40x40/757575/FFFFFF/png?text=U&font=roboto';
-    }
-  };
 
   if (isUserLoading || isProfileLoading || !user || !profile) {
     return (
@@ -212,36 +167,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <div className="flex items-center gap-3 px-2 py-1 rounded-md hover:bg-sidebar-accent cursor-pointer">
-                      <Avatar className="h-8 w-8 bg-sidebar-accent">
-                        <AvatarImage src={getUserAvatar(profile)} alt={profile.name} data-ai-hint="person avatar" />
-                        <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col truncate">
-                        <span className="text-sm font-semibold truncate">{profile.name}</span>
-                        <span className="text-xs text-muted-foreground truncate">{profile.username}</span>
-                      </div>
-                    </div>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 mb-2" side="top" align="start">
-                    <DropdownMenuLabel>{profile.username}</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
-                       <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
         </Sidebar>
       </div>
-      <SidebarInset>
+      <main className="relative flex min-h-svh flex-1 flex-col bg-background peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow">
         {!hasAccess ? (
             <div className="flex h-full flex-col items-center justify-center bg-background p-4 print-hide">
                 <ShieldAlert className="h-16 w-16 text-destructive" />
@@ -250,7 +178,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Button onClick={() => router.back()} className="mt-6">Volver</Button>
             </div>
         ) : children}
-      </SidebarInset>
+      </main>
     </SidebarProvider>
   );
 }

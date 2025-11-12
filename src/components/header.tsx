@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, AlertTriangle, PackageX } from "lucide-react";
+import { Bell, Search, AlertTriangle, PackageX, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -14,10 +14,20 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
-import type { Product } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useAuth, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import type { Product, User } from '@/lib/types';
 import { Badge } from './ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 
 type SearchProps = {
@@ -37,6 +47,16 @@ export default function AppHeader({
 }) {
   const { isMobile } = useSidebar();
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { user } = useUser();
+  
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: profile } = useDoc<User>(userDocRef);
+
   const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsRef);
 
@@ -51,6 +71,37 @@ export default function AppHeader({
   );
   
   const notificationCount = lowStockItems.length + outOfStockItems.length;
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+    }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    if (names.length > 1) {
+      return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  }
+
+  const getUserAvatar = (profile: User) => {
+    if (profile.username === 'admin') {
+      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
+    }
+
+    switch(profile.gender) {
+        case 'male':
+            return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=H&font=roboto';
+        case 'female':
+            return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=M&font=roboto';
+        default:
+             return 'https://placehold.co/40x40/757575/FFFFFF/png?text=U&font=roboto';
+    }
+  };
+
 
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6 print-hide">
@@ -130,6 +181,33 @@ export default function AppHeader({
                 </div>
             </SheetContent>
         </Sheet>
+        
+        {profile && (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8 bg-sidebar-accent">
+                    <AvatarImage src={getUserAvatar(profile)} alt={profile.name} data-ai-hint="person avatar" />
+                    <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
+                    </Avatar>
+                </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{profile.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                        {profile.username}
+                    </p>
+                    </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" /> Cerrar Sesión
+                </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        )}
       </div>
     </header>
   );
