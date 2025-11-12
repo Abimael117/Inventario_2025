@@ -225,8 +225,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col truncate">
-                        <span className="text-sm font-semibold">{profile.name}</span>
-                        <span className="text-xs text-muted-foreground capitalize">{userRoleDisplay}</span>
+                        <div className="flex items-baseline gap-1.5">
+                           <span className="text-sm font-semibold truncate">{profile.name}</span>
+                           <span className="text-xs text-muted-foreground capitalize">({userRoleDisplay})</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground truncate">{profile.username}</span>
                       </div>
                     </div>
                   </DropdownMenuTrigger>
@@ -256,4 +259,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </SidebarProvider>
   );
 }
-
