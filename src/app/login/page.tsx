@@ -101,9 +101,9 @@ export default function LoginPage() {
                   id="username"
                   name="username"
                   type="text"
-                  placeholder="admin"
+                  placeholder="nombre.usuario"
                   required
-                  defaultValue="admin"
+                  defaultValue=""
                   autoCapitalize="none"
                   autoCorrect="off"
                 />
@@ -117,7 +117,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  defaultValue="password123"
+                  defaultValue=""
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
@@ -127,9 +127,6 @@ export default function LoginPage() {
             </form>
           </CardContent>
         </Card>
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          Usuarios de prueba: <strong>admin</strong> (pass: password123) y <strong>educacion</strong> (pass: 123456).
-        </p>
       </div>
     </main>
   );
