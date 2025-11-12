@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useTransition } from 'react';
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, AlertTriangle, PackageX, LogOut, MinusSquare } from "lucide-react";
+import { Bell, Search, AlertTriangle, PackageX, LogOut, MinusSquare, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
 import { useCollection, useFirestore, useMemoFirebase, useUser, useAuth, useDoc } from '@/firebase';
-import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, query, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import type { Product, User, Notification } from '@/lib/types';
 import { Badge } from './ui/badge';
@@ -30,6 +30,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 
 type SearchProps = {
@@ -51,6 +52,8 @@ export default function AppHeader({
   const firestore = useFirestore();
   const auth = useAuth();
   const { user } = useUser();
+  const { toast } = useToast();
+  const [isPending, startTransition] = useTransition();
   
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -98,10 +101,26 @@ export default function AppHeader({
 
   const getUserAvatar = (user: User | null | undefined): string => {
     if (!user) return "";
-    if (user.username === 'admin') {
+    if (user.role === 'admin') {
       return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
     }
     return ""; // Fallback to initials
+  };
+
+  const handleDeleteNotification = (notificationId: string) => {
+    if (!firestore) return;
+    startTransition(async () => {
+      const notificationRef = doc(firestore, 'notifications', notificationId);
+      try {
+        await deleteDoc(notificationRef);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'No se pudo eliminar la notificación.',
+        });
+      }
+    });
   };
 
   return (
@@ -155,12 +174,24 @@ export default function AppHeader({
                                     <Separator />
                                     <div className="space-y-3 text-sm">
                                     {adjustmentNotifications.map(item => (
-                                        <div key={item.id} className="flex flex-col">
+                                        <div key={item.id} className="flex flex-col relative group">
                                             <div className="flex justify-between items-start">
-                                                <span className="font-semibold">{item.title}</span>
-                                                <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
-                                                    {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es })}
-                                                </span>
+                                                <span className="font-semibold pr-8">{item.title}</span>
+                                                <div className="flex items-center">
+                                                    <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
+                                                        {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true, locale: es })}
+                                                    </span>
+                                                     <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-6 w-6 ml-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        onClick={() => handleDeleteNotification(item.id)}
+                                                        disabled={isPending}
+                                                        aria-label="Eliminar notificación"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </div>
                                             <p className="text-muted-foreground">{item.description}</p>
                                         </div>
