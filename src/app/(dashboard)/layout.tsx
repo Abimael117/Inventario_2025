@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return profile.role === 'admin' || profile.permissions?.includes(permission);
   }
 
-  const userRoleDisplay = profile.role === 'admin' ? 'Administrador' : 'Usuario';
+  const userRoleDisplay = profile.role === 'admin' ? profile.username : 'Usuario';
 
   return (
     <SidebarProvider>
