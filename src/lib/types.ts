@@ -25,7 +25,7 @@ export type StockMovement = {
     productId: string;
     productName:string;
     quantity: number;
-    type: 'ajuste' | 'incremento';
+    type: 'ajuste';
     reason: string;
     date: string;
 };
@@ -37,4 +37,6 @@ export type User = {
     name: string;
     role: 'admin' | 'user';
     permissions: string[];
+    gender?: 'male' | 'female' | 'other';
 };
+

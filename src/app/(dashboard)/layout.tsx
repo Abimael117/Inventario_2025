@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const getInitials = (name?: string) => {
-    if (!name) return '';
+    if (!name) return 'U';
     const names = name.split(' ');
     if (names.length > 1) {
       return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
@@ -105,14 +105,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (profile.username === 'admin') {
       return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
     }
-    // Use a simple hashing function on the UID to get a number
-    const hash = profile.uid.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    
-    // Simple logic to alternate avatars for other users based on a consistent property
-    if (hash % 2 === 0) {
-      return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=U&font=roboto';
+
+    switch(profile.gender) {
+        case 'male':
+            return 'https://placehold.co/40x40/3F51B5/FFFFFF/png?text=H&font=roboto';
+        case 'female':
+            return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=M&font=roboto';
+        default:
+             return 'https://placehold.co/40x40/757575/FFFFFF/png?text=U&font=roboto';
     }
-    return 'https://placehold.co/40x40/8E24AA/FFFFFF/png?text=U&font=roboto';
   };
 
   if (isUserLoading || isProfileLoading || !user || !profile) {
@@ -255,3 +256,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </SidebarProvider>
   );
 }
+

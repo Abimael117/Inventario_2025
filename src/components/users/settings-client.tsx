@@ -83,12 +83,13 @@ export default function SettingsClient() {
       try {
         const { user: newAuthUser } = await createUserWithEmailAndPassword(auth, email, newUser.password!);
         
-        const userDocData = {
+        const userDocData: Omit<User, 'password'> = {
           uid: newAuthUser.uid,
           name: newUser.name,
           username: newUser.username,
-          role: 'user' as const,
+          role: 'user',
           permissions: newUser.permissions,
+          gender: newUser.gender,
         };
 
         const userDocRef = doc(firestore, "users", newAuthUser.uid);
@@ -136,10 +137,10 @@ export default function SettingsClient() {
         if (!firestore) return;
         const userDocRef = doc(firestore, 'users', userId);
 
-        // We only update the fields that can be changed from the form
         const updatePayload = {
             name: data.name,
             permissions: data.permissions,
+            gender: data.gender,
         };
 
         setDoc(userDocRef, updatePayload, { merge: true })
@@ -337,7 +338,7 @@ export default function SettingsClient() {
       </div>
 
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
             <DialogHeader>
                 <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
@@ -349,7 +350,7 @@ export default function SettingsClient() {
       </Dialog>
       
       <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
               <DialogHeader>
                   <DialogTitle>Editar Usuario</DialogTitle>
                   <DialogDescription>

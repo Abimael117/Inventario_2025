@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { User } from "@/lib/types";
 
 const permissions = [
@@ -30,6 +31,7 @@ const permissions = [
 
 const formSchema = z.object({
   name: z.string().min(2, "El nombre debe tener al menos 2 caracteres."),
+  gender: z.enum(["male", "female", "other"]),
   permissions: z.array(z.string()),
 });
 
@@ -45,6 +47,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     defaultValues: {
       name: user.name || "",
       permissions: user.permissions || [],
+      gender: user.gender || "other",
     },
   });
 
@@ -52,14 +55,15 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
     form.reset({
       name: user.name,
       permissions: user.permissions,
+      gender: user.gender || "other",
     });
   }, [user, form]);
   
   function handleFormSubmit(values: z.infer<typeof formSchema>) {
-    // Construct the payload with all form values
     const dataToSubmit: Partial<Omit<User, 'id' | 'password' | 'uid'>> = {
       name: values.name,
       permissions: values.permissions, 
+      gender: values.gender,
     };
     
     onSubmit(dataToSubmit);
@@ -67,7 +71,7 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -88,6 +92,43 @@ export function EditUserForm({ user, onSubmit, isPending }: EditUserFormProps) {
             </FormControl>
             <FormDescription>El nombre de usuario no se puede cambiar.</FormDescription>
         </FormItem>
+
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Género del Avatar</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-row space-x-4"
+                >
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="male" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Masculino</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="female" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Femenino</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="other" />
+                    </FormControl>
+                    <FormLabel className="font-normal">No especificar</FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormItem>
           <div className="mb-4">
