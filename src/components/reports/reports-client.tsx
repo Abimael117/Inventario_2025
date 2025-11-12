@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -8,16 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { generateInventoryReport, type GenerateInventoryReportOutput } from '@/ai/flows/generate-inventory-report';
-import type { Loan, Product, StockMovement } from '@/lib/types';
+import type { Loan, Product } from '@/lib/types';
 
 interface ReportsClientProps {
   products: Product[];
   loans: Loan[];
-  movements: StockMovement[];
 }
 
 const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => {
-  const { generalSummary, stockAlerts, inStock, activeLoans, recentMovementsSummary } = report;
+  const { generalSummary, stockAlerts, inStock, activeLoans } = report;
 
   return (
     <div className="space-y-6 bg-white text-black p-8 rounded-lg max-w-4xl mx-auto font-sans">
@@ -48,13 +46,6 @@ const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => 
           </ul>
         ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock bajo.</p>}
       </div>
-      
-      {recentMovementsSummary && (
-        <div>
-            <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><MinusSquare />Movimientos y Ajustes Recientes</h2>
-            <p className="text-gray-600">{recentMovementsSummary}</p>
-        </div>
-      )}
 
       <div>
         <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
@@ -82,7 +73,7 @@ const ReportViewer = ({ report }: { report: GenerateInventoryReportOutput }) => 
 };
 
 
-export default function ReportsClient({ products, loans, movements }: ReportsClientProps) {
+export default function ReportsClient({ products, loans }: ReportsClientProps) {
   const [isPending, startTransition] = useTransition();
   const [report, setReport] = useState<GenerateInventoryReportOutput | null>(null);
   const { toast } = useToast();
@@ -103,7 +94,6 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
         const result = await generateInventoryReport({
           productsData: JSON.stringify(products),
           loansData: JSON.stringify(activeLoans),
-          movementsData: JSON.stringify(movements),
         });
         setReport(result);
       } catch (error) {
@@ -167,7 +157,7 @@ export default function ReportsClient({ products, loans, movements }: ReportsCli
                   <FileText className="h-8 w-8 text-primary" />
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  Haz clic en el botón para que la IA analice todos los productos, préstamos y movimientos, y genere un reporte ejecutivo.
+                  Haz clic en el botón para que la IA analice todos los productos y préstamos, y genere un reporte ejecutivo.
                 </p>
                 <Button onClick={handleGenerateReport} disabled={isPending}>
                   {isPending ? (

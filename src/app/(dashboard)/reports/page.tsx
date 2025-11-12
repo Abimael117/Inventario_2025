@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 import ReportsClient from '@/components/reports/reports-client';
 import AppHeader from '@/components/header';
-import type { Product, Loan, StockMovement } from '@/lib/types';
+import type { Product, Loan } from '@/lib/types';
 
 
 export default function ReportsPage() {
@@ -15,13 +15,11 @@ export default function ReportsPage() {
 
   const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
-  const movementsRef = useMemoFirebase(() => firestore ? collection(firestore, 'movements') : null, [firestore]);
   
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
-  const { data: movements, isLoading: isLoadingMovements } = useCollection<StockMovement>(movementsRef);
 
-  const isLoading = isLoadingProducts || isLoadingLoans || isLoadingMovements;
+  const isLoading = isLoadingProducts || isLoadingLoans;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -37,11 +35,3 @@ export default function ReportsPage() {
         ) : (
             <ReportsClient
             products={products || []}
-            loans={loans || []}
-            movements={movements || []}
-            />
-        )}
-      </main>
-    </div>
-  );
-}
