@@ -128,8 +128,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return profile.role === 'admin' || profile.permissions?.includes(permission);
   }
 
-  const userRoleDisplay = profile.role === 'admin' ? 'Administrador' : 'Usuario';
-
   return (
     <SidebarProvider>
       <div className="print-hide">
@@ -225,10 +223,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col truncate">
-                        <div className="flex items-baseline gap-1.5">
-                           <span className="text-sm font-semibold truncate">{profile.name}</span>
-                           <span className="text-xs text-muted-foreground capitalize">({userRoleDisplay})</span>
-                        </div>
+                        <span className="text-sm font-semibold truncate">{profile.name}</span>
                         <span className="text-xs text-muted-foreground truncate">{profile.username}</span>
                       </div>
                     </div>
