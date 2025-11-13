@@ -68,17 +68,17 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
 
         <div className="pt-16 text-center text-sm grid grid-cols-2 gap-8">
             <div>
-                <p className="font-semibold text-lg">{loan.deliveredBy || '_________________________'}</p>
                 <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
                     <p className="font-semibold">Entregado por:</p>
-                    <p className="mt-1 text-gray-500">(Nombre y Firma)</p>
+                    <p className="mt-1 font-semibold text-base">{loan.deliveredBy || '___________________'}</p>
+                    <p className="text-xs text-gray-500">(Nombre y Firma)</p>
                 </div>
             </div>
             <div>
-                 <p className="font-semibold text-lg">{loan.receivedBy || '_________________________'}</p>
                 <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
                     <p className="font-semibold">Recibido por:</p>
-                    <p className="mt-1 text-gray-500">(Nombre y Firma)</p>
+                     <p className="mt-1 font-semibold text-base">{loan.receivedBy || '___________________'}</p>
+                    <p className="text-xs text-gray-500">(Nombre y Firma)</p>
                 </div>
             </div>
         </div>
