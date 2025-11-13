@@ -17,10 +17,13 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
   let formattedDate = "Fecha inválida";
   if (loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
     try {
-      const [year, month, day] = loan.loanDate.split('-').map(Number);
-      const dateObject = new Date(Date.UTC(year, month - 1, day));
+      // The `replace` is a polyfill for Safari, which can't parse 'YYYY-MM-DD' directly.
+      // It changes the format to 'YYYY/MM/DD' which is universally understood.
+      const dateObject = new Date(loan.loanDate.replace(/-/g, '/'));
       if (!isNaN(dateObject.getTime())) {
-        formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es });
+        // We add timeZone: 'UTC' to correctly interpret the date as it was intended,
+        // avoiding shifts caused by the client's local timezone.
+        formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' });
       }
     } catch (e) {
       console.error("Failed to parse date:", loan.loanDate, e);
@@ -68,22 +71,22 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
 
         <div className="pt-16 text-center text-sm grid grid-cols-2 gap-8">
             <div>
-                <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
-                    <p className="font-semibold">Entregado por:</p>
-                     <p className="font-semibold text-base">{loan.deliveredBy || '___________________'}</p>
+                <div className="border-t border-gray-400 w-2/3 mx-auto">
+                    <p className="font-semibold pt-2">Entregado por:</p>
+                     <p className="font-semibold text-base h-6">{loan.deliveredBy || ''}</p>
                 </div>
             </div>
             <div>
-                <div className="border-t border-gray-400 w-2/3 mx-auto pt-2">
-                    <p className="font-semibold">Recibido por:</p>
-                     <p className="font-semibold text-base">{loan.receivedBy || '___________________'}</p>
+                <div className="border-t border-gray-400 w-2/3 mx-auto">
+                    <p className="font-semibold pt-2">Recibido por:</p>
+                     <p className="font-semibold text-base h-6">{loan.receivedBy || ''}</p>
                 </div>
             </div>
         </div>
 
         {loan.status === 'Devuelto' && loan.returnDate && (
              <div className="pt-8 text-center text-green-600">
-                <p className="font-bold">** Material Devuelto el {format(new Date(loan.returnDate.replace(/-/g, '/')), "d 'de' MMMM, yyyy", { locale: es })} **</p>
+                <p className="font-bold">** Material Devuelto el {format(new Date(loan.returnDate.replace(/-/g, '/')), "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' })} **</p>
             </div>
         )}
       </main>

@@ -143,10 +143,13 @@ export default function LoansClient({
                                   let formattedDate = "Fecha inválida";
                                   if (loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
                                       try {
-                                          const [year, month, day] = loan.loanDate.split('-').map(Number);
-                                          const dateObject = new Date(Date.UTC(year, month - 1, day));
+                                          // The `replace` is a polyfill for Safari, which can't parse 'YYYY-MM-DD' directly.
+                                          // It changes the format to 'YYYY/MM/DD' which is universally understood.
+                                          const dateObject = new Date(loan.loanDate.replace(/-/g, '/'));
                                           if (!isNaN(dateObject.getTime())) {
-                                              formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es });
+                                              // We add timeZone: 'UTC' to correctly interpret the date as it was intended,
+                                              // avoiding shifts caused by the client's local timezone.
+                                              formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' });
                                           }
                                       } catch (e) {
                                           console.error("Failed to parse date:", loan.loanDate, e);
