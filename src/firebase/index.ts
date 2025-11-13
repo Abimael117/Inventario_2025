@@ -3,18 +3,24 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 /**
  * Initializes and returns Firebase SDK instances for client-side use.
- * Ensures that Firebase is initialized only once.
+ * Ensures that Firebase is initialized only once and sets session persistence.
  */
 export function initializeFirebase() {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  
+  // Set auth persistence to 'session'. This ensures the user has to log in
+  // again when the browser or tab is closed.
+  setPersistence(auth, browserSessionPersistence);
+
   return {
     firebaseApp: app,
-    auth: getAuth(app),
+    auth: auth,
     firestore: getFirestore(app),
   };
 }
@@ -29,3 +35,4 @@ export * from './non-blocking-updates';
 // export * from './non-blocking-login'; 
 export * from './errors';
 export * from './error-emitter';
+
