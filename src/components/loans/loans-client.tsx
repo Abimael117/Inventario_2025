@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Loader2 } from "lucide-react";
+import { PlusCircle, MoreHorizontal, CheckCircle, Trash2, Loader2, Printer } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -81,6 +81,11 @@ export default function LoansClient({
     const dateB = b.loanDate || '';
     return dateB.localeCompare(dateA);
   });
+  
+  const handlePrintReceipt = (loan: Loan) => {
+    sessionStorage.setItem('printableLoan', JSON.stringify(loan));
+    window.open('/print/loan-receipt', '_blank');
+  };
 
 
   return (
@@ -160,6 +165,9 @@ export default function LoansClient({
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
                                           <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                          <DropdownMenuItem onSelect={() => handlePrintReceipt(loan)}>
+                                            <Printer className="mr-2 h-4 w-4" /> Imprimir Comprobante
+                                          </DropdownMenuItem>
                                           <DropdownMenuItem 
                                               onSelect={() => onMarkAsReturned(loan)}
                                               disabled={loan.status === 'Devuelto' || isPending}
