@@ -18,6 +18,7 @@ export default function InventoryPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -48,18 +49,27 @@ export default function InventoryPage() {
     
     return products.filter((product) => {
       // Category filter
-      const categoryMatchFilter = categoryFilter ? product.category === categoryFilter : true;
-      if (!categoryMatchFilter) return false;
+      const categoryMatch = categoryFilter ? product.category === categoryFilter : true;
+      if (!categoryMatch) return false;
+
+      // Status filter
+      const getStatus = (p: Product) => {
+        if (p.quantity === 0) return "Agotado";
+        if (p.quantity > 0 && p.quantity <= p.reorderPoint) return "Stock Bajo";
+        return "En Stock";
+      };
+      const statusMatch = statusFilter ? getStatus(product) === statusFilter : true;
+      if (!statusMatch) return false;
       
       // Search query filter
       if (!lowercasedQuery) return true;
       const nameMatch = product.name?.toLowerCase().includes(lowercasedQuery) ?? false;
       const idMatch = product.id?.toLowerCase().includes(lowercasedQuery) ?? false;
-      const categoryMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
+      const categorySearchMatch = product.category?.toLowerCase().includes(lowercasedQuery) ?? false;
       
-      return nameMatch || idMatch || categoryMatch;
+      return nameMatch || idMatch || categorySearchMatch;
     });
-  }, [products, searchQuery, categoryFilter]);
+  }, [products, searchQuery, categoryFilter, statusFilter]);
 
 
   const handleEditClick = (product: Product) => {
@@ -294,6 +304,8 @@ export default function InventoryPage() {
             categories={uniqueCategories}
             categoryFilter={categoryFilter}
             setCategoryFilter={setCategoryFilter}
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
           />
         )}
     </div>

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2, FileSpreadsheet } from "lucide-react";
+import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2, FileSpreadsheet, XCircle } from "lucide-react";
 
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,8 @@ interface InventoryClientProps {
   categories: string[];
   categoryFilter: string;
   setCategoryFilter: (value: string) => void;
+  statusFilter: string;
+  setStatusFilter: (value: string) => void;
 }
 
 export default function InventoryClient({
@@ -101,6 +103,8 @@ export default function InventoryClient({
   categories,
   categoryFilter,
   setCategoryFilter,
+  statusFilter,
+  setStatusFilter,
 }: InventoryClientProps) {
 
   return (
@@ -115,8 +119,8 @@ export default function InventoryClient({
                     </div>
                     <div className="flex items-center gap-2">
                         <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value === "all" ? "" : value)}>
-                          <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filtrar por categoría" />
+                          <SelectTrigger className="w-auto md:w-[180px]">
+                            <SelectValue placeholder="Categoría" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">Todas las categorías</SelectItem>
@@ -125,6 +129,17 @@ export default function InventoryClient({
                                 {category}
                               </SelectItem>
                             ))}
+                          </SelectContent>
+                        </Select>
+                        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value === "all" ? "" : value)}>
+                          <SelectTrigger className="w-auto md:w-[150px]">
+                            <SelectValue placeholder="Estado" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Todos los estados</SelectItem>
+                            <SelectItem value="En Stock">En Stock</SelectItem>
+                            <SelectItem value="Stock Bajo">Stock Bajo</SelectItem>
+                            <SelectItem value="Agotado">Agotado</SelectItem>
                           </SelectContent>
                         </Select>
                          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
@@ -167,6 +182,13 @@ export default function InventoryClient({
                                     ? "destructive"
                                     : "outline"
                                 }
+                                className={
+                                    product.quantity > product.reorderPoint
+                                    ? "border-green-600/50 bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                                    : product.quantity > 0
+                                    ? "border-amber-600/50 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                                    : "border-red-600/50 bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                                }
                                 >
                                 {product.quantity > product.reorderPoint
                                     ? "En Stock"
@@ -206,10 +228,12 @@ export default function InventoryClient({
                           <TableRow>
                             <TableCell colSpan={7} className="h-24 text-center">
                               <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <p>No se encontraron productos para los filtros aplicados.</p>
-                                {categoryFilter && (
-                                   <Button size="sm" variant="outline" onClick={() => setCategoryFilter('')}>
-                                      Limpiar filtro de categoría
+                                <XCircle className="h-8 w-8" />
+                                <p className="font-semibold">No se encontraron productos</p>
+                                <p className="text-sm">Intenta ajustar o limpiar los filtros de búsqueda, categoría o estado.</p>
+                                {(categoryFilter || statusFilter) && (
+                                   <Button size="sm" variant="outline" onClick={() => { setCategoryFilter(''); setStatusFilter(''); }}>
+                                      Limpiar filtros
                                     </Button>
                                 )}
                               </div>
