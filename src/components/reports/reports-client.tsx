@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText } from 'lucide-react';
+import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -104,6 +104,13 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
     });
   };
 
+  const handlePrintReport = () => {
+    if (report) {
+      sessionStorage.setItem('printableReport', JSON.stringify(report));
+      window.open('/print/report', '_blank');
+    }
+  };
+
   const handleCloseReport = () => {
     setReport(null);
   };
@@ -128,7 +135,7 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
         <CardContent>
           {report ? (
             <div className="space-y-4">
-              <div className="rounded-md border bg-muted/30 p-4 leading-relaxed">
+              <div className="rounded-md border bg-muted/30 p-4 leading-relaxed print-target">
                 <ReportViewer report={report} />
               </div>
               <div className="flex w-full justify-center items-center gap-4">
@@ -144,6 +151,10 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
                   ) : (
                     'Volver a Generar'
                   )}
+                </Button>
+                 <Button size="sm" variant="default" onClick={handlePrintReport}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  Imprimir Reporte
                 </Button>
               </div>
             </div>
