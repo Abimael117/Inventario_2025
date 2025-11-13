@@ -19,6 +19,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setHasAccess(false);
     }
   }, [user, profile, pathname, isUserLoading, isProfileLoading]);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await signOut(auth);
+      // The useEffect hook above will handle the redirect to /login
+    }
+  };
 
   if (isUserLoading || isProfileLoading || !user || !profile) {
     return (
@@ -167,6 +175,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               )}
             </SidebarMenu>
           </SidebarContent>
+           <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout} tooltip="Cerrar Sesión">
+                  <LogOut />
+                  <span>Cerrar Sesión</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </Sidebar>
       </div>
       <main className="relative flex min-h-svh flex-1 flex-col bg-background peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow">
