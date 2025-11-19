@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Utility to generate an inventory report from local data,
  * replicating the structure of the previous AI-based report generator.
@@ -16,15 +17,22 @@ export interface InventoryReport {
   activeLoans: { id: string; name: string; quantity: number; requester: string }[];
 }
 
+interface ReportFilters {
+    category?: string;
+    status?: string;
+}
+
 /**
  * Generates an inventory report by processing product and loan data directly.
- * @param products - Array of all product objects.
- * @param activeLoans - Array of all active loan objects.
+ * @param products - Array of product objects to be included in the report.
+ * @param activeLoans - Array of all active loan objects relevant to the products.
+ * @param filters - Optional filters applied to the report.
  * @returns An InventoryReport object.
  */
 export function generateLocalInventoryReport(
   products: Product[],
-  activeLoans: Loan[]
+  activeLoans: Loan[],
+  filters: ReportFilters = {}
 ): InventoryReport {
   const critical: { name: string; quantity: number }[] = [];
   const low: { name: string; quantity: number }[] = [];
@@ -50,13 +58,23 @@ export function generateLocalInventoryReport(
   }));
   
   // 3. Create a rule-based general summary
-  let summary = `El inventario cuenta con un total de ${products.length} tipos de productos. `;
-  if (critical.length > 0 || low.length > 0) {
-    summary += `Hay ${critical.length} producto(s) agotados y ${low.length} con stock bajo, requiriendo atención. `;
-  } else {
-    summary += "En general, los niveles de stock son saludables. ";
+  let summaryIntro = 'El reporte';
+  if (filters.category) {
+    summaryIntro += ` para la categoría "${filters.category}"`;
   }
-  summary += `Actualmente, existen ${formattedLoans.length} préstamos activos.`;
+   if (filters.status) {
+    const statusText = filters.category ? ` con estado "${filters.status}"` : ` con productos en estado "${filters.status}"`;
+    summaryIntro += statusText;
+  }
+  
+  let summary = `${summaryIntro} muestra un total de ${products.length} tipo(s) de producto(s) que coinciden con los criterios. `;
+  
+  if (critical.length > 0 || low.length > 0) {
+    summary += `De estos, hay ${critical.length} producto(s) agotados y ${low.length} con stock bajo, requiriendo atención. `;
+  } else {
+    summary += "Dentro de la selección, los niveles de stock son saludables. ";
+  }
+  summary += `Actualmente, existen ${formattedLoans.length} préstamos activos para los productos en este reporte.`;
 
   // 4. Assemble and return the final report object
   return {

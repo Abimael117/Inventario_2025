@@ -4,6 +4,7 @@
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { useMemo } from 'react';
 
 import ReportsClient from '@/components/reports/reports-client';
 import AppHeader from '@/components/header';
@@ -21,6 +22,12 @@ export default function ReportsPage() {
 
   const isLoading = isLoadingProducts || isLoadingLoans;
 
+  const uniqueCategories = useMemo(() => {
+    if (!products) return [];
+    const categories = new Set(products.map(p => p.category));
+    return Array.from(categories);
+  }, [products]);
+
   return (
     <div className="flex flex-1 flex-col">
       <AppHeader title="Reportes" />
@@ -36,6 +43,7 @@ export default function ReportsPage() {
             <ReportsClient
               products={products || []}
               loans={loans || []}
+              categories={uniqueCategories}
             />
         )}
       </main>

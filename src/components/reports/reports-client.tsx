@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { Bot, Loader2, Package, AlertTriangle, ArrowRightLeft, FileText, Printer } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,18 +9,33 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Loan, Product } from '@/lib/types';
 import { generateLocalInventoryReport, type InventoryReport } from '@/lib/report-generator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface ReportsClientProps {
   products: Product[];
   loans: Loan[];
+  categories: string[];
 }
 
-const ReportViewer = ({ report }: { report: InventoryReport }) => {
+const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: { category: string, status: string } }) => {
   const { generalSummary, stockAlerts, inStock, activeLoans } = report;
+
+  const hasFilters = filters.category || filters.status;
+  const filterDescription = [filters.category, filters.status].filter(Boolean).join(" y ");
+
 
   return (
     <div className="space-y-6 bg-white text-black p-8 rounded-lg max-w-4xl mx-auto font-sans">
-      <h1 className="text-2xl font-bold text-gray-800 border-b pb-4">Reporte Ejecutivo de Inventario</h1>
+      <header className="border-b pb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Reporte Ejecutivo de Inventario</h1>
+        {hasFilters && <p className="text-sm text-gray-500 mt-1">Filtrado por: {filterDescription}</p>}
+      </header>
       
       <div>
         <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2">Estado General del Inventario</h2>
@@ -73,25 +89,49 @@ const ReportViewer = ({ report }: { report: InventoryReport }) => {
 };
 
 
-export default function ReportsClient({ products, loans }: ReportsClientProps) {
+export default function ReportsClient({ products, loans, categories }: ReportsClientProps) {
   const [isPending, startTransition] = useTransition();
   const [report, setReport] = useState<InventoryReport | null>(null);
   const { toast } = useToast();
+  
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const handleGenerateReport = () => {
     startTransition(() => {
-      if (products.length === 0) {
+      
+      const filteredProducts = products.filter(product => {
+        const categoryMatch = categoryFilter ? product.category === categoryFilter : true;
+
+        const getStatus = (p: Product) => {
+            if (p.quantity === 0) return "Agotado";
+            if (p.quantity > 0 && p.quantity <= p.reorderPoint) return "Stock Bajo";
+            return "En Stock";
+        };
+        const statusMatch = statusFilter ? getStatus(product) === statusFilter : true;
+        
+        return categoryMatch && statusMatch;
+      });
+      
+      if (filteredProducts.length === 0) {
         toast({
           variant: 'destructive',
           title: 'No hay datos',
-          description: 'No se pueden generar reportes si no hay productos en el inventario.',
+          description: 'No hay productos que coincidan con los filtros seleccionados para generar un reporte.',
         });
         return;
       }
 
       try {
-        const activeLoans = loans.filter(loan => loan.status === 'Prestado');
-        const result = generateLocalInventoryReport(products, activeLoans);
+        const productIdsInReport = new Set(filteredProducts.map(p => p.id));
+        const activeLoansForReport = loans.filter(loan => loan.status === 'Prestado' && productIdsInReport.has(loan.productId));
+        
+        const reportFilters = {
+          category: categoryFilter,
+          status: statusFilter,
+        };
+        
+        const result = generateLocalInventoryReport(filteredProducts, activeLoansForReport, reportFilters);
         setReport(result);
       } catch (error) {
         console.error("No se pudo generar el reporte local:", error);
@@ -129,14 +169,14 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
             <CardTitle>Reporte de Inventario</CardTitle>
           </div>
           <CardDescription>
-            Genera un análisis completo del estado actual de tu inventario.
+            Selecciona filtros opcionales para generar un análisis específico del estado de tu inventario.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {report ? (
             <div className="space-y-4">
               <div className="rounded-md border bg-muted/30 p-4 leading-relaxed print-target">
-                <ReportViewer report={report} />
+                <ReportViewer report={report} filters={{ category: categoryFilter, status: statusFilter }} />
               </div>
               <div className="flex w-full justify-center items-center gap-4">
                 <Button size="sm" variant="outline" onClick={handleCloseReport}>
@@ -159,13 +199,41 @@ export default function ReportsClient({ products, loans }: ReportsClientProps) {
               </div>
             </div>
           ) : (
-            <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
+            <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/50 p-8 text-center">
+              
+              <div className="mb-6 flex flex-col sm:flex-row items-center gap-4">
+                 <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value === "all" ? "" : value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filtrar por categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las categorías</SelectItem>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value === "all" ? "" : value)}>
+                    <SelectTrigger className="w-full sm:w-[200px]">
+                      <SelectValue placeholder="Filtrar por estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos los estados</SelectItem>
+                      <SelectItem value="En Stock">En Stock</SelectItem>
+                      <SelectItem value="Stock Bajo">Stock Bajo</SelectItem>
+                      <SelectItem value="Agotado">Agotado</SelectItem>
+                    </SelectContent>
+                  </Select>
+              </div>
+
               <div className="flex h-full flex-col items-center justify-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                   <FileText className="h-8 w-8 text-primary" />
                 </div>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  Haz clic en el botón para analizar todos los productos y préstamos, y generar un reporte ejecutivo.
+                  Haz clic para analizar los productos y generar un reporte ejecutivo.
                 </p>
                 <Button onClick={handleGenerateReport} disabled={isPending}>
                   {isPending ? (
