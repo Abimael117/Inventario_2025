@@ -25,8 +25,6 @@ export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
 
 // Helper function to get a valid access token
 async function getAccessToken(): Promise<string> {
-  // Initialize GoogleAuth without specifying a key file.
-  // It will automatically use the application's default credentials in this environment.
   const auth = new GoogleAuth({
     scopes: [
       'https://www.googleapis.com/auth/cloud-platform',
@@ -77,7 +75,7 @@ export const deleteUser = ai.defineFlow(
         console.error('Auth deletion failed:', errorBody);
         throw new Error(
           `Failed to delete user from authentication: ${
-            errorBody.error.message || 'Unknown error'
+            errorBody.error?.message || 'Unknown error'
           }`
         );
       }
@@ -97,14 +95,14 @@ export const deleteUser = ai.defineFlow(
         console.error('Firestore deletion failed:', errorBody);
         throw new Error(
           `Failed to delete user profile from Firestore: ${
-            errorBody.error.message || 'Unknown error'
+            errorBody.error?.message || 'Unknown error'
           }`
         );
       }
 
       return {
         success: true,
-        message: 'User deleted successfully from Auth and Firestore.',
+        message: 'Usuario eliminado con éxito.',
       };
     } catch (error: any) {
       console.error('Full deletion flow error:', error);
