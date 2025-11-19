@@ -4,13 +4,13 @@
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
 import type { User } from './types';
+import { firebaseConfig } from '@/firebase/config';
+import 'dotenv/config';
 
-// Centralized Firebase Admin SDK initialization function.
-// It will only initialize the app if it hasn't been initialized yet.
 function initializeFirebaseAdmin() {
   if (!admin.apps.length) {
-    // This is the correct, robust way to initialize in a Google Cloud environment.
-    // It automatically finds the service account credentials.
+    // When GOOGLE_APPLICATION_CREDENTIALS is set, we don't need to pass any arguments to initializeApp.
+    // It will automatically use the service account file.
     admin.initializeApp();
   }
 }
@@ -67,7 +67,9 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
 }
 
 /**
- * Deletes a user from Firebase Authentication and their profile from Firestore.
+ * Deletes a user from Firebase Authentication.
+ * This function now ONLY handles the auth deletion. The Firestore deletion
+ * will be handled by the client upon success.
  *
  * @param uid - The UID of the user to delete.
  * @returns An object indicating success or failure with a message.
@@ -81,30 +83,17 @@ export async function deleteExistingUser(uid: string) {
     }
     
     try {
-        // Step 1: Delete the user from Firebase Authentication
         await admin.auth().deleteUser(uid);
-
-        // Step 2: Delete the user's profile from Firestore
-        const userDocRef = admin.firestore().collection('users').doc(uid);
-        await userDocRef.delete();
-        
-        // Step 3: Revalidate the path to update the UI
-        revalidatePath('/settings');
-
-        return { success: true, message: 'Usuario eliminado permanentemente.' };
+        revalidatePath('/settings'); // Invalidate cache to reflect changes
+        return { success: true, message: 'Usuario eliminado de la autenticación.' };
     } catch (error: any) {
-        console.error("Error deleting user:", error);
+        console.error("Error deleting user from Auth:", error);
         let message = 'No se pudo eliminar el usuario.';
+        // If user is not found in auth, we can still consider it a "success"
+        // for the purpose of deleting the Firestore record.
         if (error.code === 'auth/user-not-found') {
-            message = 'El usuario no existe en el sistema de autenticación, pero se intentará borrar el perfil.';
-            try {
-                const userDocRef = admin.firestore().collection('users').doc(uid);
-                await userDocRef.delete();
-                revalidatePath('/settings');
-                return { success: true, message: 'Se eliminó el perfil del usuario (ya no existía en autenticación).' };
-            } catch (dbError) {
-                 return { success: false, message: 'El usuario no existe ni en autenticación ni en la base de datos.' };
-            }
+            console.log("User not found in auth, proceeding to delete from Firestore.");
+            return { success: true, message: 'El usuario no existía en autenticación, se procederá a borrar el perfil.' };
         }
         return { success: false, message };
     }

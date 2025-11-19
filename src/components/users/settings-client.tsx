@@ -134,14 +134,17 @@ export default function SettingsClient() {
   };
 
   const confirmDelete = () => {
-    if (!userToDelete) return;
+    if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
         const result = await deleteExistingUser(userToDelete.uid);
         if (result.success) {
-            toast({
+            // If the server action is successful, delete the firestore doc
+             const userDocRef = doc(firestore, 'users', userToDelete.uid);
+             await deleteDoc(userDocRef);
+             toast({
                 title: "Usuario Eliminado",
-                description: result.message,
+                description: `El usuario "${userToDelete.username}" ha sido eliminado.`,
             });
         } else {
              toast({
