@@ -10,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { GoogleAuth } from 'google-auth-library';
+import { firebaseConfig } from '@/firebase/config';
 
 const DeleteUserInputSchema = z.object({
   uid: z.string().describe('The UID of the user to delete.'),
@@ -46,9 +47,9 @@ export const deleteUser = ai.defineFlow(
   },
   async (input) => {
     const { uid } = input;
-    const projectId = process.env.GCLOUD_PROJECT;
+    const projectId = firebaseConfig.projectId;
     if (!projectId) {
-      throw new Error('GCLOUD_PROJECT environment variable not set.');
+      throw new Error('Firebase project ID is not configured.');
     }
 
     try {
@@ -88,7 +89,8 @@ export const deleteUser = ai.defineFlow(
         },
       });
 
-      if (!firestoreResponse.ok) {
+      // If the user profile doesn't exist in Firestore (404), we still consider it a success.
+      if (!firestoreResponse.ok && firestoreResponse.status !== 404) {
         const errorBody = await firestoreResponse.json();
         console.error('Firestore deletion failed:', errorBody);
         throw new Error(
