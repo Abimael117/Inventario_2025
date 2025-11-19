@@ -36,8 +36,12 @@ const deleteUserFlow = ai.defineFlow(
   async ({ uid }) => {
     try {
       // 1. Authenticate as a service account to get an access token.
+      // Both scopes are required to properly authenticate and interact with Firebase services.
       const auth = new GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase'],
+        scopes: [
+          'https://www.googleapis.com/auth/cloud-platform',
+          'https://www.googleapis.com/auth/firebase'
+        ],
       });
       const client = await auth.getClient();
       const accessToken = (await client.getAccessToken()).token;
