@@ -7,6 +7,7 @@
 
 import { ai } from '@/ai/genkit';
 import { firebaseConfig } from '@/firebase/config';
+import { GoogleAuth } from 'google-auth-library';
 import { z } from 'genkit';
 
 const DeleteUserInputSchema = z.object({
@@ -25,26 +26,20 @@ export async function deleteUser(input: DeleteUserInput): Promise<DeleteUserOutp
 }
 
 /**
- * Retrieves an OAuth 2.0 access token from the Google Cloud metadata server.
- * This is a secure way to get a token in a Google Cloud environment.
+ * Retrieves an OAuth 2.0 access token using the application's default service account.
+ * This is the standard and robust way to get a token in a Google Cloud environment.
  * @returns {Promise<string>} The access token.
  */
 async function getAccessToken(): Promise<string> {
-  const metadataServerURL = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
-  const response = await fetch(metadataServerURL, {
-    headers: {
-      'Metadata-Flavor': 'Google',
-    },
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Error fetching access token:', errorText);
-    throw new Error(`Could not refresh access token: Request failed with status code ${response.status}`);
-  }
-
-  const tokenData = await response.json();
-  return tokenData.access_token;
+    const auth = new GoogleAuth({
+        scopes: 'https://www.googleapis.com/auth/cloud-platform'
+    });
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
+    if (!accessToken.token) {
+        throw new Error('Failed to retrieve access token.');
+    }
+    return accessToken.token;
 }
 
 
