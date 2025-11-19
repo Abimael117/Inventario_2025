@@ -11,18 +11,16 @@ const DUMMY_DOMAIN = 'decd.local';
 // This ensures the SDK is initialized only once.
 if (!admin.apps.length) {
   try {
-    // We check if the environment variable is set.
-    // This is the JSON content of the service account file, not a path.
     const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    if (!serviceAccountString) {
-      throw new Error("La variable de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON no está definida o está vacía.");
+    if (serviceAccountString) {
+        const serviceAccount = JSON.parse(serviceAccountString);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+    } else {
+        console.warn("La variable de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON no está definida. Las acciones de administrador pueden fallar.");
     }
-    const serviceAccount = JSON.parse(serviceAccountString);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
   } catch (e: any) {
-    // Log a more detailed error on the server for debugging
     console.error("Error crítico de inicialización de Firebase Admin:", e.message);
   }
 }
@@ -71,51 +69,6 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
         message = 'La contraseña no es válida. Debe tener al menos 6 caracteres.';
     }
     console.error("Error creating user:", error);
-    return { success: false, message };
-  }
-}
-
-
-/**
- * Deletes a user from Firebase Authentication and their profile from Firestore.
- *
- * @param payload - An object containing the UID of the user to delete.
- * @returns An object indicating success or failure with a message.
- */
-export async function deleteExistingUser(payload: { uid: string }) {
-  if (!admin.apps.length) {
-    return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
-  }
-  
-  const { uid } = payload;
-  
-  try {
-    // Step 1: Delete from Firebase Authentication
-    try {
-      await admin.auth().deleteUser(uid);
-    } catch (authError: any) {
-      // If the user is not found in Auth, it's not a critical failure for this operation.
-      // We still want to proceed to delete their data from Firestore.
-      if (authError.code !== 'auth/user-not-found') {
-        // If it's a different error, we throw it to be caught by the outer block.
-        throw authError;
-      }
-      console.warn(`Usuario no encontrado en Auth (UID: ${uid}), se procederá a eliminar de Firestore.`);
-    }
-
-    // Step 2: Delete user document from Firestore.
-    await admin.firestore().collection('users').doc(uid).delete();
-
-    // Step 3: Revalidate the path to update the UI.
-    revalidatePath('/settings');
-
-    return { success: true, message: 'Usuario eliminado con éxito de todos los sistemas.' };
-  } catch (error: any) {
-    console.error(`Error eliminando al usuario (UID: ${uid}):`, error);
-    let message = 'No se pudo eliminar el usuario.';
-    if (error.code === 'auth/internal-error' || error.code === 'permission-denied') {
-        message = 'El servidor no tiene los permisos necesarios para eliminar usuarios. Contacta al administrador.';
-    }
     return { success: false, message };
   }
 }
