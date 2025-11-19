@@ -8,31 +8,25 @@ import 'dotenv/config';
 
 const DUMMY_DOMAIN = 'decd.local';
 
-/**
- * Initializes the Firebase Admin SDK, ensuring it's only done once.
- * This function is critical for server-side operations and uses explicit credentials.
- */
-function initializeFirebaseAdmin() {
-  if (admin.apps.length > 0) {
-    return;
-  }
-  
+// --- START: Robust Firebase Admin Initialization ---
+// This ensures the SDK is initialized only once.
+if (!admin.apps.length) {
   try {
-    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      throw new Error("Las credenciales de servicio de Firebase no están configuradas en las variables de entorno (GOOGLE_APPLICATION_CREDENTIALS_JSON).");
+    const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (!serviceAccountString) {
+      throw new Error("La variable de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON no está definida.");
     }
-    
-    const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-    
+    const serviceAccount = JSON.parse(serviceAccountString);
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
   } catch (e: any) {
-    console.error("Firebase admin initialization error:", e.message);
-    // Throw a more user-friendly error to be caught by the calling function.
-    throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
+    // Log a more detailed error on the server for debugging
+    console.error("Error crítico de inicialización de Firebase Admin:", e.message);
   }
 }
+// --- END: Robust Firebase Admin Initialization ---
+
 
 /**
  * Creates a new user in Firebase Authentication and stores their profile in Firestore.
@@ -42,10 +36,8 @@ function initializeFirebaseAdmin() {
  * @returns An object indicating success or failure with a message.
  */
 export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) {
-  try {
-    initializeFirebaseAdmin();
-  } catch (error: any) {
-    return { success: false, message: error.message };
+  if (!admin.apps.length) {
+    return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
   }
 
   const email = `${newUser.username}@${DUMMY_DOMAIN}`;
@@ -90,21 +82,16 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
  * @returns An object indicating success or failure with a message.
  */
 export async function deleteExistingUser(uid: string) {
-  try {
-    initializeFirebaseAdmin();
-  } catch (error: any) {
-    return { success: false, message: error.message };
+  if (!admin.apps.length) {
+    return { success: false, message: 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.' };
   }
 
   try {
     // Step 1: Delete user from Firebase Authentication.
     await admin.auth().deleteUser(uid);
   } catch (error: any) {
-    // If the error is 'user-not-found', it means the auth part is already gone.
-    // We can ignore this and proceed to delete from Firestore.
     if (error.code !== 'auth/user-not-found') {
       console.error(`Failed to delete user from Auth (${uid}):`, error);
-      // For other errors, we stop and report the issue.
       return { success: false, message: 'No se pudo eliminar el usuario del sistema de autenticación.' };
     }
      console.log(`Auth user ${uid} not found, proceeding to delete from Firestore.`);
