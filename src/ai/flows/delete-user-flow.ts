@@ -14,13 +14,7 @@ import { firebaseConfig } from '@/firebase/config';
 // Ensure the SDK is initialized only once.
 if (!admin.apps.length) {
     try {
-        const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-        if (!serviceAccountString) {
-            throw new Error("La variable de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON no está definida.");
-        }
-        const serviceAccount = JSON.parse(serviceAccountString);
         admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
             projectId: firebaseConfig.projectId,
         });
     } catch (e: any) {
