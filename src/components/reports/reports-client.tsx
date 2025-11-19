@@ -45,62 +45,56 @@ const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: {
         <p className="text-gray-600">{generalSummary}</p>
       </div>
 
-      {showStockAlerts && (
+      {(stockAlerts.critical.length > 0 || stockAlerts.low.length > 0) && (
         <div>
           <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><AlertTriangle className="text-red-500" />Alertas de Stock</h2>
           
-          {(!filters.status || filters.status === "Agotado") && (
+          {stockAlerts.critical.length > 0 && (
             <>
               <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Crítico (Agotados)</h3>
-              {stockAlerts.critical.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-1">
                   {stockAlerts.critical.map(item => (
                     <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-red-600">{item.quantity} unidades</span></li>
                   ))}
                 </ul>
-              ) : <p className="text-sm text-gray-500 pl-5">No hay productos agotados.</p>}
             </>
           )}
           
-          {(!filters.status || filters.status === "Stock Bajo") && (
+          {stockAlerts.low.length > 0 && (
             <>
               <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Bajo (Requiere Reorden)</h3>
-              {stockAlerts.low.length > 0 ? (
                 <ul className="list-disc pl-5 space-y-1">
                   {stockAlerts.low.map(item => (
                     <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-amber-600">{item.quantity} unidades</span></li>
                   ))}
                 </ul>
-              ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock bajo.</p>}
             </>
           )}
         </div>
       )}
 
-      {showInStock && (
+      {inStock.length > 0 && (
         <div>
           <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
-          {inStock.length > 0 ? (
             <ul className="list-disc pl-5 space-y-1">
               {inStock.map(item => (
                 <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidades</li>
               ))}
             </ul>
-          ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock suficiente.</p>}
         </div>
       )}
 
 
-       <div>
-        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><ArrowRightLeft />Préstamos Activos</h2>
-         {activeLoans.length > 0 ? (
-          <ul className="list-disc pl-5 space-y-1">
-            {activeLoans.map(item => (
-              <li key={item.id}><strong>{item.name}</strong>: {item.quantity} unidad(es) a <span className="font-semibold">{item.requester}</span></li>
-            ))}
-          </ul>
-        ) : <p className="text-sm text-gray-500 pl-5">No hay préstamos activos en este momento.</p>}
-      </div>
+       {activeLoans.length > 0 && (
+         <div>
+          <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><ArrowRightLeft />Préstamos Activos</h2>
+            <ul className="list-disc pl-5 space-y-1">
+              {activeLoans.map(item => (
+                <li key={item.id}><strong>{item.name}</strong>: {item.quantity} unidad(es) a <span className="font-semibold">{item.requester}</span></li>
+              ))}
+            </ul>
+        </div>
+       )}
     </div>
   );
 };
@@ -273,5 +267,7 @@ export default function ReportsClient({ products, loans, categories }: ReportsCl
     </>
   );
 }
+
+    
 
     
