@@ -29,6 +29,9 @@ const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: {
   const hasFilters = filters.category || filters.status;
   const filterDescription = [filters.category, filters.status].filter(Boolean).join(" y ");
 
+  const showStockAlerts = !filters.status || filters.status === "Agotado" || filters.status === "Stock Bajo";
+  const showInStock = !filters.status || filters.status === "En Stock";
+
 
   return (
     <div className="space-y-6 bg-white text-black p-8 rounded-lg max-w-4xl mx-auto font-sans">
@@ -42,37 +45,51 @@ const ReportViewer = ({ report, filters }: { report: InventoryReport, filters: {
         <p className="text-gray-600">{generalSummary}</p>
       </div>
 
-      <div>
-        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><AlertTriangle className="text-red-500" />Alertas de Stock</h2>
-        <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Crítico (Agotados)</h3>
-        {stockAlerts.critical.length > 0 ? (
-          <ul className="list-disc pl-5 space-y-1">
-            {stockAlerts.critical.map(item => (
-              <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-red-600">{item.quantity} unidades</span></li>
-            ))}
-          </ul>
-        ) : <p className="text-sm text-gray-500 pl-5">No hay productos agotados.</p>}
-        
-        <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Bajo (Requiere Reorden)</h3>
-        {stockAlerts.low.length > 0 ? (
-           <ul className="list-disc pl-5 space-y-1">
-            {stockAlerts.low.map(item => (
-              <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-amber-600">{item.quantity} unidades</span></li>
-            ))}
-          </ul>
-        ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock bajo.</p>}
-      </div>
+      {showStockAlerts && (
+        <div>
+          <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><AlertTriangle className="text-red-500" />Alertas de Stock</h2>
+          
+          {(!filters.status || filters.status === "Agotado") && (
+            <>
+              <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Crítico (Agotados)</h3>
+              {stockAlerts.critical.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {stockAlerts.critical.map(item => (
+                    <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-red-600">{item.quantity} unidades</span></li>
+                  ))}
+                </ul>
+              ) : <p className="text-sm text-gray-500 pl-5">No hay productos agotados.</p>}
+            </>
+          )}
+          
+          {(!filters.status || filters.status === "Stock Bajo") && (
+            <>
+              <h3 className="text-lg font-semibold mt-4 mb-2">Nivel Bajo (Requiere Reorden)</h3>
+              {stockAlerts.low.length > 0 ? (
+                <ul className="list-disc pl-5 space-y-1">
+                  {stockAlerts.low.map(item => (
+                    <li key={item.name}><strong>{item.name}</strong>: <span className="font-bold text-amber-600">{item.quantity} unidades</span></li>
+                  ))}
+                </ul>
+              ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock bajo.</p>}
+            </>
+          )}
+        </div>
+      )}
 
-      <div>
-        <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
-        {inStock.length > 0 ? (
-          <ul className="list-disc pl-5 space-y-1">
-            {inStock.map(item => (
-              <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidades</li>
-            ))}
-          </ul>
-        ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock suficiente.</p>}
-      </div>
+      {showInStock && (
+        <div>
+          <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><Package />Productos en Existencia</h2>
+          {inStock.length > 0 ? (
+            <ul className="list-disc pl-5 space-y-1">
+              {inStock.map(item => (
+                <li key={item.name}><strong>{item.name}</strong>: {item.quantity} unidades</li>
+              ))}
+            </ul>
+          ) : <p className="text-sm text-gray-500 pl-5">No hay productos con stock suficiente.</p>}
+        </div>
+      )}
+
 
        <div>
         <h2 className="text-xl font-bold mt-6 mb-3 border-b pb-2 flex items-center gap-2"><ArrowRightLeft />Préstamos Activos</h2>
@@ -256,3 +273,5 @@ export default function ReportsClient({ products, loans, categories }: ReportsCl
     </>
   );
 }
+
+    
