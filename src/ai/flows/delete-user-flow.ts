@@ -1,13 +1,12 @@
 'use server';
 /**
  * @fileOverview This file defines a Genkit flow for deleting a Firebase user.
- * This flow uses the Google Auth Library to make an authorized API request
- * to the Identity Toolkit API, which has the necessary permissions to delete users.
+ * This flow makes an authorized API request to the Identity Toolkit API,
+ * which has the necessary permissions to delete users.
  */
 
 import { ai } from '@/ai/genkit';
 import { firebaseConfig } from '@/firebase/config';
-import { GoogleAuth } from 'google-auth-library';
 import { z } from 'genkit';
 
 const DeleteUserInputSchema = z.object({
@@ -21,9 +20,31 @@ const DeleteUserOutputSchema = z.object({
 });
 export type DeleteUserOutput = z.infer<typeof DeleteUserOutputSchema>;
 
-
 export async function deleteUser(input: DeleteUserInput): Promise<DeleteUserOutput> {
   return deleteUserFlow(input);
+}
+
+/**
+ * Retrieves an OAuth 2.0 access token from the Google Cloud metadata server.
+ * This is a secure way to get a token in a Google Cloud environment.
+ * @returns {Promise<string>} The access token.
+ */
+async function getAccessToken(): Promise<string> {
+  const metadataServerURL = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
+  const response = await fetch(metadataServerURL, {
+    headers: {
+      'Metadata-Flavor': 'Google',
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('Error fetching access token:', errorText);
+    throw new Error(`Could not refresh access token: Request failed with status code ${response.status}`);
+  }
+
+  const tokenData = await response.json();
+  return tokenData.access_token;
 }
 
 
@@ -36,15 +57,7 @@ const deleteUserFlow = ai.defineFlow(
   async ({ uid }) => {
     try {
       // 1. Authenticate as a service account to get an access token.
-      // Both scopes are required to properly authenticate and interact with Firebase services.
-      const auth = new GoogleAuth({
-        scopes: [
-          'https://www.googleapis.com/auth/cloud-platform',
-          'https://www.googleapis.com/auth/firebase'
-        ],
-      });
-      const client = await auth.getClient();
-      const accessToken = (await client.getAccessToken()).token;
+      const accessToken = await getAccessToken();
 
       if (!accessToken) {
         throw new Error('Failed to obtain access token.');
