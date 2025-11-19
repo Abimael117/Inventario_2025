@@ -11,13 +11,15 @@ const DUMMY_DOMAIN = 'decd.local';
 function initializeFirebaseAdmin() {
   if (!admin.apps.length) {
     try {
-      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON!);
+      if (!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+        throw new Error("Las credenciales de Firebase no están configuradas en el entorno.");
+      }
+      const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
     } catch (e: any) {
       console.error("Firebase admin initialization error:", e.message);
-      // This will be caught by the calling function and reported to the user.
       throw new Error('Error interno del servidor: no se pudo conectar a los servicios de Firebase.');
     }
   }
@@ -69,49 +71,4 @@ export async function createNewUser(newUser: Omit<User, 'id' | 'role' | 'uid'>) 
     console.error("Error creating user:", error);
     return { success: false, message };
   }
-}
-
-/**
- * Deletes a user from Firebase Authentication and then from Firestore.
- * This function is designed to be robust.
- *
- * @param uid - The UID of the user to delete.
- * @returns An object indicating success or failure with a message.
- */
-export async function deleteExistingUser(uid: string) {
-    try {
-      initializeFirebaseAdmin();
-    } catch (error: any) {
-      return { success: false, message: error.message };
-    }
-    
-    try {
-        // Step 1: Attempt to delete from Firebase Authentication.
-        await admin.auth().deleteUser(uid);
-    } catch (error: any) {
-        // If the user is not found in Auth, we log it but don't treat it as a failure,
-        // because our goal is to ensure the user is removed from the system,
-        // and this means they are already gone from the auth side.
-        if (error.code === 'auth/user-not-found') {
-            console.log(`User with UID ${uid} not found in Firebase Auth. Proceeding to delete from Firestore.`);
-        } else {
-            // For other auth errors, we should stop and report the problem.
-            console.error("Error deleting user from Auth:", error);
-            return { success: false, message: 'No se pudo eliminar el usuario de la autenticación.' };
-        }
-    }
-    
-    // Step 2: Delete from Firestore. This runs regardless of whether the user was in Auth,
-    // ensuring the user profile is always removed from our database.
-    try {
-        const userDocRef = admin.firestore().collection('users').doc(uid);
-        await userDocRef.delete();
-        
-        revalidatePath('/settings'); // Invalidate cache to reflect changes on the client.
-        return { success: true, message: 'Usuario eliminado completamente.' };
-
-    } catch (firestoreError: any) {
-        console.error("Error deleting user from Firestore:", firestoreError);
-        return { success: false, message: 'El usuario fue eliminado del acceso, pero no se pudo borrar el perfil de la base de datos.' };
-    }
 }

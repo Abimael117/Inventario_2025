@@ -45,7 +45,8 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser, deleteExistingUser } from '@/lib/server-actions';
+import { createNewUser } from '@/lib/server-actions';
+import { deleteUser } from '@/ai/flows/delete-user-flow';
 
 export default function SettingsClient() {
   const router = useRouter();
@@ -134,27 +135,26 @@ export default function SettingsClient() {
   };
 
   const confirmDelete = () => {
-    if (!userToDelete || !firestore) return;
+    if (!userToDelete) return;
+    const userToDeleteName = userToDelete.username;
 
     startTransition(async () => {
-        const result = await deleteExistingUser(userToDelete.uid);
-        if (result.success) {
-            // If the server action is successful, delete the firestore doc
-             const userDocRef = doc(firestore, 'users', userToDelete.uid);
-             await deleteDoc(userDocRef);
-             toast({
-                title: "Usuario Eliminado",
-                description: `El usuario "${userToDelete.username}" ha sido eliminado.`,
-            });
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Error al Eliminar",
-                description: result.message,
-            });
-        }
+      try {
+        await deleteUser({ uid: userToDelete.uid });
+        toast({
+          title: "Usuario Eliminado",
+          description: `El usuario "${userToDeleteName}" ha sido eliminado.`,
+        });
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error al Eliminar",
+          description: error.message || "No se pudo completar la eliminación del usuario.",
+        });
+      } finally {
         setIsDeleteConfirmOpen(false);
         setUserToDelete(null);
+      }
     });
   };
 
