@@ -3,12 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import * as admin from 'firebase-admin';
 import type { User } from './types';
-import 'dotenv/config';
 
 const DUMMY_DOMAIN = 'decd.local';
 
 // --- START: Robust Firebase Admin Initialization ---
-// This ensures the SDK is initialized only once.
+// This ensures the SDK is initialized only once, which is crucial in a serverless environment.
 if (!admin.apps.length) {
   try {
     const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
@@ -22,6 +21,8 @@ if (!admin.apps.length) {
     });
   } catch (e: any) {
     console.error("Error crítico de inicialización de Firebase Admin:", e.message);
+    // In a real-world scenario, you might want to throw the error
+    // or have a more robust error handling mechanism.
   }
 }
 // --- END: Robust Firebase Admin Initialization ---
