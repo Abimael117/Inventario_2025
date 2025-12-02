@@ -44,7 +44,7 @@ import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useAuth, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser } from '@/lib/server-actions';
+import { createNewUser, deleteExistingUser } from '@/lib/server-actions';
 
 
 export default function SettingsClient() {
@@ -134,28 +134,24 @@ export default function SettingsClient() {
   };
 
   const confirmDelete = () => {
-    if (!userToDelete || !firestore) return;
+    if (!userToDelete) return;
 
     startTransition(async () => {
-      const userDocRef = doc(firestore, 'users', userToDelete.uid);
-      deleteDoc(userDocRef)
-        .then(() => {
+        const result = await deleteExistingUser(userToDelete.uid);
+        if (result.success) {
             toast({
-                title: "Perfil de Usuario Eliminado",
-                description: `El perfil de "${userToDelete.username}" ha sido eliminado de la base de datos.`,
+                title: "Usuario Eliminado",
+                description: result.message,
             });
-        })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'delete',
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Error al Eliminar",
+                description: result.message,
             });
-            errorEmitter.emit('permission-error', permissionError);
-        })
-        .finally(() => {
-            setIsDeleteConfirmOpen(false);
-            setUserToDelete(null);
-        });
+        }
+        setIsDeleteConfirmOpen(false);
+        setUserToDelete(null);
     });
   };
 
@@ -286,7 +282,7 @@ export default function SettingsClient() {
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El usuario **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
                       <li>La actualización de contraseñas no está disponible en esta pantalla por razones de seguridad.</li>
-                      <li className="font-bold text-amber-700">Importante: La eliminación de un usuario desde esta interfaz solo borra su perfil de la base de datos, pero la cuenta de acceso (autenticación) permanecerá en el sistema.</li>
+                       <li>La eliminación de un usuario desde esta interfaz es una acción **permanente e irreversible** que lo borra tanto del sistema de acceso como de la base de datos.</li>
                     </ul>
                 </CardContent>
             </Card>
@@ -329,14 +325,14 @@ export default function SettingsClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. Esto eliminará permanentemente el perfil del usuario "{userToDelete?.username}" de la base de datos, pero su cuenta de acceso permanecerá.
+              Esta acción no se puede deshacer. Esto eliminará permanentemente al usuario "{userToDelete?.username}" del sistema de acceso y de la base de datos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={isPending}>
               {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isPending ? 'Eliminando...' : 'Sí, eliminar perfil'}
+              {isPending ? 'Eliminando...' : 'Sí, eliminar permanentemente'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
