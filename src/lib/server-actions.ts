@@ -11,9 +11,15 @@ const DUMMY_DOMAIN = 'decd.local';
 // This ensures the SDK is initialized only once.
 if (!admin.apps.length) {
   try {
-    // When running in a Google Cloud environment, the SDK can automatically find the credentials.
-    // No explicit configuration is needed.
-    admin.initializeApp();
+    const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
+    if (!serviceAccountString) {
+      throw new Error('La variable de entorno GOOGLE_APPLICATION_CREDENTIALS_JSON no está configurada.');
+    }
+    const serviceAccount = JSON.parse(serviceAccountString);
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
   } catch (e: any) {
     console.error("Error crítico de inicialización de Firebase Admin:", e.message);
   }
