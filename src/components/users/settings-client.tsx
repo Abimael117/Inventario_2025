@@ -67,16 +67,11 @@ export default function SettingsClient() {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      // Use a Map to guarantee uniqueness based on the document ID (uid)
-      const uniqueUsersMap = new Map<string, User>();
+      const usersList: User[] = [];
       querySnapshot.forEach((doc) => {
-        const userData = { uid: doc.id, ...doc.data() } as User;
-        if (userData.uid) {
-            uniqueUsersMap.set(userData.uid, userData);
-        }
+        usersList.push({ uid: doc.id, ...doc.data() } as User);
       });
       
-      const usersList = Array.from(uniqueUsersMap.values());
       setUsers(usersList);
 
     } catch (error) {
@@ -91,7 +86,6 @@ export default function SettingsClient() {
     }
   };
 
-  // useEffect hook to fetch users when the component mounts or firestore instance changes.
   useEffect(() => {
     fetchUsers();
   }, [firestore]);
@@ -106,7 +100,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        fetchUsers(); // Refresh the user list
+        fetchUsers();
       } else {
         toast({
           variant: "destructive",
@@ -139,7 +133,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                fetchUsers(); // Refresh the user list
+                fetchUsers();
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -182,9 +176,9 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
-                 fetchUsers(); // Refresh the user list
+                 fetchUsers();
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -209,7 +203,17 @@ export default function SettingsClient() {
   };
   
   const displayedUsers = useMemo(() => {
-    return users.sort((a, b) => {
+    const uniqueUsersMap = new Map<string, User>();
+    users.forEach((user) => {
+      // If the user is an admin, ensure only one admin entry exists.
+      // We can use a constant key for the admin to overwrite any duplicates.
+      const key = user.role === 'admin' ? 'admin_user' : user.uid;
+      if (!uniqueUsersMap.has(key)) {
+        uniqueUsersMap.set(key, user);
+      }
+    });
+
+    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
@@ -376,5 +380,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    

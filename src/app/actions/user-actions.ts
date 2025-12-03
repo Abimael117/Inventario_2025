@@ -1,19 +1,39 @@
 
 'use server';
 
-import * as admin from 'firebase-admin';
+import { getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 
 // This pattern ensures the Admin SDK is initialized only once per server instance.
 function initializeFirebaseAdmin() {
-  if (admin.apps.length > 0) {
-    return admin.app();
+  // Check if the app is already initialized to prevent errors
+  if (getApps().length) {
+    return {
+      app: getApp(),
+      auth: getAuth(),
+      firestore: getFirestore(),
+    };
   }
-  
-  // When running in a Google Cloud environment (like App Hosting),
-  // the SDK can automatically detect the service account credentials.
-  return admin.initializeApp();
+
+  try {
+    // When running in a Google Cloud environment (like App Hosting),
+    // the SDK can automatically detect the service account credentials.
+    // No config object is needed.
+    const app = initializeApp();
+    return {
+      app,
+      auth: getAuth(app),
+      firestore: getFirestore(app),
+    };
+  } catch (error: any) {
+    console.error('Failed to initialize Firebase Admin SDK:', error);
+    // Throw a more specific error that can be caught and handled.
+    throw new Error('Server configuration error: Could not initialize Firebase Admin services.');
+  }
 }
+
 
 const DUMMY_DOMAIN = 'decd.local';
 
@@ -28,9 +48,7 @@ export async function createNewUser(
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   try {
-    const adminApp = initializeFirebaseAdmin();
-    const adminAuth = adminApp.auth();
-    const adminFirestore = adminApp.firestore();
+    const { auth: adminAuth, firestore: adminFirestore } = initializeFirebaseAdmin();
 
     if (!userData.password || userData.password.length < 6) {
       return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
@@ -64,26 +82,22 @@ export async function createNewUser(
     let errorMessage = 'Error desconocido al crear el usuario.';
     
     // Provide more specific error messages based on Firebase error codes
-    switch (error.code) {
-      case 'auth/email-already-exists':
-        errorMessage = 'Este nombre de usuario ya está en uso.';
-        break;
-      case 'auth/invalid-password':
-        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
-        break;
-      case 'auth/invalid-email':
-         errorMessage = 'El formato del nombre de usuario no es válido.';
-        break;
-      // Handle case where SDK might not have been initialized due to env issues
-      case 'app/no-app':
-        errorMessage = 'Error de configuración del servidor. No se pudo conectar con los servicios de Firebase.';
-        break;
-      default:
-        errorMessage = error.message || 'Error desconocido del servidor.';
+    if (error.code) {
+        switch (error.code) {
+        case 'auth/email-already-exists':
+            errorMessage = 'Este nombre de usuario ya está en uso.';
+            break;
+        case 'auth/invalid-password':
+            errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+            break;
+        case 'auth/invalid-email':
+            errorMessage = 'El formato del nombre de usuario no es válido.';
+            break;
+        }
+    } else if (error.message.includes('Server configuration error')) {
+        errorMessage = error.message;
     }
     
     return { success: false, error: errorMessage };
   }
 }
-
-    
