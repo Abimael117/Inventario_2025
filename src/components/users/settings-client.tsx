@@ -358,7 +358,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
-
-    

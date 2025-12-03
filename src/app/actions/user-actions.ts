@@ -20,8 +20,8 @@ interface CreateUserInput {
 if (!admin.apps.length) {
     try {
         console.log("Initializing Firebase Admin SDK in Server Action...");
-        // Initialize with default credentials from the environment.
         admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
             projectId: firebaseConfig.projectId,
         });
         console.log("Firebase Admin SDK initialized successfully in Server Action.");
@@ -87,7 +87,3 @@ export async function createNewUser(input: CreateUserInput) {
       return { success: false, error: errorMessage };
     }
 }
-
-    
-
-    
