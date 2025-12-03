@@ -44,7 +44,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser } from '@/ai/flows/create-user-flow';
+import { createNewUser } from '@/app/actions/user-actions';
+
 
 export default function SettingsClient() {
   const firestore = useFirestore();
@@ -65,10 +66,10 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid' | 'password'> & {password: string}) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
         try {
-            const result = await createNewUser(newUser);
+            const result = await createNewUser(newUser as any);
             if (result.success) {
                 toast({
                     title: "Usuario Creado",
@@ -147,8 +148,6 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
-        // Here, we should be calling a flow/action to delete the Auth user as well.
-        // For now, we only delete the Firestore profile.
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
@@ -182,9 +181,11 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     if (!users) return [];
     
+    // Use a Map to ensure each user is displayed only once, using their UID as the key.
     const uniqueUsers = new Map<string, User>();
     users.forEach(u => {
-        const userWithUid = { ...u, uid: u.id };
+        // The document ID from Firestore is the UID.
+        const userWithUid = { ...u, uid: u.id }; 
         if (!uniqueUsers.has(userWithUid.uid)) {
             uniqueUsers.set(userWithUid.uid, userWithUid);
         }
