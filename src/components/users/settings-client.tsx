@@ -69,6 +69,7 @@ export default function SettingsClient() {
   const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
         try {
+            // Directly call the Server Action
             const result = await createNewUser(newUser as any);
             if (result.success) {
                 toast({
@@ -148,6 +149,8 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
+        // This is a simplification. A real app should call a server action
+        // to delete the user from Firebase Auth as well.
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
@@ -184,9 +187,10 @@ export default function SettingsClient() {
     // Use a Map to ensure each user is displayed only once, using their UID as the key.
     const uniqueUsers = new Map<string, User>();
     users.forEach(u => {
-        // The document ID from Firestore is the UID.
+        // useCollection returns `id`, which is the document ID (our UID).
+        // Let's ensure the object consistently has a `uid` property.
         const userWithUid = { ...u, uid: u.id }; 
-        if (!uniqueUsers.has(userWithUid.uid)) {
+        if (userWithUid.uid && !uniqueUsers.has(userWithUid.uid)) {
             uniqueUsers.set(userWithUid.uid, userWithUid);
         }
     });
@@ -271,7 +275,7 @@ export default function SettingsClient() {
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => openDeleteDialog(user)}
-                                    disabled={user.role === 'admin' || isPending}
+                                    disabled={user.role === 'admin' || isPending || user.uid === currentUser?.uid}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >
@@ -296,7 +300,7 @@ export default function SettingsClient() {
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
                       <li>Al crear un nuevo usuario, se crea tanto su **cuenta de acceso** (autenticación) como su **perfil de permisos** (base de datos).</li>
-                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser eliminada manualmente desde la Consola de Firebase.</li>
+                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser eliminada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
                     </ul>
                 </CardContent>
             </Card>
