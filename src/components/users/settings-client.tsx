@@ -182,8 +182,8 @@ export default function SettingsClient() {
     // Use a Map to ensure each user is displayed only once, using their UID as the key.
     const uniqueUsers = new Map<string, User>();
     users.forEach(u => {
-        // useCollection returns `id`, which is the document ID (our UID).
-        // Let's ensure the object consistently has a `uid` property.
+        // The `useCollection` hook returns `id`, which is the document ID (our UID).
+        // We ensure the object consistently has a `uid` property.
         const userWithUid = { ...u, uid: u.id }; 
         if (userWithUid.uid && !uniqueUsers.has(userWithUid.uid)) {
             uniqueUsers.set(userWithUid.uid, userWithUid);
