@@ -144,14 +144,12 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
-        // This is a simplification. A real app should call a server action
-        // to delete the user from Firebase Auth as well.
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -180,6 +178,7 @@ export default function SettingsClient() {
     if (!users) {
       return [];
     }
+    // Use a Map to guarantee uniqueness based on the user's `uid`.
     const uniqueUsersMap = new Map<string, User>();
     users.forEach(user => {
       // The user object MUST have a `uid` to be valid.
@@ -356,5 +355,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    

@@ -7,22 +7,16 @@ import { firebaseConfig } from '@/firebase/config';
 
 // --- Firebase Admin SDK Initialization ---
 // This pattern ensures the Admin SDK is initialized only once per server instance.
-let isFirebaseAdminInitialized = false;
-
-function initializeFirebaseAdmin() {
-  if (!isFirebaseAdminInitialized) {
-    try {
-      if (admin.apps.length === 0) {
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-          projectId: firebaseConfig.projectId,
-        });
-      }
-      isFirebaseAdminInitialized = true;
-    } catch (error: any) {
-      console.error('Firebase Admin Initialization Error:', error);
-      // We don't set the flag to true, so it might retry on the next call.
-    }
+if (admin.apps.length === 0) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: firebaseConfig.projectId,
+    });
+  } catch (error: any) {
+    console.error('Error al inicializar Firebase Admin SDK:', error);
+    // This will likely cause subsequent operations to fail,
+    // which is expected if the environment is not configured correctly.
   }
 }
 
@@ -38,9 +32,7 @@ export async function createNewUser(
   userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
-  initializeFirebaseAdmin();
-
-  if (!isFirebaseAdminInitialized) {
+  if (admin.apps.length === 0) {
     return { success: false, error: 'Error de configuración del servidor. El SDK de Firebase no está inicializado. Revisa los logs.' };
   }
   
