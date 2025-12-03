@@ -13,7 +13,6 @@ function initializeFirebaseAdmin() {
   try {
     // When running in a Google Cloud environment (like App Hosting),
     // the SDK can automatically detect the service account credentials.
-    // No need to check for GOOGLE_APPLICATION_CREDENTIALS explicitly.
     admin.initializeApp();
   } catch (error: any) {
     console.error('Error al inicializar Firebase Admin SDK:', error);
@@ -90,6 +89,8 @@ export async function createNewUser(
       case 'app/no-app':
         errorMessage = 'Error de configuración del servidor. No se pudo conectar con los servicios de Firebase.';
         break;
+      default:
+        errorMessage = error.message || 'Error desconocido del servidor.';
     }
     
     return { success: false, error: errorMessage };
