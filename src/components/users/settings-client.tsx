@@ -39,24 +39,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
 export default function SettingsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
-
-  const usersRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
-
-  const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -65,6 +60,35 @@ export default function SettingsClient() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const fetchUsers = async () => {
+    if (!firestore) return;
+    setIsLoadingUsers(true);
+    const usersRef = collection(firestore, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    const usersList: User[] = [];
+    querySnapshot.forEach((doc) => {
+        usersList.push({ uid: doc.id, ...doc.data() } as User);
+    });
+
+    // Use a Map to guarantee uniqueness
+    const uniqueUsersMap = new Map<string, User>();
+    usersList.forEach(user => {
+        if (user?.uid) {
+            uniqueUsersMap.set(user.uid, user);
+        }
+    });
+    
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+    
+    setUsers(uniqueUsers);
+    setIsLoadingUsers(false);
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [firestore]);
+
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
     startTransition(async () => {
@@ -75,6 +99,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
+        fetchUsers(); // Refresh the user list
       } else {
         toast({
           variant: "destructive",
@@ -107,6 +132,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
+                fetchUsers(); // Refresh the user list
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -151,6 +177,7 @@ export default function SettingsClient() {
                     title: "Perfil de Usuario Eliminado",
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
+                 fetchUsers(); // Refresh the user list
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -175,20 +202,7 @@ export default function SettingsClient() {
   };
   
   const displayedUsers = useMemo(() => {
-    if (!users) {
-      return [];
-    }
-    // Use a Map to guarantee uniqueness based on the user's `uid`.
-    const uniqueUsersMap = new Map<string, User>();
-    users.forEach(user => {
-      // The user object MUST have a `uid` to be valid.
-      if (user?.uid) {
-        uniqueUsersMap.set(user.uid, user);
-      }
-    });
-    
-    // Convert the Map values back to an array and sort it.
-    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
+    return users.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
