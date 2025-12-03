@@ -178,18 +178,14 @@ export default function SettingsClient() {
   
   const displayedUsers = useMemo(() => {
     if (!users) return [];
-    
-    // Use a Map to ensure uniqueness based on the document ID (`id` from useCollection)
     const uniqueUsers = new Map<string, User>();
     users.forEach(user => {
-      // The `useCollection` hook from `use-collection.tsx` returns a property `id` which is the Firestore document ID.
-      // We use this `id` as the unique key. The user object from Firestore already contains a `uid` field, but
-      // the document ID (`id`) is the most reliable unique identifier provided by the hook.
-      if (user.id && !uniqueUsers.has(user.id)) {
-        uniqueUsers.set(user.id, user);
+      // Use the `uid` from the user data as the unique key. This is the Firebase Auth User ID
+      // and should be the canonical identifier for a user account.
+      if (user.uid && !uniqueUsers.has(user.uid)) {
+        uniqueUsers.set(user.uid, user);
       }
     });
-  
     return Array.from(uniqueUsers.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -357,3 +353,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
