@@ -6,16 +6,16 @@ import type { User } from '@/lib/types';
 import { firebaseConfig } from '@/firebase/config';
 
 // Initialize Firebase Admin SDK only if it hasn't been initialized yet.
+// This is a "lazy initialization" pattern.
 function initializeFirebaseAdmin() {
     if (!admin.apps.length) {
       try {
         // When running in a Google Cloud environment, the SDK can auto-discover credentials.
-        // For local development, you would set the GOOGLE_APPLICATION_CREDENTIALS env var.
         admin.initializeApp({
           credential: admin.credential.applicationDefault(),
           projectId: firebaseConfig.projectId,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error('Firebase Admin Initialization Error:', error);
         // Throw an error to make it clear that initialization failed. This prevents
         // subsequent operations from failing with a generic "unknown error".
