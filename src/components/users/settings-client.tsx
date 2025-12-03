@@ -180,15 +180,13 @@ export default function SettingsClient() {
     if (!users) {
       return [];
     }
-    // Use a Map to ensure every user is unique by their UID. This is the foolproof way.
     const uniqueUsers = new Map<string, User>();
     for (const user of users) {
-      if (user && user.uid) { // Ensure user and uid exist
+      if (user && user.uid) {
         uniqueUsers.set(user.uid, user);
       }
     }
     
-    // Convert the Map values back to an array and sort it.
     return Array.from(uniqueUsers.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
