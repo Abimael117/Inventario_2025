@@ -178,15 +178,21 @@ export default function SettingsClient() {
   
   const displayedUsers = useMemo(() => {
     if (!users) return [];
-    const uniqueUsers = new Map<string, User>();
-    users.forEach(user => {
-      // Use the `uid` from the user data as the unique key. This is the Firebase Auth User ID
-      // and should be the canonical identifier for a user account.
-      if (user.uid && !uniqueUsers.has(user.uid)) {
-        uniqueUsers.set(user.uid, user);
+    
+    // Use a Map to guarantee uniqueness based on the user's UID.
+    const uniqueUsersMap = new Map<string, User>();
+    for (const user of users) {
+      // The user object from Firestore should have a `uid` property.
+      // We only add the user to the map if they have a uid and are not already in the map.
+      if (user.uid && !uniqueUsersMap.has(user.uid)) {
+        uniqueUsersMap.set(user.uid, user);
       }
-    });
-    return Array.from(uniqueUsers.values()).sort((a, b) => {
+    }
+    
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+    
+    // Sort the unique users: admin first, then alphabetically by name.
+    return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
