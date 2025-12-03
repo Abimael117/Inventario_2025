@@ -39,11 +39,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect, useCallback, useMemo } from 'react';
+import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -68,6 +68,7 @@ export default function SettingsClient() {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
+      // Use a Map to ensure unique users by UID, preventing duplicates
       const usersMap = new Map<string, User>();
       querySnapshot.forEach((doc) => {
         const userData = { uid: doc.id, ...doc.data() } as User;
@@ -75,7 +76,15 @@ export default function SettingsClient() {
       });
       
       const usersList = Array.from(usersMap.values());
-      setUsers(usersList);
+      
+      // Sort the unique list
+      const sortedUsers = usersList.sort((a, b) => {
+          if (a.role === 'admin' && b.role !== 'admin') return -1;
+          if (b.role === 'admin' && a.role !== 'admin') return 1;
+          return (a.name || '').localeCompare(b.name || '');
+      });
+
+      setUsers(sortedUsers);
 
     } catch (error) {
         console.error("Error fetching users:", error);
@@ -89,6 +98,7 @@ export default function SettingsClient() {
     }
   }, [firestore, toast]);
 
+  // useEffect now has an empty dependency array, so it runs only once on mount.
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -103,7 +113,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        fetchUsers();
+        fetchUsers(); // Refresh user list
       } else {
         toast({
           variant: "destructive",
@@ -136,7 +146,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                fetchUsers();
+                fetchUsers(); // Refresh user list
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -181,7 +191,7 @@ export default function SettingsClient() {
                     title: "Perfil de Usuario Eliminado",
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
-                 fetchUsers();
+                 fetchUsers(); // Refresh user list
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -204,14 +214,6 @@ export default function SettingsClient() {
     reports: 'Reportes',
     settings: 'Configuración'
   };
-  
-  const displayedUsers = useMemo(() => {
-    return [...users].sort((a, b) => {
-      if (a.role === 'admin' && b.role !== 'admin') return -1;
-      if (b.role === 'admin' && a.role !== 'admin') return 1;
-      return (a.name || '').localeCompare(b.name || '');
-    });
-  }, [users]);
 
 
   if (isLoadingUsers) {
@@ -258,7 +260,7 @@ export default function SettingsClient() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {displayedUsers.map(user => (
+                        {users.map(user => (
                             <TableRow key={user.uid}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>
@@ -373,5 +375,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
