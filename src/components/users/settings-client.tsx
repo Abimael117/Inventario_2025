@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -42,7 +41,7 @@ import { AddUserForm } from '@/components/users/add-user-form';
 import { useState, useTransition, useMemo, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
@@ -64,25 +63,35 @@ export default function SettingsClient() {
   const fetchUsers = async () => {
     if (!firestore) return;
     setIsLoadingUsers(true);
-    const usersRef = collection(firestore, 'users');
-    const querySnapshot = await getDocs(usersRef);
-    const usersList: User[] = [];
-    querySnapshot.forEach((doc) => {
-        usersList.push({ uid: doc.id, ...doc.data() } as User);
-    });
+    try {
+      const usersRef = collection(firestore, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      const usersList: User[] = [];
+      querySnapshot.forEach((doc) => {
+          usersList.push({ uid: doc.id, ...doc.data() } as User);
+      });
 
-    // Use a Map to guarantee uniqueness by UID. This is the definitive fix.
-    const uniqueUsersMap = new Map<string, User>();
-    usersList.forEach(user => {
-        if (user?.uid) {
-            uniqueUsersMap.set(user.uid, user);
-        }
-    });
-    
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
-    
-    setUsers(uniqueUsers);
-    setIsLoadingUsers(false);
+      // Utiliza un Map para garantizar la unicidad por UID.
+      const uniqueUsersMap = new Map<string, User>();
+      usersList.forEach(user => {
+          if (user?.uid) {
+              uniqueUsersMap.set(user.uid, user);
+          }
+      });
+      
+      const uniqueUsers = Array.from(uniqueUsersMap.values());
+      
+      setUsers(uniqueUsers);
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al cargar usuarios",
+            description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
+        });
+    } finally {
+        setIsLoadingUsers(false);
+    }
   };
 
   useEffect(() => {
