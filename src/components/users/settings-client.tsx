@@ -177,26 +177,31 @@ export default function SettingsClient() {
   };
   
   const displayedUsers = useMemo(() => {
-    if (!users) return [];
-    
-    // Use a Map to guarantee uniqueness based on the user's UID.
-    const uniqueUsersMap = new Map<string, User>();
+    if (!users) {
+      return [];
+    }
+
+    const uniqueUsers = new Map<string, User>();
     for (const user of users) {
-      // The user object from Firestore should have a `uid` property.
-      // We only add the user to the map if they have a uid and are not already in the map.
-      if (user.uid && !uniqueUsersMap.has(user.uid)) {
-        uniqueUsersMap.set(user.uid, user);
+      if (user && user.uid) { // Ensure user and uid exist
+        uniqueUsers.set(user.uid, user);
       }
     }
     
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
-    
-    // Sort the unique users: admin first, then alphabetically by name.
-    return uniqueUsers.sort((a, b) => {
-      if (a.role === 'admin' && b.role !== 'admin') return -1;
-      if (a.role !== 'admin' && b.role === 'admin') return 1;
+    // Convert Map back to an array and sort it
+    const sortedUsers = Array.from(uniqueUsers.values()).sort((a, b) => {
+      // Admin always comes first
+      if (a.role === 'admin' && b.role !== 'admin') {
+        return -1;
+      }
+      if (b.role === 'admin' && a.role !== 'admin') {
+        return 1;
+      }
+      // Sort other users alphabetically by name
       return (a.name || '').localeCompare(b.name || '');
     });
+
+    return sortedUsers;
   }, [users]);
 
 
