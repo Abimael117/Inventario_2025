@@ -7,18 +7,12 @@ import type { User } from '@/lib/types';
 // This pattern ensures the Admin SDK is initialized only once per server instance.
 function initializeFirebaseAdmin() {
   if (admin.apps.length > 0) {
-    return admin;
+    return admin.app();
   }
   
-  try {
-    // When running in a Google Cloud environment (like App Hosting),
-    // the SDK can automatically detect the service account credentials.
-    admin.initializeApp();
-  } catch (error: any) {
-    console.error('Error al inicializar Firebase Admin SDK:', error);
-    // This will cause subsequent operations to fail if the environment is not configured correctly.
-  }
-  return admin;
+  // When running in a Google Cloud environment (like App Hosting),
+  // the SDK can automatically detect the service account credentials.
+  return admin.initializeApp();
 }
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -33,24 +27,19 @@ export async function createNewUser(
   userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
-  const admin = initializeFirebaseAdmin();
-  
-  // A check to see if the initialization failed and there are still no apps.
-  if (admin.apps.length === 0) {
-    const errorMessage = 'Error de configuración del servidor. El SDK de Firebase no está inicializado. Revisa los logs.';
-    console.error(errorMessage);
-    return { success: false, error: errorMessage };
-  }
-  
-  if (!userData.password || userData.password.length < 6) {
-    return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
-  }
-
-  const email = `${userData.username}@${DUMMY_DOMAIN}`;
-
   try {
+    const adminApp = initializeFirebaseAdmin();
+    const adminAuth = adminApp.auth();
+    const adminFirestore = adminApp.firestore();
+
+    if (!userData.password || userData.password.length < 6) {
+      return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
+    }
+
+    const email = `${userData.username}@${DUMMY_DOMAIN}`;
+
     // 1. Create user in Firebase Authentication
-    const userRecord = await admin.auth().createUser({
+    const userRecord = await adminAuth.createUser({
       email: email,
       password: userData.password,
       displayName: userData.name,
@@ -60,7 +49,7 @@ export async function createNewUser(
     // Do NOT store the password in Firestore.
     const { password, ...userDataForFirestore } = userData;
 
-    const userDocRef = admin.firestore().collection('users').doc(userRecord.uid);
+    const userDocRef = adminFirestore.collection('users').doc(userRecord.uid);
     await userDocRef.set({
       ...userDataForFirestore,
       uid: userRecord.uid,
@@ -96,3 +85,5 @@ export async function createNewUser(
     return { success: false, error: errorMessage };
   }
 }
+
+    

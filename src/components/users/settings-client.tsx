@@ -66,22 +66,19 @@ export default function SettingsClient() {
     try {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
-      const usersList: User[] = [];
-      querySnapshot.forEach((doc) => {
-          usersList.push({ uid: doc.id, ...doc.data() } as User);
-      });
-
-      // Utiliza un Map para garantizar la unicidad por UID.
+      
+      // Use a Map to guarantee uniqueness based on the document ID (uid)
       const uniqueUsersMap = new Map<string, User>();
-      usersList.forEach(user => {
-          if (user?.uid) {
-              uniqueUsersMap.set(user.uid, user);
-          }
+      querySnapshot.forEach((doc) => {
+        const userData = { uid: doc.id, ...doc.data() } as User;
+        if (userData.uid) {
+            uniqueUsersMap.set(userData.uid, userData);
+        }
       });
       
-      const uniqueUsers = Array.from(uniqueUsersMap.values());
-      
-      setUsers(uniqueUsers);
+      const usersList = Array.from(uniqueUsersMap.values());
+      setUsers(usersList);
+
     } catch (error) {
         console.error("Error fetching users:", error);
         toast({
@@ -94,6 +91,7 @@ export default function SettingsClient() {
     }
   };
 
+  // useEffect hook to fetch users when the component mounts or firestore instance changes.
   useEffect(() => {
     fetchUsers();
   }, [firestore]);
@@ -184,7 +182,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
                  fetchUsers(); // Refresh the user list
             })
@@ -378,3 +376,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
