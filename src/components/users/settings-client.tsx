@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -43,13 +44,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, writeBatch } from 'firebase/firestore';
-
-
-// NOTE: Server-side actions have been removed due to persistent environment issues.
-// User creation will only create the Firestore record. The Auth user must be created
-// manually in the Firebase Console with a matching email (username@decd.local).
-// User deletion only deletes the Firestore record, not the Auth user.
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { createNewUser } from '@/ai/flows/create-user-flow';
 
 export default function SettingsClient() {
   const router = useRouter();
@@ -70,41 +66,26 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid' | 'password'> & {password?: string}) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
-        if (!firestore) {
-            toast({ variant: "destructive", title: "Error", description: "Firestore no está disponible." });
-            return;
-        }
-
-        // Generate a temporary UID for the document ID.
-        // The definitive UID will come from the manually created Auth user.
-        const userDocRef = doc(collection(firestore, 'users'));
-
-        const userDocData: Omit<User, 'password'> = {
-            uid: `NEEDS_AUTH_UID_FOR_${newUser.username}`, // Placeholder UID
-            name: newUser.name,
-            username: newUser.username,
-            role: 'user',
-            permissions: newUser.permissions || [],
-        };
-
-        setDoc(userDocRef, userDocData)
-            .then(() => {
+        try {
+            const result = await createNewUser(newUser);
+            if (result.success) {
                 toast({
-                    title: "Perfil de Usuario Creado",
-                    description: `El perfil para "${newUser.username}" fue creado. Ahora debes crear su cuenta de acceso manualmente en la Consola de Firebase.`,
+                    title: "Usuario Creado",
+                    description: `El usuario "${newUser.username}" ha sido creado y puede iniciar sesión.`,
                 });
                 setIsAddUserOpen(false);
-            })
-            .catch(error => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: userDocData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                throw new Error(result.error || 'Ocurrió un error desconocido.');
+            }
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error al Crear Usuario",
+                description: error.message || 'No se pudo crear la cuenta de usuario.',
             });
+        }
     });
   };
 
@@ -116,6 +97,7 @@ export default function SettingsClient() {
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
         if (!firestore) return;
+        // The document ID in the 'users' collection is the user's UID
         const userDocRef = doc(firestore, 'users', userId);
 
         const updatePayload = {
@@ -159,12 +141,13 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
+        // The document ID in the 'users' collection is the user's UID
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado de la base de datos.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado de la base de datos. Aún debes eliminar su cuenta de acceso manualmente.`,
                 });
             })
             .catch(error => {
@@ -188,28 +171,14 @@ export default function SettingsClient() {
     reports: 'Reportes',
     settings: 'Configuración'
   };
-
+  
   const displayedUsers = useMemo(() => {
     if (!users) return [];
-    
-    // Firestore's document ID is now the source of truth for the user's "uid" in this context
-    const usersWithCorrectId = users.map(u => ({...u, uid: u.id}));
-
-    const allAdmins = usersWithCorrectId.filter(u => u.role === 'admin');
-    const otherUsers = usersWithCorrectId.filter(u => u.role !== 'admin');
-    
-    const singleAdmin = allAdmins.length > 0 ? [allAdmins[0]] : [];
-    
-    const combinedUsers = [...singleAdmin, ...otherUsers];
-
-    return combinedUsers.sort((a, b) => {
-      if (a.role === 'admin' && b.role !== 'admin') {
-        return -1; // admin comes first
-      }
-      if (a.role !== 'admin' && b.role === 'admin') {
-        return 1;
-      }
-      return a.name.localeCompare(b.name); // sort other users by name
+    const usersWithId = users.map(u => ({...u, uid: u.id}));
+    return usersWithId.sort((a, b) => {
+      if (a.role === 'admin' && b.role !== 'admin') return -1;
+      if (a.role !== 'admin' && b.role === 'admin') return 1;
+      return a.name.localeCompare(b.name);
     });
   }, [users]);
 
@@ -234,16 +203,16 @@ export default function SettingsClient() {
         <AppHeader title="Configuración">
             <Button size="sm" onClick={() => setIsAddUserOpen(true)} disabled={isPending}>
                 <PlusCircle className="h-4 w-4 mr-2" />
-                Añadir Perfil
+                Añadir Usuario
             </Button>
         </AppHeader>
         <main className="flex-1 p-4 md:p-6">
           <div className="grid gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Gestión de Perfiles</CardTitle>
+                <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade, edita o elimina perfiles de usuarios y gestiona sus permisos de acceso.
+                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -304,13 +273,13 @@ export default function SettingsClient() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <ShieldQuestion className="h-5 w-5" />
-                        Sobre la Gestión de Perfiles
+                        Sobre la Gestión de Usuarios
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
-                      <li>Para que un nuevo perfil pueda iniciar sesión, debes crear manualmente un usuario en la **Consola de Firebase &gt; Authentication** con un email que coincida con el formato `nombre.usuario@decd.local` y asignarle una contraseña.</li>
+                      <li>Al crear un nuevo usuario, se crea tanto su **cuenta de acceso** como su **perfil de permisos** en la base de datos.</li>
                       <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación, pero **no elimina la cuenta de acceso** de la Consola de Firebase.</li>
                     </ul>
                 </CardContent>
@@ -322,9 +291,9 @@ export default function SettingsClient() {
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Añadir Nuevo Perfil de Usuario</DialogTitle>
+                <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                    Completa los detalles para crear un nuevo perfil. Recuerda crear su cuenta de acceso en la Consola de Firebase.
+                    Completa los detalles para crear una nueva cuenta de usuario. Podrá iniciar sesión inmediatamente.
                 </DialogDescription>
             </DialogHeader>
             <AddUserForm onSubmit={handleAddUser} isPending={isPending} />
@@ -369,3 +338,4 @@ export default function SettingsClient() {
     </>
   );
 }
+
