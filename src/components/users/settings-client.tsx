@@ -43,7 +43,7 @@ import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -67,6 +67,7 @@ export default function SettingsClient() {
       return;
     }
     
+    setIsLoadingUsers(true);
     try {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
@@ -100,7 +101,6 @@ export default function SettingsClient() {
   }, [firestore, toast]);
 
   useEffect(() => {
-    setIsLoadingUsers(true);
     fetchUsers();
   }, [fetchUsers]);
 
@@ -376,3 +376,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
