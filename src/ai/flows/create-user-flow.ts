@@ -24,19 +24,16 @@ const CreateUserOutputSchema = z.object({
 });
 export type CreateUserOutput = z.infer<typeof CreateUserOutputSchema>;
 
-// Initialize Firebase Admin SDK if not already initialized
+// Correctly initialize Firebase Admin SDK ONCE.
 if (!admin.apps.length) {
-    // Read credentials from environment variables
-    const serviceAccountString = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
-    if (!serviceAccountString) {
-        console.error("Firebase Admin SDK credentials are not available in environment variables.");
-    } else {
-        const serviceAccount = JSON.parse(serviceAccountString);
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-        console.log("Firebase Admin SDK initialized successfully.");
-    }
+  try {
+    // When deployed, it will use Application Default Credentials.
+    // For local development, GOOGLE_APPLICATION_CREDENTIALS env var must be set.
+    admin.initializeApp();
+    console.log("Firebase Admin SDK initialized successfully.");
+  } catch (e: any) {
+    console.error("Firebase Admin SDK initialization error:", e);
+  }
 }
 
 
@@ -54,7 +51,8 @@ const createUserFlow = ai.defineFlow(
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     if (!admin.apps.length) {
-      return { success: false, error: 'Firebase Admin SDK no está inicializado.' };
+      console.error('CRITICAL: Firebase Admin SDK is not initialized.');
+      return { success: false, error: 'Firebase Admin SDK no está inicializado. Contacta al soporte.' };
     }
     
     try {
@@ -79,15 +77,18 @@ const createUserFlow = ai.defineFlow(
       // The document ID in 'users' collection is the UID
       await admin.firestore().collection('users').doc(uid).set(userProfile);
 
+      console.log(`Successfully created user: ${username} (UID: ${uid})`);
       return { success: true, uid: uid };
     } catch (error: any) {
       console.error('Error creating user:', error);
-      // Provide a more user-friendly error message
-      let errorMessage = 'Ocurrió un error inesperado.';
+      
+      let errorMessage = 'Ocurrió un error inesperado al crear el usuario.';
       if (error.code === 'auth/email-already-exists') {
-        errorMessage = 'Este nombre de usuario ya existe.';
+        errorMessage = 'Este nombre de usuario ya existe en el sistema de autenticación.';
       } else if (error.code === 'auth/invalid-password') {
         errorMessage = 'La contraseña no es válida. Debe tener al menos 6 caracteres.';
+      } else if (error.code === 'unavailable') {
+         errorMessage = 'El servicio de autenticación no está disponible. Revisa la conexión del servidor.';
       }
       return { success: false, error: errorMessage };
     }

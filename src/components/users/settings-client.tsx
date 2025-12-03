@@ -176,12 +176,21 @@ export default function SettingsClient() {
     if (!users) return [];
     
     // The user's UID is the document ID, which is already `id` from useCollection.
-    // Let's just ensure the `uid` property is consistently set.
-    const usersWithId = users.map(u => ({...u, uid: u.id}));
+    // Let's just ensure the `uid` property is consistently set and filter out any potential duplicates.
+    const uniqueUsers = new Map<string, User>();
+    users.forEach(u => {
+        const userWithUid = { ...u, uid: u.id };
+        if (!uniqueUsers.has(userWithUid.uid)) {
+            uniqueUsers.set(userWithUid.uid, userWithUid);
+        }
+    });
+
+    const usersWithId = Array.from(uniqueUsers.values());
     
     return usersWithId.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
+      if (!a.name || !b.name) return 0;
       return a.name.localeCompare(b.name);
     });
   }, [users]);
@@ -328,7 +337,7 @@ export default function SettingsClient() {
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción eliminará permanentemente el perfil de "{userToDelete?.username}" de la base de datos de la aplicación. Su cuenta de acceso no será eliminada.
-            </AlertDialogDescription>
+            </carddescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
