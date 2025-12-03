@@ -180,14 +180,17 @@ export default function SettingsClient() {
     if (!users) {
       return [];
     }
-    const uniqueUsers = new Map<string, User>();
+    // Use a Map to ensure every user is unique by their UID.
+    const uniqueUsersMap = new Map<string, User>();
     for (const user of users) {
-      if (user && user.uid) {
-        uniqueUsers.set(user.uid, user);
+      // Check if user and user.uid are valid before adding to the map.
+      if (user?.uid) {
+        uniqueUsersMap.set(user.uid, user);
       }
     }
     
-    return Array.from(uniqueUsers.values()).sort((a, b) => {
+    // Convert the Map values to an array and sort them.
+    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
