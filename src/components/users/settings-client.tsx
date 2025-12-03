@@ -174,7 +174,11 @@ export default function SettingsClient() {
   
   const displayedUsers = useMemo(() => {
     if (!users) return [];
+    
+    // The user's UID is the document ID, which is already `id` from useCollection.
+    // Let's just ensure the `uid` property is consistently set.
     const usersWithId = users.map(u => ({...u, uid: u.id}));
+    
     return usersWithId.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -338,4 +342,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
