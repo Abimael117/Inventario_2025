@@ -3,21 +3,24 @@
 
 import * as admin from 'firebase-admin';
 import type { User } from '@/lib/types';
-import { firebaseConfig } from '@/firebase/config';
 
 // --- Firebase Admin SDK Initialization ---
 // This pattern ensures the Admin SDK is initialized only once per server instance.
-if (admin.apps.length === 0) {
-  try {
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: firebaseConfig.projectId,
-    });
-  } catch (error: any) {
-    console.error('Error al inicializar Firebase Admin SDK:', error);
-    // This will likely cause subsequent operations to fail,
-    // which is expected if the environment is not configured correctly.
+function initializeFirebaseAdmin() {
+  if (admin.apps.length === 0) {
+    try {
+      // When running in a Google Cloud environment (like App Hosting),
+      // the SDK can automatically detect the service account credentials.
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+    } catch (error: any) {
+      console.error('Error al inicializar Firebase Admin SDK:', error);
+      // This will cause subsequent operations to fail, which is expected
+      // if the environment is not configured correctly.
+    }
   }
+  return admin;
 }
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -31,6 +34,8 @@ const DUMMY_DOMAIN = 'decd.local';
 export async function createNewUser(
   userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
+  
+  const admin = initializeFirebaseAdmin();
   
   if (admin.apps.length === 0) {
     return { success: false, error: 'Error de configuración del servidor. El SDK de Firebase no está inicializado. Revisa los logs.' };
