@@ -180,18 +180,16 @@ export default function SettingsClient() {
     if (!users) {
       return [];
     }
-    // Use a Map to guarantee uniqueness based on the user's UID.
     const uniqueUsersMap = new Map<string, User>();
     users.forEach(user => {
-      if (user && user.uid) {
+      // The user object MUST have a `uid` to be valid.
+      if (user?.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     });
-
-    // Convert the Map values back to an array and sort them.
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
     
-    return uniqueUsers.sort((a, b) => {
+    // Convert the Map values back to an array and sort it.
+    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
@@ -358,3 +356,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
