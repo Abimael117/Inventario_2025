@@ -5,20 +5,22 @@ import * as admin from 'firebase-admin';
 import type { User } from '@/lib/types';
 import { firebaseConfig } from '@/firebase/config';
 
-// Initialize Firebase Admin SDK only if it hasn't been initialized yet.
 // This is a "lazy initialization" pattern.
+// It ensures the Admin SDK is initialized only once per server instance.
+let isFirebaseAdminInitialized = false;
 function initializeFirebaseAdmin() {
-    if (!admin.apps.length) {
+    if (!isFirebaseAdminInitialized) {
       try {
         // When running in a Google Cloud environment, the SDK can auto-discover credentials.
+        // If not, you might need to set GOOGLE_APPLICATION_CREDENTIALS env var.
         admin.initializeApp({
           credential: admin.credential.applicationDefault(),
           projectId: firebaseConfig.projectId,
         });
+        isFirebaseAdminInitialized = true;
       } catch (error: any) {
         console.error('Firebase Admin Initialization Error:', error);
-        // Throw an error to make it clear that initialization failed. This prevents
-        // subsequent operations from failing with a generic "unknown error".
+        // Throw an error to make it clear that initialization failed.
         throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
       }
     }
@@ -47,7 +49,7 @@ export async function createNewUser(
   try {
     // 1. Create user in Firebase Authentication
     const userRecord = await admin.auth().createUser({
-      email,
+      email: email, // Use the constructed email
       password: userData.password,
       displayName: userData.name,
     });
