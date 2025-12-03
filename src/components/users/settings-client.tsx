@@ -76,13 +76,13 @@ export default function SettingsClient() {
                 });
                 setIsAddUserOpen(false);
             } else {
-                throw new Error(result.error || 'Ocurrió un error desconocido.');
+                throw new Error(result.error || 'Ocurrió un error desconocido durante la creación.');
             }
         } catch (error: any) {
             toast({
                 variant: "destructive",
                 title: "Error al Crear Usuario",
-                description: error.message || 'No se pudo crear la cuenta de usuario.',
+                description: error.message || 'No se pudo crear la cuenta de usuario. Revisa los logs para más detalles.',
             });
         }
     });
@@ -147,12 +147,14 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
+        // Here, we should be calling a flow/action to delete the Auth user as well.
+        // For now, we only delete the Firestore profile.
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -336,7 +338,7 @@ export default function SettingsClient() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente el perfil de "{userToDelete?.username}" de la base de datos de la aplicación. Su cuenta de acceso no será eliminada.
+              Esta acción eliminará permanentemente el perfil de "{userToDelete?.username}" de la base de datos de la aplicación. Su cuenta de acceso **no** será eliminada.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -7,6 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import * as admin from 'firebase-admin';
+import { firebaseConfig } from '@/firebase/config';
 
 // Define input schema using Zod
 const CreateUserInputSchema = z.object({
@@ -24,16 +25,18 @@ const CreateUserOutputSchema = z.object({
 });
 export type CreateUserOutput = z.infer<typeof CreateUserOutputSchema>;
 
-// Correctly initialize Firebase Admin SDK ONCE.
+
+// --- ONE-TIME ADMIN SDK INITIALIZATION ---
 if (!admin.apps.length) {
-  try {
-    // When deployed, it will use Application Default Credentials.
-    // For local development, GOOGLE_APPLICATION_CREDENTIALS env var must be set.
-    admin.initializeApp();
-    console.log("Firebase Admin SDK initialized successfully.");
-  } catch (e: any) {
-    console.error("Firebase Admin SDK initialization error:", e);
-  }
+    try {
+        console.log("Initializing Firebase Admin SDK in flow...");
+        admin.initializeApp({
+            projectId: firebaseConfig.projectId,
+        });
+        console.log("Firebase Admin SDK initialized successfully in flow.");
+    } catch (e: any) {
+        console.error("CRITICAL: Firebase Admin SDK initialization failed in flow.", e);
+    }
 }
 
 
@@ -51,8 +54,8 @@ const createUserFlow = ai.defineFlow(
     const email = `${username}@${DUMMY_DOMAIN}`;
 
     if (!admin.apps.length) {
-      console.error('CRITICAL: Firebase Admin SDK is not initialized.');
-      return { success: false, error: 'Firebase Admin SDK no está inicializado. Contacta al soporte.' };
+      console.error('CRITICAL: Firebase Admin SDK is not initialized. The flow cannot proceed.');
+      return { success: false, error: 'El servicio de administración de Firebase no está inicializado. Contacta al soporte.' };
     }
     
     try {
@@ -80,15 +83,15 @@ const createUserFlow = ai.defineFlow(
       console.log(`Successfully created user: ${username} (UID: ${uid})`);
       return { success: true, uid: uid };
     } catch (error: any) {
-      console.error('Error creating user:', error);
+      console.error('Error creating user in createUserFlow:', error);
       
       let errorMessage = 'Ocurrió un error inesperado al crear el usuario.';
       if (error.code === 'auth/email-already-exists') {
-        errorMessage = 'Este nombre de usuario ya existe en el sistema de autenticación.';
+        errorMessage = `El nombre de usuario "${username}" ya existe. El email derivado "${email}" ya está en uso.`;
       } else if (error.code === 'auth/invalid-password') {
         errorMessage = 'La contraseña no es válida. Debe tener al menos 6 caracteres.';
-      } else if (error.code === 'unavailable') {
-         errorMessage = 'El servicio de autenticación no está disponible. Revisa la conexión del servidor.';
+      } else if (error.code === 'unavailable' || error.code === 'auth/internal-error') {
+         errorMessage = 'El servicio de autenticación no está disponible o falló. Revisa la conexión del servidor y los logs.';
       }
       return { success: false, error: errorMessage };
     }
