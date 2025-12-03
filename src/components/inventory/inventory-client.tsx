@@ -2,6 +2,7 @@
 "use client";
 
 import { Edit, MoreHorizontal, Trash2, MinusCircle, PlusCircle, Loader2, FileSpreadsheet, XCircle } from "lucide-react";
+import Papa from "papaparse";
 
 import type { Product } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,26 @@ export default function InventoryClient({
   setStatusFilter,
 }: InventoryClientProps) {
 
+  const handleExport = () => {
+    const csvData = Papa.unparse(data.map(p => ({
+      'ID': p.id,
+      'Nombre': p.name,
+      'Categoría': p.category,
+      'Cantidad': p.quantity,
+      'Ubicación': p.location,
+      'Punto de Reorden': p.reorderPoint,
+    })));
+
+    const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'inventario.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <main className="flex-1 p-4 md:p-6">
@@ -142,6 +163,10 @@ export default function InventoryClient({
                             <SelectItem value="Agotado">Agotado</SelectItem>
                           </SelectContent>
                         </Select>
+                        <Button variant="outline" size="sm" onClick={handleExport} disabled={data.length === 0}>
+                           <FileSpreadsheet className="h-4 w-4 mr-2" />
+                           Exportar
+                        </Button>
                          <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
                             <PlusCircle className="h-4 w-4 mr-2" />
                             Añadir Producto

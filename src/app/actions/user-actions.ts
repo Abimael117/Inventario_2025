@@ -1,0 +1,76 @@
+
+'use server';
+
+import * as admin from 'firebase-admin';
+import { User } from '@/lib/types';
+import { firebaseConfig } from '@/firebase/config';
+
+// Initialize Firebase Admin SDK
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: firebaseConfig.projectId,
+    });
+  } catch (error) {
+    console.error('Firebase Admin Initialization Error:', error);
+  }
+}
+
+const DUMMY_DOMAIN = 'decd.local';
+
+/**
+ * Creates a new user in Firebase Authentication and Firestore.
+ * This is a server action and should only be called from the server.
+ * @param userData - The user data for the new user.
+ * @returns An object with success status and a message or error.
+ */
+export async function createNewUser(
+  userData: Omit<User, 'uid' | 'role' | 'permissions'>
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  if (!userData.password || userData.password.length < 6) {
+    return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
+  }
+
+  const email = `${userData.username}@${DUMMY_DOMAIN}`;
+
+  try {
+    // 1. Create user in Firebase Authentication
+    const userRecord = await admin.auth().createUser({
+      email,
+      password: userData.password,
+      displayName: userData.name,
+    });
+
+    // 2. Create user profile in Firestore
+    const userDocRef = admin.firestore().collection('users').doc(userRecord.uid);
+    await userDocRef.set({
+      uid: userRecord.uid,
+      name: userData.name,
+      username: userData.username,
+      role: 'user', // Default role
+      permissions: ['dashboard', 'inventory', 'loans', 'reports'], // Default permissions
+    });
+
+    return { success: true, message: 'Usuario creado con éxito.' };
+
+  } catch (error: any) {
+    console.error('Error creating new user:', error);
+    let errorMessage = 'Error desconocido al crear el usuario.';
+    
+    // Provide more specific error messages based on Firebase error codes
+    switch (error.code) {
+      case 'auth/email-already-exists':
+        errorMessage = 'Este nombre de usuario ya está en uso.';
+        break;
+      case 'auth/invalid-password':
+        errorMessage = 'La contraseña debe tener al menos 6 caracteres.';
+        break;
+      case 'auth/invalid-email':
+         errorMessage = 'El formato del nombre de usuario no es válido.';
+        break;
+    }
+    
+    return { success: false, error: errorMessage };
+  }
+}

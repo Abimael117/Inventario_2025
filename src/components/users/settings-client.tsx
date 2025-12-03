@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, ShieldQuestion, Loader2, Edit } from 'lucide-react';
+import { Trash2, ShieldQuestion, Loader2, Edit, PlusCircle } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -38,11 +38,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
+import { AddUserForm } from '@/components/users/add-user-form';
 import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { createNewUser } from '@/app/actions/user-actions';
 
 
 export default function SettingsClient() {
@@ -56,12 +58,32 @@ export default function SettingsClient() {
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
   
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+
+  const handleAddUser = (newUserData: Omit<User, 'uid' | 'role' | 'permissions'>) => {
+    startTransition(async () => {
+      const result = await createNewUser(newUserData);
+      if (result.success) {
+        toast({
+          title: "Usuario Creado",
+          description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
+        });
+        setIsAddUserOpen(false);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al Crear Usuario",
+          description: result.error || 'Ocurrió un error desconocido.',
+        });
+      }
+    });
+  };
 
   const openEditDialog = (user: User) => {
     setUserToEdit(user);
@@ -197,11 +219,17 @@ export default function SettingsClient() {
         <main className="flex-1 p-4 md:p-6">
           <div className="grid gap-6">
             <Card>
-              <CardHeader>
-                <CardTitle>Gestión de Usuarios</CardTitle>
-                <CardDescription>
-                  Edita o elimina usuarios y gestiona sus permisos de acceso.
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Gestión de Usuarios</CardTitle>
+                  <CardDescription>
+                    Edita, elimina y crea nuevos usuarios para el sistema.
+                  </CardDescription>
+                </div>
+                <Button size="sm" onClick={() => setIsAddUserOpen(true)}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Añadir Usuario
+                </Button>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -268,12 +296,28 @@ export default function SettingsClient() {
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
                       <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser eliminada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
+                      <li>Las contraseñas de nuevos usuarios deben ser seguras y tener al menos 6 caracteres.</li>
                     </ul>
                 </CardContent>
             </Card>
           </div>
         </main>
       </div>
+
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+                <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+                <DialogDescription>
+                    Rellena los datos para crear una nueva cuenta de acceso.
+                </DialogDescription>
+            </DialogHeader>
+            <AddUserForm 
+              onSubmit={handleAddUser}
+              isPending={isPending}
+            />
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
           <DialogContent className="sm:max-w-md">
