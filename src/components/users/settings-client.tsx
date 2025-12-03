@@ -179,17 +179,16 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     if (!users) return [];
     
-    // Use a Map to ensure each user is displayed only once, using their UID as the key.
     const uniqueUsers = new Map<string, User>();
-    users.forEach(u => {
-        // The `useCollection` hook returns `id`, which is the document ID (our UID).
-        // We ensure the object consistently has a `uid` property.
-        const userWithUid = { ...u, uid: u.id }; 
-        if (userWithUid.uid && !uniqueUsers.has(userWithUid.uid)) {
-            uniqueUsers.set(userWithUid.uid, userWithUid);
-        }
+    users.forEach(user => {
+      // The `useCollection` hook returns `id`, which is the document ID.
+      // We ensure the object consistently has a `uid` property.
+      const userWithUid = { ...user, uid: user.id }; 
+      if (!uniqueUsers.has(userWithUid.uid)) {
+        uniqueUsers.set(userWithUid.uid, userWithUid);
+      }
     });
-
+  
     return Array.from(uniqueUsers.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -357,3 +356,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
