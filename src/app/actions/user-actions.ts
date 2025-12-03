@@ -5,27 +5,22 @@ import * as admin from 'firebase-admin';
 import type { User } from '@/lib/types';
 import { firebaseConfig } from '@/firebase/config';
 
-// This is a "lazy initialization" pattern.
-// It ensures the Admin SDK is initialized only once per server instance.
-let isFirebaseAdminInitialized = false;
-function initializeFirebaseAdmin() {
-    if (!isFirebaseAdminInitialized) {
-      try {
-        if (admin.apps.length === 0) {
-            // When running in a Google Cloud environment, the SDK can auto-discover credentials.
-            // If not, you might need to set GOOGLE_APPLICATION_CREDENTIALS env var.
-            admin.initializeApp({
-              credential: admin.credential.applicationDefault(),
-              projectId: firebaseConfig.projectId,
-            });
-        }
-        isFirebaseAdminInitialized = true;
-      } catch (error: any) {
-        console.error('Firebase Admin Initialization Error:', error);
-        // Throw an error to make it clear that initialization failed.
-        throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
-      }
-    }
+// --- Firebase Admin SDK Initialization ---
+// This pattern ensures the Admin SDK is initialized only once.
+if (admin.apps.length === 0) {
+  try {
+    // When running in a Google Cloud environment (like App Hosting), the SDK can auto-discover credentials.
+    // No need to manually set GOOGLE_APPLICATION_CREDENTIALS.
+    admin.initializeApp({
+      // Use applicationDefault() which finds the credentials automatically.
+      credential: admin.credential.applicationDefault(),
+      projectId: firebaseConfig.projectId,
+    });
+  } catch (error: any) {
+    console.error('Firebase Admin Initialization Error:', error);
+    // We don't throw here to avoid crashing the server on boot, 
+    // but subsequent calls will fail. The error will be caught in createNewUser.
+  }
 }
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -39,9 +34,12 @@ const DUMMY_DOMAIN = 'decd.local';
 export async function createNewUser(
   userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
-  
-  initializeFirebaseAdmin();
 
+  // The initialization is now at the top level, so we just check if it was successful.
+  if (admin.apps.length === 0) {
+    return { success: false, error: 'Error de configuración del servidor. El SDK de Firebase no está inicializado.' };
+  }
+  
   if (!userData.password || userData.password.length < 6) {
     return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
   }

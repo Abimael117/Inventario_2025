@@ -183,7 +183,7 @@ export default function SettingsClient() {
     // Use a Map to ensure every user is unique by their UID. This is the foolproof way.
     const uniqueUsers = new Map<string, User>();
     for (const user of users) {
-      if (user && user.uid) { 
+      if (user && user.uid) { // Ensure user and uid exist
         uniqueUsers.set(user.uid, user);
       }
     }
@@ -356,7 +356,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
-
-    
