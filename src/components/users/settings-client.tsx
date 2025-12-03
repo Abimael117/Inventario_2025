@@ -71,7 +71,7 @@ export default function SettingsClient() {
         usersList.push({ uid: doc.id, ...doc.data() } as User);
     });
 
-    // Use a Map to guarantee uniqueness
+    // Use a Map to guarantee uniqueness by UID. This is the definitive fix.
     const uniqueUsersMap = new Map<string, User>();
     usersList.forEach(user => {
         if (user?.uid) {

@@ -3,20 +3,21 @@
 
 import * as admin from 'firebase-admin';
 import type { User } from '@/lib/types';
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
 
 // This pattern ensures the Admin SDK is initialized only once per server instance.
 function initializeFirebaseAdmin() {
-  if (getApps().length === 0) {
-    try {
-      // When running in a Google Cloud environment (like App Hosting),
-      // the SDK can automatically detect the service account credentials.
-      admin.initializeApp();
-    } catch (error: any) {
-      console.error('Error al inicializar Firebase Admin SDK con credenciales por defecto:', error);
-      // This will cause subsequent operations to fail, which is expected
-      // if the environment is not configured correctly.
-    }
+  if (admin.apps.length > 0) {
+    return admin;
+  }
+  
+  try {
+    // When running in a Google Cloud environment (like App Hosting),
+    // the SDK can automatically detect the service account credentials.
+    // No need to check for GOOGLE_APPLICATION_CREDENTIALS explicitly.
+    admin.initializeApp();
+  } catch (error: any) {
+    console.error('Error al inicializar Firebase Admin SDK:', error);
+    // This will cause subsequent operations to fail if the environment is not configured correctly.
   }
   return admin;
 }
