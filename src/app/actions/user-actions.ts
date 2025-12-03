@@ -33,7 +33,7 @@ const DUMMY_DOMAIN = 'decd.local';
  * @returns An object with success status and a message or error.
  */
 export async function createNewUser(
-  userData: Omit<User, 'uid' | 'role' | 'permissions'>
+  userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   initializeFirebaseAdmin();
@@ -59,7 +59,7 @@ export async function createNewUser(
       name: userData.name,
       username: userData.username,
       role: 'user', // Default role
-      permissions: ['dashboard', 'inventory', 'loans', 'reports'], // Default permissions
+      permissions: userData.permissions || [], // Use permissions from form
     });
 
     return { success: true, message: 'Usuario creado con éxito.' };

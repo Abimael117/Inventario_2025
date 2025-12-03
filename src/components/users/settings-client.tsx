@@ -66,7 +66,7 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleAddUser = (newUserData: Omit<User, 'uid' | 'role' | 'permissions'>) => {
+  const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
     startTransition(async () => {
       const result = await createNewUser(newUserData);
       if (result.success) {
@@ -307,9 +307,9 @@ export default function SettingsClient() {
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
         <DialogContent className="sm:max-w-md">
             <DialogHeader>
-                <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+                <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
                 <DialogDescription>
-                    Rellena los datos para crear una nueva cuenta de acceso.
+                    Completa los detalles para crear una nueva cuenta de usuario.
                 </DialogDescription>
             </DialogHeader>
             <AddUserForm 
