@@ -151,7 +151,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -179,13 +179,14 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     if (!users) return [];
     
+    // Use a Map to ensure uniqueness based on the document ID (`id` from useCollection)
     const uniqueUsers = new Map<string, User>();
     users.forEach(user => {
-      // The `useCollection` hook returns `id`, which is the document ID.
-      // We ensure the object consistently has a `uid` property.
-      const userWithUid = { ...user, uid: user.id }; 
-      if (!uniqueUsers.has(userWithUid.uid)) {
-        uniqueUsers.set(userWithUid.uid, userWithUid);
+      // The `useCollection` hook from `use-collection.tsx` returns a property `id` which is the Firestore document ID.
+      // We use this `id` as the unique key. The user object from Firestore already contains a `uid` field, but
+      // the document ID (`id`) is the most reliable unique identifier provided by the hook.
+      if (user.id && !uniqueUsers.has(user.id)) {
+        uniqueUsers.set(user.id, user);
       }
     });
   
@@ -356,5 +357,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
