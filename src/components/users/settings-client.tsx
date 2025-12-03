@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo, useEffect, useCallback } from 'react';
+import { useState, useTransition, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
@@ -206,11 +206,7 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     const uniqueUsersMap = new Map<string, User>();
     users.forEach((user) => {
-        // Use user.uid as the key to ensure uniqueness for all users.
-        // If a user with this uid is already in the map, it won't be added again.
-        if (!uniqueUsersMap.has(user.uid)) {
-            uniqueUsersMap.set(user.uid, user);
-        }
+      uniqueUsersMap.set(user.uid, user);
     });
 
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
