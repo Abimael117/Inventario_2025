@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -9,7 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Trash2, ShieldQuestion, Loader2, Edit } from 'lucide-react';
+import { Trash2, ShieldQuestion, Loader2, Edit } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -36,14 +37,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AddUserForm } from '@/components/users/add-user-form';
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
-import { createNewUser } from '@/app/actions/user-actions';
 
 
 export default function SettingsClient() {
@@ -57,36 +56,12 @@ export default function SettingsClient() {
 
   const { data: users, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
   
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userToEdit, setUserToEdit] = useState<User | null>(null);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-
-  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
-    startTransition(async () => {
-        try {
-            const result = await createNewUser(newUser as any);
-            if (result.success) {
-                toast({
-                    title: "Usuario Creado",
-                    description: `El usuario "${newUser.username}" ha sido creado y puede iniciar sesión.`,
-                });
-                setIsAddUserOpen(false);
-            } else {
-                throw new Error(result.error || 'Ocurrió un error desconocido durante la creación.');
-            }
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error al Crear Usuario",
-                description: error.message || 'No se pudo crear la cuenta de usuario. Revisa los logs para más detalles.',
-            });
-        }
-    });
-  };
 
   const openEditDialog = (user: User) => {
     setUserToEdit(user);
@@ -154,7 +129,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -218,19 +193,14 @@ export default function SettingsClient() {
   return (
     <>
       <div className="flex flex-1 flex-col">
-        <AppHeader title="Configuración">
-            <Button size="sm" onClick={() => setIsAddUserOpen(true)} disabled={isPending}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Añadir Usuario
-            </Button>
-        </AppHeader>
+        <AppHeader title="Configuración" />
         <main className="flex-1 p-4 md:p-6">
           <div className="grid gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Añade, edita o elimina usuarios y gestiona sus permisos de acceso.
+                  Edita o elimina usuarios y gestiona sus permisos de acceso.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -297,7 +267,6 @@ export default function SettingsClient() {
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
-                      <li>Al crear un nuevo usuario, se crea tanto su **cuenta de acceso** (autenticación) como su **perfil de permisos** (base de datos).</li>
                       <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser eliminada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
                     </ul>
                 </CardContent>
@@ -306,18 +275,6 @@ export default function SettingsClient() {
         </main>
       </div>
 
-      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-        <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-                <DialogTitle>Añadir Nuevo Usuario</DialogTitle>
-                <DialogDescription>
-                    Completa los detalles para crear una nueva cuenta de usuario. Podrá iniciar sesión inmediatamente.
-                </DialogDescription>
-            </DialogHeader>
-            <AddUserForm onSubmit={handleAddUser} isPending={isPending} />
-        </DialogContent>
-      </Dialog>
-      
       <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
           <DialogContent className="sm:max-w-md">
               <DialogHeader>
