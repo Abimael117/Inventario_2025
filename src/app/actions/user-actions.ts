@@ -2,18 +2,23 @@
 'use server';
 
 import * as admin from 'firebase-admin';
-import { User } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { firebaseConfig } from '@/firebase/config';
 
-// Initialize Firebase Admin SDK
+// Initialize Firebase Admin SDK only if it hasn't been initialized yet.
 if (!admin.apps.length) {
   try {
+    // When running in a Google Cloud environment, the SDK can auto-discover credentials.
+    // For local development, you would set the GOOGLE_APPLICATION_CREDENTIALS env var.
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
       projectId: firebaseConfig.projectId,
     });
   } catch (error) {
     console.error('Firebase Admin Initialization Error:', error);
+    // Throw an error to make it clear that initialization failed. This prevents
+    // subsequent operations from failing with a generic "unknown error".
+    throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
   }
 }
 
@@ -68,6 +73,10 @@ export async function createNewUser(
         break;
       case 'auth/invalid-email':
          errorMessage = 'El formato del nombre de usuario no es válido.';
+        break;
+      // Handle case where SDK might not have been initialized due to env issues
+      case 'app/no-app':
+        errorMessage = 'Error de configuración del servidor. No se pudo conectar con los servicios de Firebase.';
         break;
     }
     
