@@ -6,20 +6,22 @@ import type { User } from '@/lib/types';
 import { firebaseConfig } from '@/firebase/config';
 
 // Initialize Firebase Admin SDK only if it hasn't been initialized yet.
-if (!admin.apps.length) {
-  try {
-    // When running in a Google Cloud environment, the SDK can auto-discover credentials.
-    // For local development, you would set the GOOGLE_APPLICATION_CREDENTIALS env var.
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-      projectId: firebaseConfig.projectId,
-    });
-  } catch (error) {
-    console.error('Firebase Admin Initialization Error:', error);
-    // Throw an error to make it clear that initialization failed. This prevents
-    // subsequent operations from failing with a generic "unknown error".
-    throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
-  }
+function initializeFirebaseAdmin() {
+    if (!admin.apps.length) {
+      try {
+        // When running in a Google Cloud environment, the SDK can auto-discover credentials.
+        // For local development, you would set the GOOGLE_APPLICATION_CREDENTIALS env var.
+        admin.initializeApp({
+          credential: admin.credential.applicationDefault(),
+          projectId: firebaseConfig.projectId,
+        });
+      } catch (error) {
+        console.error('Firebase Admin Initialization Error:', error);
+        // Throw an error to make it clear that initialization failed. This prevents
+        // subsequent operations from failing with a generic "unknown error".
+        throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
+      }
+    }
 }
 
 const DUMMY_DOMAIN = 'decd.local';
@@ -33,6 +35,9 @@ const DUMMY_DOMAIN = 'decd.local';
 export async function createNewUser(
   userData: Omit<User, 'uid' | 'role' | 'permissions'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
+  
+  initializeFirebaseAdmin();
+
   if (!userData.password || userData.password.length < 6) {
     return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
   }
