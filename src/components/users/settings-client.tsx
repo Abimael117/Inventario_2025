@@ -42,14 +42,13 @@ import { EditUserForm } from '@/components/users/edit-user-form';
 import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useRouter } from 'next/navigation';
-import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { createNewUser } from '@/ai/flows/create-user-flow';
 
 export default function SettingsClient() {
-  const router = useRouter();
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
 
   const usersRef = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -97,7 +96,6 @@ export default function SettingsClient() {
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
         if (!firestore) return;
-        // The document ID in the 'users' collection is the user's UID
         const userDocRef = doc(firestore, 'users', userId);
 
         const updatePayload = {
@@ -133,6 +131,14 @@ export default function SettingsClient() {
       });
       return;
     }
+    if (user.uid === currentUser?.uid) {
+      toast({
+        variant: "destructive",
+        title: "Acción no permitida",
+        description: "No puedes eliminar tu propia cuenta.",
+      });
+      return;
+    }
     setUserToDelete(user);
     setIsDeleteConfirmOpen(true);
   };
@@ -141,13 +147,12 @@ export default function SettingsClient() {
     if (!userToDelete || !firestore) return;
 
     startTransition(async () => {
-        // The document ID in the 'users' collection is the user's UID
         const userDocRef = doc(firestore, 'users', userToDelete.uid);
         deleteDoc(userDocRef)
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado de la base de datos. Aún debes eliminar su cuenta de acceso manualmente.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente.`,
                 });
             })
             .catch(error => {
@@ -175,24 +180,18 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     if (!users) return [];
     
-    // The user's UID is the document ID, which is already `id` from useCollection.
-    // Let's just ensure the `uid` property is consistently set and filter out any potential duplicates.
     const uniqueUsers = new Map<string, User>();
     users.forEach(u => {
-        // The `id` from useCollection is the document ID, which IS the uid.
         const userWithUid = { ...u, uid: u.id };
         if (!uniqueUsers.has(userWithUid.uid)) {
             uniqueUsers.set(userWithUid.uid, userWithUid);
         }
     });
 
-    const usersWithId = Array.from(uniqueUsers.values());
-    
-    return usersWithId.sort((a, b) => {
+    return Array.from(uniqueUsers.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (a.role !== 'admin' && b.role === 'admin') return 1;
-      if (!a.name || !b.name) return 0;
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     });
   }, [users]);
 
@@ -293,8 +292,8 @@ export default function SettingsClient() {
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
-                      <li>Al crear un nuevo usuario, se crea tanto su **cuenta de acceso** como su **perfil de permisos** en la base de datos.</li>
-                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación, pero **no elimina la cuenta de acceso** de la Consola de Firebase.</li>
+                      <li>Al crear un nuevo usuario, se crea tanto su **cuenta de acceso** (autenticación) como su **perfil de permisos** (base de datos).</li>
+                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser eliminada manualmente desde la Consola de Firebase.</li>
                     </ul>
                 </CardContent>
             </Card>
