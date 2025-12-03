@@ -68,11 +68,13 @@ export default function SettingsClient() {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      const usersList: User[] = [];
+      const usersMap = new Map<string, User>();
       querySnapshot.forEach((doc) => {
-        usersList.push({ uid: doc.id, ...doc.data() } as User);
+        const userData = { uid: doc.id, ...doc.data() } as User;
+        usersMap.set(userData.uid, userData);
       });
       
+      const usersList = Array.from(usersMap.values());
       setUsers(usersList);
 
     } catch (error) {
@@ -204,12 +206,7 @@ export default function SettingsClient() {
   };
   
   const displayedUsers = useMemo(() => {
-    const uniqueUsersMap = new Map<string, User>();
-    users.forEach((user) => {
-      uniqueUsersMap.set(user.uid, user);
-    });
-
-    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
+    return [...users].sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
@@ -376,3 +373,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
