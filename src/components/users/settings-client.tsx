@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -69,7 +68,6 @@ export default function SettingsClient() {
   const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
     startTransition(async () => {
         try {
-            // Directly call the Server Action
             const result = await createNewUser(newUser as any);
             if (result.success) {
                 toast({
