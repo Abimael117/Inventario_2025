@@ -62,13 +62,15 @@ export default function SettingsClient() {
   const { toast } = useToast();
 
   const fetchUsers = useCallback(async () => {
-    if (!firestore) return;
-    setIsLoadingUsers(true);
+    if (!firestore) {
+      setIsLoadingUsers(false);
+      return;
+    }
+    
     try {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      // Use a Map to ensure unique users by UID, preventing duplicates
       const usersMap = new Map<string, User>();
       querySnapshot.forEach((doc) => {
         const userData = { uid: doc.id, ...doc.data() } as User;
@@ -77,7 +79,6 @@ export default function SettingsClient() {
       
       const usersList = Array.from(usersMap.values());
       
-      // Sort the unique list
       const sortedUsers = usersList.sort((a, b) => {
           if (a.role === 'admin' && b.role !== 'admin') return -1;
           if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -98,8 +99,8 @@ export default function SettingsClient() {
     }
   }, [firestore, toast]);
 
-  // useEffect now has an empty dependency array, so it runs only once on mount.
   useEffect(() => {
+    setIsLoadingUsers(true);
     fetchUsers();
   }, [fetchUsers]);
 
