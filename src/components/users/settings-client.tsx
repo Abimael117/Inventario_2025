@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -38,11 +39,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo, useEffect } from 'react';
+import { useState, useTransition, useMemo, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -60,7 +61,7 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!firestore) return;
     setIsLoadingUsers(true);
     try {
@@ -84,11 +85,11 @@ export default function SettingsClient() {
     } finally {
         setIsLoadingUsers(false);
     }
-  };
+  }, [firestore, toast]);
 
   useEffect(() => {
     fetchUsers();
-  }, [firestore]);
+  }, [fetchUsers]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -205,12 +206,11 @@ export default function SettingsClient() {
   const displayedUsers = useMemo(() => {
     const uniqueUsersMap = new Map<string, User>();
     users.forEach((user) => {
-      // If the user is an admin, ensure only one admin entry exists.
-      // We can use a constant key for the admin to overwrite any duplicates.
-      const key = user.role === 'admin' ? 'admin_user' : user.uid;
-      if (!uniqueUsersMap.has(key)) {
-        uniqueUsersMap.set(key, user);
-      }
+        // Use user.uid as the key to ensure uniqueness for all users.
+        // If a user with this uid is already in the map, it won't be added again.
+        if (!uniqueUsersMap.has(user.uid)) {
+            uniqueUsersMap.set(user.uid, user);
+        }
     });
 
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
