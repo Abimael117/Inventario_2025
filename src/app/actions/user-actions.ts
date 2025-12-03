@@ -11,12 +11,14 @@ let isFirebaseAdminInitialized = false;
 function initializeFirebaseAdmin() {
     if (!isFirebaseAdminInitialized) {
       try {
-        // When running in a Google Cloud environment, the SDK can auto-discover credentials.
-        // If not, you might need to set GOOGLE_APPLICATION_CREDENTIALS env var.
-        admin.initializeApp({
-          credential: admin.credential.applicationDefault(),
-          projectId: firebaseConfig.projectId,
-        });
+        if (admin.apps.length === 0) {
+            // When running in a Google Cloud environment, the SDK can auto-discover credentials.
+            // If not, you might need to set GOOGLE_APPLICATION_CREDENTIALS env var.
+            admin.initializeApp({
+              credential: admin.credential.applicationDefault(),
+              projectId: firebaseConfig.projectId,
+            });
+        }
         isFirebaseAdminInitialized = true;
       } catch (error: any) {
         console.error('Firebase Admin Initialization Error:', error);
@@ -49,17 +51,19 @@ export async function createNewUser(
   try {
     // 1. Create user in Firebase Authentication
     const userRecord = await admin.auth().createUser({
-      email: email, // Use the constructed email
+      email: email,
       password: userData.password,
       displayName: userData.name,
     });
 
     // 2. Create user profile in Firestore
+    // Do NOT store the password in Firestore.
+    const { password, ...userDataForFirestore } = userData;
+
     const userDocRef = admin.firestore().collection('users').doc(userRecord.uid);
     await userDocRef.set({
+      ...userDataForFirestore,
       uid: userRecord.uid,
-      name: userData.name,
-      username: userData.username,
       role: 'user', // Default role
       permissions: userData.permissions || [], // Use permissions from form
     });
