@@ -66,7 +66,7 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid'>) => {
+  const handleAddUser = (newUser: Omit<User, 'id' | 'role' | 'uid' | 'password'> & {password: string}) => {
     startTransition(async () => {
         try {
             const result = await createNewUser(newUser);
@@ -179,6 +179,7 @@ export default function SettingsClient() {
     // Let's just ensure the `uid` property is consistently set and filter out any potential duplicates.
     const uniqueUsers = new Map<string, User>();
     users.forEach(u => {
+        // The `id` from useCollection is the document ID, which IS the uid.
         const userWithUid = { ...u, uid: u.id };
         if (!uniqueUsers.has(userWithUid.uid)) {
             uniqueUsers.set(userWithUid.uid, userWithUid);
@@ -337,7 +338,7 @@ export default function SettingsClient() {
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción eliminará permanentemente el perfil de "{userToDelete?.username}" de la base de datos de la aplicación. Su cuenta de acceso no será eliminada.
-            </carddescription>
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
