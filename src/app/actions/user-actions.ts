@@ -2,12 +2,12 @@
 'use server';
 
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 // Use environment variables for service account credentials
-const firebaseAdminConfig = {
+const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -16,23 +16,22 @@ const firebaseAdminConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// This function initializes a SEPARATE, temporary Firebase app instance
-// with admin-like privileges for user creation.
-// It uses a different name to avoid conflicts with the client-side app.
-function initializeTemporaryAdminApp() {
-  const adminAppName = 'firebase-admin-app-for-user-creation';
-  const existingApp = getApps().find(app => app.name === adminAppName);
+// Initializes and returns Firebase SDK instances for server-side actions.
+// Ensures that Firebase is initialized only once.
+function getFirebaseAdmin() {
+  const appName = 'firebase-admin-app-for-actions';
+  const existingApp = getApps().find(app => app.name === appName);
   if (existingApp) {
     return {
-        auth: getAuth(existingApp),
-        firestore: getFirestore(existingApp)
+      auth: getAuth(existingApp),
+      firestore: getFirestore(existingApp)
     };
   }
   
-  const tempApp = initializeApp(firebaseAdminConfig, adminAppName);
+  const app = initializeApp(firebaseConfig, appName);
   return {
-      auth: getAuth(tempApp),
-      firestore: getFirestore(tempApp)
+      auth: getAuth(app),
+      firestore: getFirestore(app)
   };
 }
 
@@ -50,8 +49,7 @@ export async function createNewUser(
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   try {
-    // Initialize a temporary app for this server-side action
-    const { auth: tempAuth, firestore: tempFirestore } = initializeTemporaryAdminApp();
+    const { auth, firestore } = getFirebaseAdmin();
 
     if (!userData.password || userData.password.length < 6) {
       return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
@@ -60,14 +58,14 @@ export async function createNewUser(
     const email = `${userData.username}@${DUMMY_DOMAIN}`;
 
     // 1. Create user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(tempAuth, email, userData.password);
+    const userCredential = await createUserWithEmailAndPassword(auth, email, userData.password);
     const userRecord = userCredential.user;
 
     // 2. Create user profile in Firestore
     // Do NOT store the password in Firestore.
     const { password, ...userDataForFirestore } = userData;
 
-    const userDocRef = doc(tempFirestore, 'users', userRecord.uid);
+    const userDocRef = doc(firestore, 'users', userRecord.uid);
     await setDoc(userDocRef, {
       ...userDataForFirestore,
       uid: userRecord.uid,
@@ -84,7 +82,7 @@ export async function createNewUser(
     // Provide more specific error messages based on Firebase error codes
     if (error.code) {
         switch (error.code) {
-        case 'auth/email-already-exists':
+        case 'auth/email-already-in-use':
             errorMessage = 'Este nombre de usuario ya está en uso.';
             break;
         case 'auth/invalid-password':
