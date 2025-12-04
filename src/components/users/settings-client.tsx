@@ -62,40 +62,34 @@ export default function SettingsClient() {
   const { toast } = useToast();
   
   const fetchUsers = async () => {
-      if (!firestore) return;
+    if (!firestore) return;
+    
+    setIsLoadingUsers(true);
+    try {
+      const usersRef = collection(firestore, 'users');
+      const querySnapshot = await getDocs(usersRef);
       
-      setIsLoadingUsers(true);
-      try {
-        const usersRef = collection(firestore, 'users');
-        const querySnapshot = await getDocs(usersRef);
-        
-        const usersMap = new Map<string, User>();
-        querySnapshot.forEach((doc) => {
-          const userData = { uid: doc.id, ...doc.data() } as User;
-          usersMap.set(userData.uid, userData);
-        });
-        
-        const usersList = Array.from(usersMap.values());
-        
-        const sortedUsers = usersList.sort((a, b) => {
-            if (a.role === 'admin' && b.role !== 'admin') return -1;
-            if (b.role === 'admin' && a.role !== 'admin') return 1;
-            return (a.name || '').localeCompare(b.name || '');
-        });
+      const usersData = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+      
+      const sortedUsers = usersData.sort((a, b) => {
+          if (a.role === 'admin' && b.role !== 'admin') return -1;
+          if (b.role === 'admin' && a.role !== 'admin') return 1;
+          return (a.name || '').localeCompare(b.name || '');
+      });
 
-        setUsers(sortedUsers);
+      setUsers(sortedUsers);
 
-      } catch (error) {
-          console.error("Error fetching users:", error);
-          toast({
-              variant: "destructive",
-              title: "Error al cargar usuarios",
-              description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
-          });
-      } finally {
-          setIsLoadingUsers(false);
-      }
-    };
+    } catch (error) {
+        console.error("Error fetching users:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al cargar usuarios",
+            description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
+        });
+    } finally {
+        setIsLoadingUsers(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -374,5 +368,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
