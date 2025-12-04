@@ -1,15 +1,15 @@
 'use client';
 
-import React, { useMemo, type ReactNode, useEffect } from 'react';
+import React, { useMemo, type ReactNode } from 'react';
 import { FirebaseProvider } from '@/firebase/provider';
 import { initializeFirebase } from '@/firebase';
-import { firebaseConfig } from './config';
 
 interface FirebaseClientProviderProps {
   children: ReactNode;
 }
 
 export function FirebaseClientProvider({ children }: FirebaseClientProviderProps) {
+  // The useMemo hook ensures that initializeFirebase is called only once.
   const firebaseServices = useMemo(() => {
     return initializeFirebase();
   }, []);

@@ -61,45 +61,45 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
-    if (!firestore) return;
-    
-    setIsLoadingUsers(true);
-    try {
-      const usersRef = collection(firestore, 'users');
-      const querySnapshot = await getDocs(usersRef);
-      
-      const usersMap = new Map<string, User>();
-      querySnapshot.forEach((doc) => {
-        const userData = { uid: doc.id, ...doc.data() } as User;
-        usersMap.set(userData.uid, userData);
-      });
-      
-      const usersList = Array.from(usersMap.values());
-      
-      const sortedUsers = usersList.sort((a, b) => {
-          if (a.role === 'admin' && b.role !== 'admin') return -1;
-          if (b.role === 'admin' && a.role !== 'admin') return 1;
-          return (a.name || '').localeCompare(b.name || '');
-      });
-
-      setUsers(sortedUsers);
-
-    } catch (error) {
-        console.error("Error fetching users:", error);
-        toast({
-            variant: "destructive",
-            title: "Error al cargar usuarios",
-            description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
-        });
-    } finally {
-        setIsLoadingUsers(false);
-    }
-  };
-  
   useEffect(() => {
+    const fetchUsers = async () => {
+      if (!firestore) return;
+      
+      setIsLoadingUsers(true);
+      try {
+        const usersRef = collection(firestore, 'users');
+        const querySnapshot = await getDocs(usersRef);
+        
+        const usersMap = new Map<string, User>();
+        querySnapshot.forEach((doc) => {
+          const userData = { uid: doc.id, ...doc.data() } as User;
+          usersMap.set(userData.uid, userData);
+        });
+        
+        const usersList = Array.from(usersMap.values());
+        
+        const sortedUsers = usersList.sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (b.role === 'admin' && a.role !== 'admin') return 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+
+        setUsers(sortedUsers);
+
+      } catch (error) {
+          console.error("Error fetching users:", error);
+          toast({
+              variant: "destructive",
+              title: "Error al cargar usuarios",
+              description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
+          });
+      } finally {
+          setIsLoadingUsers(false);
+      }
+    };
+    
     fetchUsers();
-  }, [firestore]);
+  }, [firestore, toast]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -111,7 +111,17 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        fetchUsers(); // Refresh user list
+        // Manually add user to state to avoid re-fetching everything
+        // This part needs the full user object, which the action should return
+        // For now, we refetch. A better implementation would be to get the new user's UID back.
+         const querySnapshot = await getDocs(collection(firestore, 'users'));
+          const usersList = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+           const sortedUsers = usersList.sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (b.role === 'admin' && a.role !== 'admin') return 1;
+            return (a.name || '').localeCompare(b.name || '');
+        });
+        setUsers(sortedUsers);
       } else {
         toast({
           variant: "destructive",
@@ -144,7 +154,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                fetchUsers(); // Refresh user list
+                setUsers(prevUsers => prevUsers.map(u => u.uid === userId ? { ...u, ...updatePayload } : u));
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -189,7 +199,7 @@ export default function SettingsClient() {
                     title: "Perfil de Usuario Eliminado",
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
-                 fetchUsers(); // Refresh user list
+                setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -373,5 +383,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
