@@ -38,18 +38,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [firestore, user]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-
+  
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.replace('/login');
+    if (isUserLoading || isProfileLoading) {
+      return; 
     }
-  }, [isUserLoading, user, router]);
 
-  useEffect(() => {
-    if (user && profile) {
-      // Check for access
+    if (!user) {
+      router.replace('/login');
+      return;
+    }
+    
+    if (profile) {
       const currentRoute = pathname.split('/')[1] || 'dashboard';
       const routePermissionMap: { [key: string]: string } = {
         '': 'dashboard',
@@ -62,15 +65,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       
       const requiredPermission = routePermissionMap[currentRoute];
 
-      if (requiredPermission && (profile.permissions?.includes(requiredPermission) || profile.role === 'admin')) {
+      if (requiredPermission && (profile.role === 'admin' || profile.permissions?.includes(requiredPermission))) {
         setHasAccess(true);
       } else {
         setHasAccess(false);
       }
-    } else if (!isUserLoading && !isProfileLoading) {
+    } else {
+        // Profile doesn't exist but user does, deny access.
         setHasAccess(false);
     }
-  }, [user, profile, pathname, isUserLoading, isProfileLoading]);
+    
+    setIsCheckingAuth(false);
+  }, [isUserLoading, isProfileLoading, user, profile, pathname, router]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -79,7 +85,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  if (isUserLoading || isProfileLoading || !user || !profile) {
+  if (isCheckingAuth || !profile) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

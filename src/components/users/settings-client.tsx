@@ -38,11 +38,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs, onSnapshot, QuerySnapshot, DocumentData, Unsubscribe } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -63,38 +63,35 @@ export default function SettingsClient() {
   useEffect(() => {
     if (!firestore) return;
 
-    const fetchUsers = async () => {
-        setIsLoadingUsers(true);
-        try {
-            const usersRef = collection(firestore, 'users');
-            const querySnapshot = await getDocs(usersRef);
+    setIsLoadingUsers(true);
+    const usersRef = collection(firestore, 'users');
 
-            const usersMap = new Map<string, User>();
-            querySnapshot.forEach(doc => {
-                usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
-            });
-            const uniqueUsers = Array.from(usersMap.values());
-            
-            const sortedUsers = uniqueUsers.sort((a, b) => {
-                if (a.role === 'admin' && b.role !== 'admin') return -1;
-                if (b.role === 'admin' && a.role !== 'admin') return 1;
-                return (a.name || '').localeCompare(b.name || '');
-            });
+    const unsubscribe: Unsubscribe = onSnapshot(usersRef, (querySnapshot: QuerySnapshot<DocumentData>) => {
+      const usersMap = new Map<string, User>();
+      querySnapshot.forEach(doc => {
+        usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+      });
+      const uniqueUsers = Array.from(usersMap.values());
+      
+      const sortedUsers = uniqueUsers.sort((a, b) => {
+        if (a.role === 'admin' && b.role !== 'admin') return -1;
+        if (b.role === 'admin' && a.role !== 'admin') return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
 
-            setUsers(sortedUsers);
-        } catch (error) {
-            console.error("Error fetching users:", error);
-            toast({
-                variant: "destructive",
-                title: "Error al cargar usuarios",
-                description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
-            });
-        } finally {
-            setIsLoadingUsers(false);
-        }
-    };
-    
-    fetchUsers();
+      setUsers(sortedUsers);
+      setIsLoadingUsers(false);
+    }, (error) => {
+      console.error("Error fetching users with snapshot:", error);
+      toast({
+          variant: "destructive",
+          title: "Error al cargar usuarios",
+          description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
+      });
+      setIsLoadingUsers(false);
+    });
+
+    return () => unsubscribe();
   }, [firestore, toast]);
 
 
@@ -104,25 +101,9 @@ export default function SettingsClient() {
       if (result.success) {
         toast({
           title: "Usuario Creado",
-          description: `El usuario "${newUserData.username}" ha sido creado con éxito. La lista se actualizará.`,
+          description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        
-        // Trigger a re-fetch to get the new user with the real UID
-        if (firestore) {
-          const querySnapshot = await getDocs(collection(firestore, 'users'));
-          const usersMap = new Map<string, User>();
-          querySnapshot.forEach(doc => {
-              usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
-          });
-          const sortedUsers = Array.from(usersMap.values()).sort((a, b) => {
-              if (a.role === 'admin' && b.role !== 'admin') return -1;
-              if (b.role === 'admin' && a.role !== 'admin') return 1;
-              return (a.name || '').localeCompare(b.name || '');
-          });
-          setUsers(sortedUsers);
-        }
-
       } else {
         toast({
           variant: "destructive",
@@ -155,7 +136,6 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                setUsers(prevUsers => prevUsers.map(u => u.uid === userId ? { ...u, ...updatePayload } : u));
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -200,7 +180,6 @@ export default function SettingsClient() {
                     title: "Perfil de Usuario Eliminado",
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
-                 setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
