@@ -39,11 +39,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect, useCallback } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -61,11 +61,8 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const fetchUsers = useCallback(async () => {
-    if (!firestore) {
-      setIsLoadingUsers(false);
-      return;
-    }
+  const fetchUsers = async () => {
+    if (!firestore) return;
     
     setIsLoadingUsers(true);
     try {
@@ -98,11 +95,11 @@ export default function SettingsClient() {
     } finally {
         setIsLoadingUsers(false);
     }
-  }, [firestore, toast]);
-
+  };
+  
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+  }, [firestore]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
