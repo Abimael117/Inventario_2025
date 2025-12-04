@@ -60,9 +60,8 @@ export default function SettingsClient() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchUsers = async () => {
+  
+  const fetchUsers = async () => {
       if (!firestore) return;
       
       setIsLoadingUsers(true);
@@ -97,9 +96,11 @@ export default function SettingsClient() {
           setIsLoadingUsers(false);
       }
     };
-    
+
+  useEffect(() => {
     fetchUsers();
-  }, [firestore, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firestore]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -111,17 +112,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        // Manually add user to state to avoid re-fetching everything
-        // This part needs the full user object, which the action should return
-        // For now, we refetch. A better implementation would be to get the new user's UID back.
-         const querySnapshot = await getDocs(collection(firestore, 'users'));
-          const usersList = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-           const sortedUsers = usersList.sort((a, b) => {
-            if (a.role === 'admin' && b.role !== 'admin') return -1;
-            if (b.role === 'admin' && a.role !== 'admin') return 1;
-            return (a.name || '').localeCompare(b.name || '');
-        });
-        setUsers(sortedUsers);
+        fetchUsers(); // Re-fetch users to show the new one
       } else {
         toast({
           variant: "destructive",
@@ -154,7 +145,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                setUsers(prevUsers => prevUsers.map(u => u.uid === userId ? { ...u, ...updatePayload } : u));
+                fetchUsers(); // Re-fetch to show changes
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -197,9 +188,9 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
-                setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
+                fetchUsers(); // Re-fetch to remove the deleted user
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -383,3 +374,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
