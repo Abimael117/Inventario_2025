@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -59,17 +58,19 @@ export default function SettingsClient() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   
   useEffect(() => {
     const fetchUsers = async () => {
         if (!firestore) return;
 
+        setIsLoadingUsers(true);
         try {
             const usersRef = collection(firestore, 'users');
             const querySnapshot = await getDocs(usersRef);
 
             const usersMap = new Map<string, User>();
-            querySnapshot.docs.forEach(doc => {
+            querySnapshot.forEach(doc => {
                 usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
             });
             const uniqueUsers = Array.from(usersMap.values());
@@ -88,10 +89,14 @@ export default function SettingsClient() {
                 title: "Error al cargar usuarios",
                 description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
             });
+        } finally {
+            setIsLoadingUsers(false);
         }
     };
     
-    fetchUsers();
+    if (firestore) {
+      fetchUsers();
+    }
   }, [firestore, toast]);
 
 
@@ -101,13 +106,24 @@ export default function SettingsClient() {
       if (result.success) {
         toast({
           title: "Usuario Creado",
-          description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
+          description: `El usuario "${newUserData.username}" ha sido creado con éxito. La lista se actualizará.`,
         });
         setIsAddUserOpen(false);
-        // Manually add user to local state to avoid full re-fetch if not needed
-        // Or re-fetch if it's simpler and the list isn't huge.
-        const newUserDoc = { ...newUserData, uid: 'temp-id', role: 'user' } as User; // temp id
-        setUsers(prev => [...prev, newUserDoc].sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+        
+        // Trigger a re-fetch to get the new user with the real UID
+        if (firestore) {
+          const querySnapshot = await getDocs(collection(firestore, 'users'));
+          const usersMap = new Map<string, User>();
+          querySnapshot.forEach(doc => {
+              usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+          });
+          const sortedUsers = Array.from(usersMap.values()).sort((a, b) => {
+              if (a.role === 'admin' && b.role !== 'admin') return -1;
+              if (b.role === 'admin' && a.role !== 'admin') return 1;
+              return (a.name || '').localeCompare(b.name || '');
+          });
+          setUsers(sortedUsers);
+        }
 
       } else {
         toast({
@@ -184,7 +200,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
                  setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
             })
@@ -211,7 +227,7 @@ export default function SettingsClient() {
   };
 
 
-  if (users.length === 0 && !firestore) {
+  if (isLoadingUsers) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
