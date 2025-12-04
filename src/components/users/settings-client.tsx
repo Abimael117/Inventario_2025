@@ -38,11 +38,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -50,9 +50,6 @@ export default function SettingsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -61,34 +58,27 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const fetchUsers = async () => {
-    if (!firestore) return;
-    setIsLoadingUsers(true);
-    const usersCollectionRef = collection(firestore, 'users');
-    const querySnapshot = await getDocs(usersCollectionRef);
-    
-    const usersMap = new Map<string, User>();
-    querySnapshot.forEach((doc) => {
-      const userData = doc.data() as User;
-      if(userData.uid) {
-          usersMap.set(userData.uid, { ...userData, id: doc.id });
-      }
-    });
-    
-    const uniqueUsers = Array.from(usersMap.values());
-    const sortedUsers = uniqueUsers.sort((a, b) => {
-      if (a.role === 'admin' && b.role !== 'admin') return -1;
-      if (b.role === 'admin' && a.role !== 'admin') return 1;
-      return (a.name || '').localeCompare(b.name || '');
-    });
-
-    setUsers(sortedUsers);
-    setIsLoadingUsers(false);
-  };
-  
-  useEffect(() => {
-    fetchUsers();
+  const usersCollectionRef = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'users');
   }, [firestore]);
+
+  const { data: rawUsers, isLoading: isLoadingUsers, error: usersError } = useCollection<User>(usersCollectionRef);
+
+  const [users, setUsers] = useState<User[]>([]);
+
+  // We use another effect to process the raw data from the hook
+  // This allows us to sort and filter it before rendering.
+  useState(() => {
+    if (rawUsers) {
+      const sortedUsers = [...rawUsers].sort((a, b) => {
+        if (a.role === 'admin' && b.role !== 'admin') return -1;
+        if (b.role === 'admin' && a.role !== 'admin') return 1;
+        return (a.name || '').localeCompare(b.name || '');
+      });
+      setUsers(sortedUsers);
+    }
+  }, [rawUsers]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -100,7 +90,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        fetchUsers();
+        // Data will refresh automatically due to useCollection hook
       } else {
         toast({
           variant: "destructive",
@@ -119,6 +109,7 @@ export default function SettingsClient() {
   const handleUpdateUser = (userId: string, data: Partial<Omit<User, 'id' | 'password'>>) => {
      startTransition(async () => {
         if (!firestore) return;
+        // The user ID from auth is the document ID in the 'users' collection
         const userDocRef = doc(firestore, 'users', userId);
 
         const updatePayload = {
@@ -133,7 +124,7 @@ export default function SettingsClient() {
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                fetchUsers();
+                 // Data will refresh automatically due to useCollection hook
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -176,9 +167,9 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
-                 setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
+                 // Data will refresh automatically due to useCollection hook
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
