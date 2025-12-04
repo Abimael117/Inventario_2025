@@ -61,9 +61,9 @@ export default function SettingsClient() {
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   
   useEffect(() => {
-    const fetchUsers = async () => {
-        if (!firestore) return;
+    if (!firestore) return;
 
+    const fetchUsers = async () => {
         setIsLoadingUsers(true);
         try {
             const usersRef = collection(firestore, 'users');
@@ -94,9 +94,7 @@ export default function SettingsClient() {
         }
     };
     
-    if (firestore) {
-      fetchUsers();
-    }
+    fetchUsers();
   }, [firestore, toast]);
 
 
@@ -200,7 +198,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
                  setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
             })
