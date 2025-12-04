@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -62,35 +61,33 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  useEffect(() => {
+  const fetchUsers = async () => {
     if (!firestore) return;
+    setIsLoadingUsers(true);
+    const usersCollectionRef = collection(firestore, 'users');
+    const querySnapshot = await getDocs(usersCollectionRef);
     
-    const fetchUsers = async () => {
-      setIsLoadingUsers(true);
-      const usersCollectionRef = collection(firestore, 'users');
-      const querySnapshot = await getDocs(usersCollectionRef);
-      
-      const usersMap = new Map<string, User>();
-      querySnapshot.forEach((doc) => {
-        const userData = doc.data() as User;
-        if(userData.uid) {
-            usersMap.set(userData.uid, { ...userData, id: doc.id });
-        }
-      });
-      
-      const uniqueUsers = Array.from(usersMap.values());
-      const sortedUsers = uniqueUsers.sort((a, b) => {
-        if (a.role === 'admin' && b.role !== 'admin') return -1;
-        if (b.role === 'admin' && a.role !== 'admin') return 1;
-        return (a.name || '').localeCompare(b.name || '');
-      });
+    const usersMap = new Map<string, User>();
+    querySnapshot.forEach((doc) => {
+      const userData = doc.data() as User;
+      if(userData.uid) {
+          usersMap.set(userData.uid, { ...userData, id: doc.id });
+      }
+    });
+    
+    const uniqueUsers = Array.from(usersMap.values());
+    const sortedUsers = uniqueUsers.sort((a, b) => {
+      if (a.role === 'admin' && b.role !== 'admin') return -1;
+      if (b.role === 'admin' && a.role !== 'admin') return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
 
-      setUsers(sortedUsers);
-      setIsLoadingUsers(false);
-    };
-
+    setUsers(sortedUsers);
+    setIsLoadingUsers(false);
+  };
+  
+  useEffect(() => {
     fetchUsers();
-    
   }, [firestore]);
 
 
@@ -103,25 +100,7 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
-        // Re-fetch users to show the new one
-        if (firestore) {
-            const usersCollectionRef = collection(firestore, 'users');
-            const querySnapshot = await getDocs(usersCollectionRef);
-            const usersMap = new Map<string, User>();
-            querySnapshot.forEach((doc) => {
-                const userData = doc.data() as User;
-                if(userData.uid) {
-                    usersMap.set(userData.uid, { ...userData, id: doc.id });
-                }
-            });
-            const uniqueUsers = Array.from(usersMap.values());
-            const sortedUsers = uniqueUsers.sort((a, b) => {
-                if (a.role === 'admin' && b.role !== 'admin') return -1;
-                if (b.role === 'admin' && a.role !== 'admin') return 1;
-                return (a.name || '').localeCompare(b.name || '');
-            });
-            setUsers(sortedUsers);
-        }
+        fetchUsers();
       } else {
         toast({
           variant: "destructive",
@@ -148,29 +127,13 @@ export default function SettingsClient() {
         };
 
         setDoc(userDocRef, updatePayload, { merge: true })
-            .then(async () => {
+            .then(() => {
                 toast({
                     title: "Usuario Actualizado",
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
-                // Re-fetch users
-                const usersCollectionRef = collection(firestore, 'users');
-                const querySnapshot = await getDocs(usersCollectionRef);
-                const usersMap = new Map<string, User>();
-                querySnapshot.forEach((doc) => {
-                    const userData = doc.data() as User;
-                     if(userData.uid) {
-                        usersMap.set(userData.uid, { ...userData, id: doc.id });
-                    }
-                });
-                const uniqueUsers = Array.from(usersMap.values());
-                const sortedUsers = uniqueUsers.sort((a, b) => {
-                    if (a.role === 'admin' && b.role !== 'admin') return -1;
-                    if (b.role === 'admin' && a.role !== 'admin') return 1;
-                    return (a.name || '').localeCompare(b.name || '');
-                });
-                setUsers(sortedUsers);
+                fetchUsers();
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -399,5 +362,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
