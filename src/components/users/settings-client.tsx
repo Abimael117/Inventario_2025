@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -39,7 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo, useEffect } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection, useMemoFirebase } from '@/firebase';
@@ -66,20 +67,25 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  const users = useMemo(() => {
-    if (!rawUsers) return [];
+  // This logic runs on every render to ensure the displayed list is always correct and unique.
+  const getUniqueSortedUsers = (users: User[] | null): User[] => {
+    if (!users) return [];
     
-    // Create a Map to ensure uniqueness
+    // Use a Map to ensure every user is unique based on their uid.
     const userMap = new Map<string, User>();
-    rawUsers.forEach(user => userMap.set(user.uid, user));
+    users.forEach(user => userMap.set(user.uid, user));
     
-    // Convert back to array and sort
+    // Convert back to an array and sort it.
     return Array.from(userMap.values()).sort((a, b) => {
+      // 'admin' role always comes first.
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
+      // Otherwise, sort alphabetically by name.
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [rawUsers]);
+  };
+
+  const users = getUniqueSortedUsers(rawUsers);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -350,5 +356,7 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
 
     
