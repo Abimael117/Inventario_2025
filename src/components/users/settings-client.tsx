@@ -63,15 +63,22 @@ export default function SettingsClient() {
   
   const fetchUsers = async () => {
     if (!firestore) return;
-    
+
     setIsLoadingUsers(true);
+    setUsers([]); // Clear previous state to prevent accumulation
     try {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      const usersData = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+      // Use a Map to ensure uniqueness based on UID
+      const usersMap = new Map<string, User>();
+      querySnapshot.docs.forEach(doc => {
+        usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+      });
+
+      const uniqueUsers = Array.from(usersMap.values());
       
-      const sortedUsers = usersData.sort((a, b) => {
+      const sortedUsers = uniqueUsers.sort((a, b) => {
           if (a.role === 'admin' && b.role !== 'admin') return -1;
           if (b.role === 'admin' && a.role !== 'admin') return 1;
           return (a.name || '').localeCompare(b.name || '');
@@ -91,6 +98,7 @@ export default function SettingsClient() {
     }
   };
 
+  // This useEffect will run only once when firestore becomes available.
   useEffect(() => {
     fetchUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
