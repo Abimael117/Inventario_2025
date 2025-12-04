@@ -51,7 +51,6 @@ export default function SettingsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
   
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -63,17 +62,15 @@ export default function SettingsClient() {
   
   const fetchUsers = async () => {
     if (!firestore) return;
-
-    setIsLoadingUsers(true);
-    setUsers([]); // Clear previous state to prevent accumulation
     try {
       const usersRef = collection(firestore, 'users');
       const querySnapshot = await getDocs(usersRef);
       
-      // Use a Map to ensure uniqueness based on UID
       const usersMap = new Map<string, User>();
       querySnapshot.docs.forEach(doc => {
-        usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+        if (!usersMap.has(doc.id)) {
+            usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+        }
       });
 
       const uniqueUsers = Array.from(usersMap.values());
@@ -93,14 +90,13 @@ export default function SettingsClient() {
             title: "Error al cargar usuarios",
             description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
         });
-    } finally {
-        setIsLoadingUsers(false);
     }
   };
 
-  // This useEffect will run only once when firestore becomes available.
   useEffect(() => {
-    fetchUsers();
+    if(firestore) {
+        fetchUsers();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firestore]);
 
@@ -217,7 +213,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers) {
+  if (users.length === 0) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
