@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -38,11 +39,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect, useCallback } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
 import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, getDocs, onSnapshot, QuerySnapshot, DocumentData, Unsubscribe } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -66,10 +67,13 @@ export default function SettingsClient() {
     setIsLoadingUsers(true);
     const usersRef = collection(firestore, 'users');
 
-    const unsubscribe: Unsubscribe = onSnapshot(usersRef, (querySnapshot: QuerySnapshot<DocumentData>) => {
+    const unsubscribe: Unsubscribe = onSnapshot(usersRef, (querySnapshot) => {
+      const usersData = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+      
+      // Use a Map to ensure uniqueness by UID
       const usersMap = new Map<string, User>();
-      querySnapshot.forEach(doc => {
-        usersMap.set(doc.id, { uid: doc.id, ...doc.data() } as User);
+      usersData.forEach(user => {
+        usersMap.set(user.uid, user);
       });
       const uniqueUsers = Array.from(usersMap.values());
       
