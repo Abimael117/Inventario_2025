@@ -39,18 +39,17 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
 export default function SettingsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
-  const [users, setUsers] = useState<User[]>([]);
   
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
@@ -59,44 +58,26 @@ export default function SettingsClient() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
-  
-  useEffect(() => {
-    if (!firestore) return;
 
-    setIsLoadingUsers(true);
-    const usersRef = collection(firestore, 'users');
+  const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const { data: usersData, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
 
-    const unsubscribe: Unsubscribe = onSnapshot(usersRef, (querySnapshot) => {
-      const usersData = querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-      
-      // Use a Map to ensure uniqueness by UID
-      const usersMap = new Map<string, User>();
-      usersData.forEach(user => {
-        usersMap.set(user.uid, user);
-      });
-      const uniqueUsers = Array.from(usersMap.values());
-      
-      const sortedUsers = uniqueUsers.sort((a, b) => {
+  const users = useMemo(() => {
+    if (!usersData) return [];
+    
+    // Use a Map to ensure uniqueness by UID, preventing any visual duplication.
+    const usersMap = new Map<string, User>();
+    usersData.forEach(user => {
+      usersMap.set(user.uid, user);
+    });
+    const uniqueUsers = Array.from(usersMap.values());
+
+    return uniqueUsers.sort((a, b) => {
         if (a.role === 'admin' && b.role !== 'admin') return -1;
         if (b.role === 'admin' && a.role !== 'admin') return 1;
         return (a.name || '').localeCompare(b.name || '');
-      });
-
-      setUsers(sortedUsers);
-      setIsLoadingUsers(false);
-    }, (error) => {
-      console.error("Error fetching users with snapshot:", error);
-      toast({
-          variant: "destructive",
-          title: "Error al cargar usuarios",
-          description: "No se pudieron obtener los datos de los usuarios. Intenta recargar la página.",
-      });
-      setIsLoadingUsers(false);
     });
-
-    return () => unsubscribe();
-  }, [firestore, toast]);
+  }, [usersData]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -208,7 +189,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers) {
+  if (isLoadingUsers && !usersData) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
