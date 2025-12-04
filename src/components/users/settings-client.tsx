@@ -39,11 +39,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
+import { doc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
 
@@ -51,6 +51,9 @@ export default function SettingsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -59,25 +62,36 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const usersRef = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-  const { data: usersData, isLoading: isLoadingUsers } = useCollection<User>(usersRef);
-
-  const users = useMemo(() => {
-    if (!usersData) return [];
+  useEffect(() => {
+    if (!firestore) return;
     
-    // Use a Map to ensure uniqueness by UID, preventing any visual duplication.
-    const usersMap = new Map<string, User>();
-    usersData.forEach(user => {
-      usersMap.set(user.uid, user);
-    });
-    const uniqueUsers = Array.from(usersMap.values());
-
-    return uniqueUsers.sort((a, b) => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      const usersCollectionRef = collection(firestore, 'users');
+      const querySnapshot = await getDocs(usersCollectionRef);
+      
+      const usersMap = new Map<string, User>();
+      querySnapshot.forEach((doc) => {
+        const userData = doc.data() as User;
+        if(userData.uid) {
+            usersMap.set(userData.uid, { ...userData, id: doc.id });
+        }
+      });
+      
+      const uniqueUsers = Array.from(usersMap.values());
+      const sortedUsers = uniqueUsers.sort((a, b) => {
         if (a.role === 'admin' && b.role !== 'admin') return -1;
         if (b.role === 'admin' && a.role !== 'admin') return 1;
         return (a.name || '').localeCompare(b.name || '');
-    });
-  }, [usersData]);
+      });
+
+      setUsers(sortedUsers);
+      setIsLoadingUsers(false);
+    };
+
+    fetchUsers();
+    
+  }, [firestore]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -89,6 +103,25 @@ export default function SettingsClient() {
           description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
         });
         setIsAddUserOpen(false);
+        // Re-fetch users to show the new one
+        if (firestore) {
+            const usersCollectionRef = collection(firestore, 'users');
+            const querySnapshot = await getDocs(usersCollectionRef);
+            const usersMap = new Map<string, User>();
+            querySnapshot.forEach((doc) => {
+                const userData = doc.data() as User;
+                if(userData.uid) {
+                    usersMap.set(userData.uid, { ...userData, id: doc.id });
+                }
+            });
+            const uniqueUsers = Array.from(usersMap.values());
+            const sortedUsers = uniqueUsers.sort((a, b) => {
+                if (a.role === 'admin' && b.role !== 'admin') return -1;
+                if (b.role === 'admin' && a.role !== 'admin') return 1;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+            setUsers(sortedUsers);
+        }
       } else {
         toast({
           variant: "destructive",
@@ -115,12 +148,29 @@ export default function SettingsClient() {
         };
 
         setDoc(userDocRef, updatePayload, { merge: true })
-            .then(() => {
+            .then(async () => {
                 toast({
                     title: "Usuario Actualizado",
                     description: `Los datos del usuario han sido guardados.`,
                 });
                 setIsEditUserOpen(false);
+                // Re-fetch users
+                const usersCollectionRef = collection(firestore, 'users');
+                const querySnapshot = await getDocs(usersCollectionRef);
+                const usersMap = new Map<string, User>();
+                querySnapshot.forEach((doc) => {
+                    const userData = doc.data() as User;
+                     if(userData.uid) {
+                        usersMap.set(userData.uid, { ...userData, id: doc.id });
+                    }
+                });
+                const uniqueUsers = Array.from(usersMap.values());
+                const sortedUsers = uniqueUsers.sort((a, b) => {
+                    if (a.role === 'admin' && b.role !== 'admin') return -1;
+                    if (b.role === 'admin' && a.role !== 'admin') return 1;
+                    return (a.name || '').localeCompare(b.name || '');
+                });
+                setUsers(sortedUsers);
             })
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
@@ -165,6 +215,7 @@ export default function SettingsClient() {
                     title: "Perfil de Usuario Eliminado",
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
+                 setUsers(prevUsers => prevUsers.filter(u => u.uid !== userToDelete.uid));
             })
             .catch(error => {
                  const permissionError = new FirestorePermissionError({
@@ -189,7 +240,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers && !usersData) {
+  if (isLoadingUsers) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
@@ -348,3 +399,5 @@ export default function SettingsClient() {
     </>
   );
 }
+
+    
