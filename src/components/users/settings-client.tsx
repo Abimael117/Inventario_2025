@@ -67,13 +67,16 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // This logic runs on every render to ensure the displayed list is always correct and unique.
   const getUniqueSortedUsers = (users: User[] | null): User[] => {
     if (!users) return [];
     
     // Use a Map to ensure every user is unique based on their uid.
     const userMap = new Map<string, User>();
-    users.forEach(user => userMap.set(user.uid, user));
+    users.forEach(user => {
+      if (user && user.uid) {
+        userMap.set(user.uid, user)
+      }
+    });
     
     // Convert back to an array and sort it.
     return Array.from(userMap.values()).sort((a, b) => {
@@ -171,7 +174,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -329,7 +332,7 @@ export default function SettingsClient() {
               {userToEdit && (
                 <EditUserForm 
                     user={userToEdit} 
-                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data as any)}
+                    onSubmit={(data) => handleUpdateUser(userToedit.uid, data as any)}
                     isPending={isPending} 
                 />
               )}
@@ -356,7 +359,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
-
-    
