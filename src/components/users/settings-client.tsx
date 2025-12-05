@@ -69,9 +69,17 @@ export default function SettingsClient() {
 
   const users = useMemo(() => {
     if (!rawUsers) return [];
-    // The useCollection hook now provides a clean, non-duplicated list.
-    // We just need to sort it.
-    return [...rawUsers].sort((a, b) => {
+    
+    // Create a Map to filter out duplicates by UID, ensuring each user appears only once.
+    const uniqueUsersMap = new Map<string, User>();
+    rawUsers.forEach(user => {
+      uniqueUsersMap.set(user.uid, user);
+    });
+    
+    // Convert the map back to an array and sort it.
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+    
+    return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');

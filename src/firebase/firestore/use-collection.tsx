@@ -53,19 +53,8 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
-  // Use a ref to hold the unsubscribe function.
-  // This ensures we have a stable reference to it across re-renders
-  // without causing the effect to re-run.
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-
   useEffect(() => {
-    // If a listener is already active, unsubscribe from it first.
-    // This is the crucial step to prevent multiple listeners.
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-
+    // If no query is provided, reset the state and do nothing.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -76,8 +65,8 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Establish the new real-time listener and store its unsubscribe function in the ref.
-    unsubscribeRef.current = onSnapshot(
+    // Establish the new real-time listener.
+    const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
@@ -111,13 +100,11 @@ export function useCollection<T = any>(
       }
     );
 
-    // The cleanup function for the effect. This will be called when the component
-    // that uses this hook unmounts.
+    // The cleanup function for the effect. This is critical.
+    // It will be called when the component unmounts, or BEFORE the effect runs again
+    // if the dependency array changes. This prevents memory leaks and duplicate listeners.
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
+      unsubscribe();
     };
   }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference itself changes.
 
