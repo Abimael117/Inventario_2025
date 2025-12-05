@@ -60,20 +60,24 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  // Memoize the collection reference to prevent re-renders in `useCollection`.
   const usersCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
   }, [firestore]);
 
+  // Use the corrected `useCollection` hook to get user data.
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
+  // Memoize the processing of user data to prevent re-computation on every render.
   const users = useMemo(() => {
     if (!rawUsers) {
       return [];
     }
-    // Ensure uniqueness using a Map and then sort.
+    // Ensure uniqueness using a Map (as a safeguard) and then sort.
     const uniqueUsers = Array.from(new Map(rawUsers.map(item => [item.uid, item])).values());
     
+    // Sort to ensure 'admin' is always first.
     return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -323,7 +327,7 @@ export default function SettingsClient() {
               {userToEdit && (
                 <EditUserForm 
                     user={userToEdit} 
-                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data as any)}
+                    onSubmit={(data) => handleUpdateUser(userToedit.uid, data as any)}
                     isPending={isPending} 
                 />
               )}
@@ -350,3 +354,4 @@ export default function SettingsClient() {
     </>
   );
 }
+
