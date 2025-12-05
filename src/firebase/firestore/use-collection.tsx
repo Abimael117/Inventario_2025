@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -66,7 +67,8 @@ export function useCollection<T = any>(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
-        setData(results);
+        const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
+        setData(uniqueResults);
         setError(null);
         setIsLoading(false);
       },
@@ -94,5 +96,3 @@ export function useCollection<T = any>(
 
   return { data, isLoading, error };
 }
-
-    

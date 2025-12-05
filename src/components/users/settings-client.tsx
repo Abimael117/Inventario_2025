@@ -67,28 +67,14 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  const getUniqueSortedUsers = (users: User[] | null): User[] => {
-    if (!users) return [];
-    
-    // Use a Map to ensure every user is unique based on their uid.
-    const userMap = new Map<string, User>();
-    users.forEach(user => {
-      if (user && user.uid) {
-        userMap.set(user.uid, user)
-      }
-    });
-    
-    // Convert back to an array and sort it.
-    return Array.from(userMap.values()).sort((a, b) => {
-      // 'admin' role always comes first.
+  const users = useMemo(() => {
+    if (!rawUsers) return [];
+    return [...rawUsers].sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
-      // Otherwise, sort alphabetically by name.
       return (a.name || '').localeCompare(b.name || '');
     });
-  };
-
-  const users = getUniqueSortedUsers(rawUsers);
+  }, [rawUsers]);
 
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
@@ -332,7 +318,7 @@ export default function SettingsClient() {
               {userToEdit && (
                 <EditUserForm 
                     user={userToEdit} 
-                    onSubmit={(data) => handleUpdateUser(userToedit.uid, data as any)}
+                    onSubmit={(data) => handleUpdateUser(userToEdit.uid, data as any)}
                     isPending={isPending} 
                 />
               )}
