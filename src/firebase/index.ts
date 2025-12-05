@@ -3,14 +3,14 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, setPersistence, browserSessionPersistence, Auth } from 'firebase/auth';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 /**
  * Initializes and returns Firebase SDK instances for client-side use.
  * Ensures that Firebase is initialized only once and sets session persistence.
  */
-export function initializeFirebase() {
+export function initializeFirebase(): { firebaseApp: FirebaseApp; auth: Auth; firestore: Firestore } {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = getAuth(app);
   
@@ -35,4 +35,3 @@ export * from './non-blocking-updates';
 // export * from './non-blocking-login'; 
 export * from './errors';
 export * from './error-emitter';
-

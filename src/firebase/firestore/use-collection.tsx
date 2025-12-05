@@ -72,10 +72,16 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (err: FirestoreError) => {
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+        let path = 'unknown_path';
+        try {
+          if (memoizedTargetRefOrQuery.type === 'collection') {
+            path = (memoizedTargetRefOrQuery as CollectionReference).path;
+          } else {
+             path = (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+          }
+        } catch (e) {
+          console.error("Could not determine path for Firestore error:", e);
+        }
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
