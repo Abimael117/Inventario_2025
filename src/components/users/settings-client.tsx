@@ -73,7 +73,9 @@ export default function SettingsClient() {
     // Create a Map to filter out duplicates by UID, ensuring each user appears only once.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
-      uniqueUsersMap.set(user.uid, user);
+      if (user && user.uid) {
+        uniqueUsersMap.set(user.uid, user);
+      }
     });
     
     // Convert the map back to an array and sort it.

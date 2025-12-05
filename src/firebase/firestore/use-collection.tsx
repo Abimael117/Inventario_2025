@@ -10,6 +10,7 @@ import {
   FirestoreError,
   QuerySnapshot,
   CollectionReference,
+  Unsubscribe,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -53,8 +54,17 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  // Use a ref to hold the unsubscribe function to ensure it's stable across renders
+  const unsubscribeRef = useRef<Unsubscribe | null>(null);
+
   useEffect(() => {
-    // If no query is provided, reset the state and do nothing.
+    // If a previous subscription exists, unsubscribe from it before creating a new one.
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -65,8 +75,8 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Establish the new real-time listener.
-    const unsubscribe = onSnapshot(
+    // Establish the new real-time listener and store its unsubscribe function in the ref.
+    unsubscribeRef.current = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
@@ -100,11 +110,13 @@ export function useCollection<T = any>(
       }
     );
 
-    // The cleanup function for the effect. This is critical.
-    // It will be called when the component unmounts, or BEFORE the effect runs again
-    // if the dependency array changes. This prevents memory leaks and duplicate listeners.
+    // The cleanup function for the effect.
+    // This will be called when the component unmounts or BEFORE the effect runs again.
     return () => {
-      unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
     };
   }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference itself changes.
 
