@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -53,8 +53,19 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  // Use a ref to hold the unsubscribe function.
+  // This ensures we have a stable reference to it across re-renders
+  // without causing the effect to re-run.
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
-    // If the query/ref is not ready, set a non-loading, empty state.
+    // If a listener is already active, unsubscribe from it first.
+    // This is the crucial step to prevent multiple listeners.
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     if (!memoizedTargetRefOrQuery) {
       setData(null);
       setIsLoading(false);
@@ -62,27 +73,22 @@ export function useCollection<T = any>(
       return;
     }
 
-    // Set loading state and reset previous data/errors.
     setIsLoading(true);
     setError(null);
 
-    // Establish the real-time listener.
-    const unsubscribe = onSnapshot(
+    // Establish the new real-time listener and store its unsubscribe function in the ref.
+    unsubscribeRef.current = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        // Map snapshot documents to a strongly-typed array with IDs.
         const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
         setData(results);
-        setError(null); // Clear any previous errors on successful data receipt.
+        setError(null);
         setIsLoading(false);
       },
       (err: FirestoreError) => {
-        // Handle Firestore-specific errors (like permission denied).
         console.error("Firestore onSnapshot error:", err);
-
         let path = 'unknown_path';
         try {
-           // Attempt to extract the path for better error context.
           if (memoizedTargetRefOrQuery.type === 'collection') {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
           } else {
@@ -92,7 +98,6 @@ export function useCollection<T = any>(
           console.error("Could not determine path for Firestore error:", e);
         }
         
-        // Create a detailed, LLM-friendly permission error.
         const contextualError = new FirestorePermissionError({
           operation: 'list',
           path,
@@ -102,20 +107,19 @@ export function useCollection<T = any>(
         setData(null);
         setIsLoading(false);
         
-        // Globally emit the error so it can be caught by an error boundary.
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
-    // CRITICAL: Cleanup function.
-    // This function is returned by useEffect and runs when the component unmounts
-    // or when the `memoizedTargetRefOrQuery` dependency changes. This prevents memory leaks
-    // and stops multiple listeners from being active.
+    // The cleanup function for the effect. This will be called when the component
+    // that uses this hook unmounts.
     return () => {
-      unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
     };
-  }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference changes.
+  }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference itself changes.
 
   return { data, isLoading, error };
 }
-
