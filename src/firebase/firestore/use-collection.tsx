@@ -67,8 +67,7 @@ export function useCollection<T = any>(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
-        const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
-        setData(uniqueResults);
+        setData(results);
         setError(null);
         setIsLoading(false);
       },

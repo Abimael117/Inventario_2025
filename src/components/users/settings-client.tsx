@@ -69,7 +69,11 @@ export default function SettingsClient() {
 
   const users = useMemo(() => {
     if (!rawUsers) return [];
-    return [...rawUsers].sort((a, b) => {
+    
+    // Ensure uniqueness using a Map, just in case, and then sort.
+    const uniqueUsers = Array.from(new Map(rawUsers.map(item => [item.uid, item])).values());
+    
+    return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
