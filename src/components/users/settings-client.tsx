@@ -68,8 +68,9 @@ export default function SettingsClient() {
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const users = useMemo(() => {
-    if (!rawUsers) return [];
-    
+    if (!rawUsers) {
+      return [];
+    }
     // Ensure uniqueness using a Map and then sort.
     const uniqueUsers = Array.from(new Map(rawUsers.map(item => [item.uid, item])).values());
     
