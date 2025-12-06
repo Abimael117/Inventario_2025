@@ -39,15 +39,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EditUserForm } from '@/components/users/edit-user-form';
 import { AddUserForm } from '@/components/users/add-user-form';
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection } from '@/firebase';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser } from '@/firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
+interface SettingsClientProps {
+  users: User[];
+  isLoading: boolean;
+}
 
-export default function SettingsClient() {
+export default function SettingsClient({ users, isLoading }: SettingsClientProps) {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   
@@ -58,30 +62,6 @@ export default function SettingsClient() {
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-
-  const usersCollectionRef = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'users');
-  }, [firestore]);
-
-  const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
-  
-  const users = useMemo(() => {
-    if (!rawUsers) return [];
-    // Use a Map to guarantee uniqueness based on UID
-    const uniqueUsersMap = new Map<string, User>();
-    for (const user of rawUsers) {
-      if (user && user.uid) {
-        uniqueUsersMap.set(user.uid, user);
-      }
-    }
-    // Convert Map values to an array and sort
-    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
-      if (a.role === 'admin' && b.role !== 'admin') return -1;
-      if (b.role === 'admin' && a.role !== 'admin') return 1;
-      return (a.name || '').localeCompare(b.name || '');
-    });
-  }, [rawUsers]);
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
     startTransition(async () => {
@@ -191,21 +171,6 @@ export default function SettingsClient() {
     settings: 'Configuración'
   };
 
-
-  if (isLoadingUsers) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <AppHeader title="Configuración" />
-        <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Cargando usuarios...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -236,7 +201,14 @@ export default function SettingsClient() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {users.map(user => (
+                        {isLoading && (
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && users.map(user => (
                             <TableRow key={user.uid}>
                                 <TableCell className="font-medium">{user.name}</TableCell>
                                 <TableCell>{user.username}</TableCell>

@@ -8,7 +8,7 @@ import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import InventoryClient from "@/components/inventory/inventory-client";
-import AppHeader from '@/components/header';
+import AppHeader from "@/components/header";
 import type { Product, StockMovement, Notification } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
