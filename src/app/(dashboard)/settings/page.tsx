@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useCollection, useFirestore, useUser, useAuth } from '@/firebase';
+import { useCollection, useFirestore, useAuth, useUser } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
@@ -89,7 +89,7 @@ export default function SettingsPage() {
         if (error instanceof FirebaseError) {
            let errorMessage = 'Ocurrió un error desconocido al crear el usuario.';
            switch (error.code) {
-             case 'auth/email-already-exists':
+             case 'auth/email-already-in-use':
                errorMessage = 'Este nombre de usuario ya está en uso. Elige otro.';
                break;
              case 'auth/weak-password':
@@ -189,7 +189,7 @@ export default function SettingsPage() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
             .catch(() => {
@@ -231,7 +231,7 @@ export default function SettingsPage() {
                 onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
                 onAddUser={handleAddUser}
                 onOpenEditDialog={openEditDialog}
-                onUpdateUser={onUpdateUser}
+                onUpdateUser={handleUpdateUser}
                 onOpenDeleteDialog={openDeleteDialog}
                 onConfirmDelete={onConfirmDelete}
             />
