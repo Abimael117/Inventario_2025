@@ -133,8 +133,8 @@ export default function SettingsPage() {
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
-            .catch(() => {
-                 const permissionError = new FirestorePermissionError({
+            .catch(async (serverError: any) => {
+                const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'delete',
                 });
@@ -172,7 +172,7 @@ export default function SettingsPage() {
                 onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
                 onAddUser={handleAddUser}
                 onOpenEditDialog={openEditDialog}
-                onUpdateUser={onUpdateUser}
+                onUpdateUser={handleUpdateUser}
                 onOpenDeleteDialog={openDeleteDialog}
                 onConfirmDelete={confirmDelete}
             />
