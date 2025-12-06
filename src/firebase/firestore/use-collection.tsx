@@ -70,11 +70,8 @@ export function useCollection<T = any>(
         console.error("Firestore onSnapshot error:", err);
         let path = 'unknown_path';
         try {
-          if (memoizedTargetRefOrQuery.type === 'collection') {
+          if ('path' in memoizedTargetRefOrQuery) {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
-          } else {
-             // A less ideal but functional way to get path from a query
-             path = (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
           }
         } catch (e) {
           console.error("Could not determine path for Firestore error:", e);
