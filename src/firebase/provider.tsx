@@ -63,17 +63,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     return () => unsubscribe();
   }, [auth]);
 
-  const contextValue = useMemo(() => ({
+  // This is the critical change. The main context value is memoized
+  // and only depends on the static services. The user state is separate.
+  const servicesContextValue = useMemo(() => ({
     firebaseApp,
     firestore,
     auth,
+  }), [firebaseApp, firestore, auth]);
+
+  // We combine the static services with the dynamic user state for the final provider value.
+  // This prevents consumers of `firestore` or `auth` from re-rendering when `user` changes.
+  const finalContextValue = {
+    ...servicesContextValue,
     user: userAuthState.user,
     isUserLoading: userAuthState.isUserLoading,
     userError: userAuthState.userError,
-  }), [firebaseApp, firestore, auth, userAuthState]);
+  };
 
   return (
-    <FirebaseContext.Provider value={contextValue}>
+    <FirebaseContext.Provider value={finalContextValue}>
       <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>
@@ -97,5 +105,3 @@ export const useUser = () => {
     const { user, isUserLoading, userError } = useFirebaseContext();
     return { user, isUserLoading, userError };
 };
-
-    
