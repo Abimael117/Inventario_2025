@@ -148,7 +148,7 @@ export default function LoansPage() {
                     description: `El registro del préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
                 });
             })
-            .catch(async (serverError) => {
+            .catch(async () => {
                 const permissionError = new FirestorePermissionError({
                     path: loanRef.path,
                     operation: 'delete',

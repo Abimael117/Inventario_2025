@@ -112,7 +112,7 @@ export default function InventoryPage() {
                 description: `El producto "${productToDelete.name}" ha sido eliminado.`,
             });
           })
-          .catch(async (serverError) => {
+          .catch(async () => {
               const permissionError = new FirestorePermissionError({
                   path: productRef.path,
                   operation: 'delete',
@@ -149,7 +149,7 @@ export default function InventoryPage() {
           });
           setIsAddDialogOpen(false);
         })
-        .catch(async (serverError) => {
+        .catch(async () => {
             const permissionError = new FirestorePermissionError({
                 path: productRef.path,
                 operation: 'create',
@@ -173,7 +173,7 @@ export default function InventoryPage() {
               setIsEditDialogOpen(false);
               setProductToEdit(null);
           })
-          .catch(async (serverError) => {
+          .catch(async () => {
               const permissionError = new FirestorePermissionError({
                   path: productRef.path,
                   operation: 'update',

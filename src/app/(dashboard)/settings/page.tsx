@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
@@ -88,7 +89,7 @@ export default function SettingsPage() {
                 });
                 setIsEditUserOpen(false);
             })
-            .catch(async (serverError) => {
+            .catch(async () => {
                 const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'update',
@@ -129,10 +130,10 @@ export default function SettingsPage() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
-            .catch(error => {
+            .catch(() => {
                  const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'delete',
@@ -171,7 +172,7 @@ export default function SettingsPage() {
                 onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
                 onAddUser={handleAddUser}
                 onOpenEditDialog={openEditDialog}
-                onUpdateUser={handleUpdateUser}
+                onUpdateUser={onUpdateUser}
                 onOpenDeleteDialog={openDeleteDialog}
                 onConfirmDelete={confirmDelete}
             />
