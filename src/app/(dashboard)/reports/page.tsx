@@ -14,8 +14,8 @@ import type { Product, Loan } from '@/lib/types';
 export default function ReportsPage() {
   const firestore = useFirestore();
 
-  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemo(() => (firestore ? collection(firestore, 'products') : null), [firestore]);
+  const loansRef = useMemo(() => (firestore ? collection(firestore, 'loans') : null), [firestore]);
   
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);

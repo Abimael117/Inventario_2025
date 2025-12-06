@@ -65,7 +65,7 @@ export default function SettingsClient() {
   }, [firestore]);
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
-
+  
   const users = useMemo(() => {
     if (!rawUsers) return [];
     // Use a Map to guarantee uniqueness based on UID
@@ -82,7 +82,6 @@ export default function SettingsClient() {
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [rawUsers]);
-
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
     startTransition(async () => {

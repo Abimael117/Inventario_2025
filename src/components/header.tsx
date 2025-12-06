@@ -64,7 +64,7 @@ export default function AppHeader({
 
   const { data: profile } = useDoc<User>(userDocRef);
 
-  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const productsRef = useMemo(() => (firestore ? collection(firestore, 'products') : null), [firestore]);
   const { data: products } = useCollection<Product>(productsRef);
 
   const notificationsRef = useMemo(() => {

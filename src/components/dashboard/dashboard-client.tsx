@@ -28,8 +28,8 @@ const chartConfig = {
 export default function DashboardClient() {
   const firestore = useFirestore();
 
-  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemo(() => (firestore ? collection(firestore, 'products') : null), [firestore]);
+  const loansRef = useMemo(() => (firestore ? collection(firestore, 'loans') : null), [firestore]);
   
   const { data: inventoryData, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loansData, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);

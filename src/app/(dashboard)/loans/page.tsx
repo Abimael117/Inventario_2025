@@ -23,8 +23,8 @@ export default function LoansPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
 
-  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
-  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemo(() => (firestore ? collection(firestore, 'loans') : null), [firestore]);
+  const productsRef = useMemo(() => (firestore ? collection(firestore, 'products') : null), [firestore]);
 
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
