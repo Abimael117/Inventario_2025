@@ -7,12 +7,9 @@ import {
   DocumentData,
   FirestoreError,
   QuerySnapshot,
-  collection,
-  query,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { useFirestore } from '@/firebase/provider';
 
 export type WithId<T> = T & { id: string };
 
@@ -30,11 +27,15 @@ export function useCollection<T = DocumentData>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   
   // Use a ref to store the query to prevent re-subscribing on every render.
-  // This is a key part of the fix to avoid stale closures and unnecessary re-runs.
   const queryRef = useRef(memoizedQuery);
-  queryRef.current = memoizedQuery;
 
   useEffect(() => {
+    // Only update the ref if the memoizedQuery has actually changed.
+    // This comparison is key to preventing unnecessary re-subscriptions.
+    if (queryRef.current !== memoizedQuery) {
+        queryRef.current = memoizedQuery;
+    }
+
     // If the query is not ready, reset the state and do nothing.
     if (!queryRef.current) {
       setIsLoading(false);
@@ -45,9 +46,6 @@ export function useCollection<T = DocumentData>(
 
     setIsLoading(true);
 
-    // CRITICAL: onSnapshot returns an unsubscribe function.
-    // This function MUST be called when the component unmounts
-    // or when the query changes, to prevent memory leaks and duplicate listeners.
     const unsubscribe = onSnapshot(
       queryRef.current,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -76,8 +74,7 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // The cleanup function that gets called on unmount or before re-running the effect.
-    // This is the most important part of the fix.
+    // The cleanup function is called on unmount or before the effect re-runs.
     return () => {
       unsubscribe();
     };

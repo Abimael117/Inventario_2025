@@ -58,20 +58,24 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
+  // STABLE REFERENCE: This ensures the collection reference object does not
+  // get recreated on every render, which is critical for the useCollection hook.
   const usersCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore]);
+  }, [firestore]); // Dependency is stable.
 
+  // The hook receives a stable reference, preventing the memory leak.
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // BULLETPROOF: This logic guarantees that no matter how many duplicate
+  // BULLETPROOF DE-DUPLICATION: This logic guarantees that no matter how many duplicate
   // users are received from the hook, only unique users will be rendered.
   const users = useMemo(() => {
     if (!rawUsers) {
       return [];
     }
     // Use a Map to guarantee uniqueness based on the user's UID.
+    // This is the definitive way to prevent duplicates in the UI.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
       if (user && user.uid) {

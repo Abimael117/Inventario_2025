@@ -27,10 +27,13 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   
   const docRefRef = useRef(memoizedDocRef);
-  docRefRef.current = memoizedDocRef;
-
 
   useEffect(() => {
+    // Only update the ref if the memoizedDocRef has actually changed.
+    if (docRefRef.current !== memoizedDocRef) {
+        docRefRef.current = memoizedDocRef;
+    }
+
     // Reset state and do nothing if the document reference is not ready
     if (!docRefRef.current) {
       setIsLoading(false);
@@ -41,15 +44,12 @@ export function useDoc<T = any>(
 
     setIsLoading(true);
 
-    // CRITICAL: onSnapshot returns an unsubscribe function.
-    // This function MUST be called on cleanup to prevent memory leaks.
     const unsubscribe = onSnapshot(
       docRefRef.current,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
         } else {
-          // Document does not exist
           setData(null);
         }
         setError(null);
@@ -68,12 +68,10 @@ export function useDoc<T = any>(
       }
     );
 
-    // The cleanup function that gets called on unmount or before the effect re-runs.
-    // This is the most important part of the fix.
     return () => {
       unsubscribe();
     };
-  }, [memoizedDocRef]); // Re-run effect only when the reference itself changes
+  }, [memoizedDocRef]); // Re-run effect only when the memoized reference itself changes
 
   return { data, isLoading, error };
 }
