@@ -30,13 +30,10 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
-  // Use a ref to store the query which will not change on re-renders
   const queryRef = useRef<Query<DocumentData> | null | undefined>(null);
 
   useEffect(() => {
-    // Only re-subscribe if the query itself has changed.
-    // isEqual performs a deep comparison.
-    if (query && isEqual(queryRef.current, query)) {
+    if (isEqual(queryRef.current, query)) {
       return;
     }
     queryRef.current = query;
@@ -46,7 +43,7 @@ export function useCollection<T = DocumentData>(
       return;
     }
 
-    setResult(prev => ({ ...prev, isLoading: true }));
+    setResult(prev => ({ ...prev, isLoading: true, error: null }));
 
     const unsubscribe = onSnapshot(
       query,
@@ -72,9 +69,8 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // This cleanup function is guaranteed to run on unmount or before the effect re-runs.
     return () => unsubscribe();
-  }, [query]); // The effect re-runs only when the query prop instance changes.
+  }, [query]);
 
   return result;
 }

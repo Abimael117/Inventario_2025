@@ -33,8 +33,7 @@ export function useDoc<T = any>(
   const docRefRef = useRef<DocumentReference<DocumentData> | null | undefined>(null);
 
   useEffect(() => {
-    // Prevent re-subscribing if the docRef is structurally identical.
-    if (docRef && isEqual(docRefRef.current, docRef)) {
+    if (isEqual(docRefRef.current, docRef)) {
       return;
     }
     docRefRef.current = docRef;
@@ -56,7 +55,6 @@ export function useDoc<T = any>(
              error: null
           });
         } else {
-          // If the document does not exist, treat it as "not loading" and no data.
           setResult({ data: null, isLoading: false, error: null });
         }
       },
@@ -70,10 +68,8 @@ export function useDoc<T = any>(
         errorEmitter.emit('permission-error', contextualError);
       }
     );
-
-    // Cleanup subscription on unmount or before the effect re-runs.
     return () => unsubscribe();
-  }, [docRef]); // Re-run effect only when the docRef object instance changes
+  }, [docRef]);
 
   return result;
 }
