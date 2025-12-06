@@ -42,6 +42,7 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  // This effect correctly handles the subscription lifecycle.
   useEffect(() => {
     // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
@@ -64,14 +65,13 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (err: FirestoreError) => {
-        console.error("Firestore onSnapshot error:", err);
         let path = 'unknown_path';
         try {
           if ('path' in memoizedTargetRefOrQuery) {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
           }
         } catch (e) {
-          console.error("Could not determine path for Firestore error:", e);
+          // Could not determine path, but still emit the error
         }
         
         const contextualError = new FirestorePermissionError({
@@ -87,8 +87,9 @@ export function useCollection<T = any>(
       }
     );
 
-    // The cleanup function for the effect when the component unmounts or dependency changes.
+    // The cleanup function for the effect.
     // This is CRITICAL to prevent memory leaks and duplicate listeners.
+    // It runs when the component unmounts or when `memoizedTargetRefOrQuery` changes.
     return () => {
       unsubscribe();
     };
