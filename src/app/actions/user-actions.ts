@@ -4,36 +4,43 @@
 import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
+import { firebaseConfig } from '@/firebase/config';
 
 // Helper function to initialize Firebase Admin SDK.
 // It ensures the SDK is initialized only once.
 function initializeFirebaseAdmin() {
   // Check if the app is already initialized to prevent crashing.
   if (!admin.apps.length) {
-    // Get credentials from server-side environment variables
-    const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // IMPORTANT: Replace escaped newlines for production environments
-      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-    };
+    const privateKey = (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
-    // Verify that all required environment variables are present.
-    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-        console.error("Firebase Admin SDK environment variables are not set or missing.");
-        throw new Error('Firebase Admin environment variables are not set. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY.');
+    // The Admin SDK needs credentials to be initialized.
+    // If they are not available, we cannot proceed with admin operations.
+    if (!privateKey || !clientEmail) {
+        console.warn(
+            "Firebase Admin SDK credentials (private key or client email) are not set in environment variables. " +
+            "Server-side actions requiring admin privileges (like creating users) will fail. " +
+            "Please set FIREBASE_PRIVATE_KEY and FIREBASE_CLIENT_EMAIL."
+        );
+        // We don't throw an error here to allow the rest of the app to function,
+        // but admin-dependent features will be disabled.
+        return null; 
     }
 
     // Initialize the app with credentials
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert({
+          projectId: firebaseConfig.projectId,
+          clientEmail: clientEmail,
+          privateKey: privateKey
+      }),
     });
   }
   return admin.app();
 }
 
 // Initialize outside the function scope to ensure it's called only once.
-initializeFirebaseAdmin();
+const adminApp = initializeFirebaseAdmin();
 
 /**
  * Creates a new user in Firebase Authentication and Firestore using the Admin SDK.
@@ -45,6 +52,10 @@ export async function createNewUser(
   userData: Omit<User, 'uid' | 'role'>
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
+  if (!adminApp) {
+      return { success: false, error: "El SDK de Firebase Admin no está inicializado. Revisa las credenciales del servidor." };
+  }
+
   try {
     if (!userData.password || userData.password.length < 6) {
       return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
