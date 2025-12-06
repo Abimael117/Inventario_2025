@@ -29,13 +29,16 @@ export function useDoc<T = any>(
     error: null,
   });
 
+  // docRef can be unstable. We use its path as a stable dependency.
+  const docPath = docRef ? docRef.path : null;
+
   useEffect(() => {
     if (!docRef) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
 
-    setResult({ data: null, isLoading: true, error: null });
+    setResult(prev => ({ ...prev, isLoading: true }));
 
     const unsubscribe = onSnapshot(
       docRef,
@@ -60,8 +63,11 @@ export function useDoc<T = any>(
       }
     );
 
+    // This cleanup function is called when the component unmounts
+    // or when the dependencies of the effect change.
     return () => unsubscribe();
-  }, [docRef]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docPath]); // Depend only on the stable path of the document reference
 
   return result;
 }

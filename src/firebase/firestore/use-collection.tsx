@@ -29,13 +29,16 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
+  // The query object can be unstable. We stringify it to get a stable dependency.
+  const queryPath = query ? JSON.stringify((query as any)._query) : null;
+
   useEffect(() => {
     if (!query) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
 
-    setResult({ data: null, isLoading: true, error: null });
+    setResult(prev => ({ ...prev, isLoading: true }));
 
     const unsubscribe = onSnapshot(
       query,
@@ -47,8 +50,11 @@ export function useCollection<T = DocumentData>(
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
+        // This is a simplified way to get path; might need adjustment for complex queries
         if ('path' in query) {
           path = (query as any).path;
+        } else if ((query as any)._query?.path?.segments) {
+          path = (query as any)._query.path.segments.join('/');
         }
         
         const contextualError = new FirestorePermissionError({
@@ -61,8 +67,11 @@ export function useCollection<T = DocumentData>(
       }
     );
 
+    // This cleanup function is called when the component unmounts
+    // or when the dependencies of the effect change.
     return () => unsubscribe();
-  }, [query]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryPath]); // Depend only on the stable string representation of the query
 
   return result;
 }

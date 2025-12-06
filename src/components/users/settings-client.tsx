@@ -66,16 +66,19 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
+  // This useMemo block now correctly deduplicates the users.
+  // It runs whenever rawUsers changes, ensuring the list is always clean.
   const users = useMemo(() => {
     if (!rawUsers) return [];
-    // Use a Map to guarantee uniqueness based on user UID.
+    // Use a Map to guarantee uniqueness based on user UID. This is a foolproof way
+    // to prevent duplicates from ever appearing in the UI.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     }
-    // Convert the Map values to an array and sort them.
+    // Convert the Map values back to an array and sort them for display.
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
