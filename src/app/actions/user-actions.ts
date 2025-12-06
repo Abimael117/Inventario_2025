@@ -5,14 +5,24 @@ import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
-// Use environment variables for service account credentials
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+// This function now reads environment variables at runtime, which is crucial for Vercel.
+const getFirebaseConfig = () => {
+    const config = {
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    };
+
+    // This check ensures that all variables are present when the function is called.
+    for (const [key, value] of Object.entries(config)) {
+        if (!value) {
+            throw new Error(`Missing Firebase environment variable: ${key}. Please set it in your Vercel project settings.`);
+        }
+    }
+    return config;
 };
 
 // Initializes and returns Firebase SDK instances for server-side actions.
@@ -28,7 +38,8 @@ function getFirebaseAdmin() {
     };
   }
   
-  // If not initialized, create a new app instance
+  // If not initialized, get config and create a new app instance
+  const firebaseConfig = getFirebaseConfig();
   const app = initializeApp(firebaseConfig, appName);
   return {
       auth: getAuth(app),
