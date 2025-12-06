@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   DocumentReference,
   onSnapshot,
@@ -10,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { isEqual } from 'lodash';
 
 export type WithId<T> = T & { id: string };
 
@@ -27,8 +29,16 @@ export function useDoc<T = any>(
     isLoading: true,
     error: null,
   });
+
+  const docRefRef = useRef(memoizedDocRef);
   
   useEffect(() => {
+    // Only resubscribe if the document reference has actually changed.
+    if (isEqual(docRefRef.current, memoizedDocRef)) {
+      return;
+    }
+    docRefRef.current = memoizedDocRef;
+    
     if (!memoizedDocRef) {
       setResult({ data: null, isLoading: false, error: null });
       return;
@@ -65,3 +75,5 @@ export function useDoc<T = any>(
 
   return result;
 }
+
+    
