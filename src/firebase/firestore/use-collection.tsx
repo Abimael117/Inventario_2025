@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
@@ -80,7 +80,7 @@ export function useCollection<T = any>(
         });
 
         setError(contextualError);
-setData(null);
+        setData(null);
         setIsLoading(false);
         
         errorEmitter.emit('permission-error', contextualError);
@@ -88,6 +88,7 @@ setData(null);
     );
 
     // The cleanup function for the effect when the component unmounts or dependency changes.
+    // This is CRITICAL to prevent memory leaks and duplicate listeners.
     return () => {
       unsubscribe();
     };
