@@ -86,35 +86,41 @@ export default function SettingsPage() {
         setIsAddUserOpen(false);
 
       } catch (error) {
-        let errorMessage = 'Ocurrió un error desconocido al crear el usuario.';
         if (error instanceof FirebaseError) {
-          switch (error.code) {
-            case 'auth/email-already-exists':
-              errorMessage = 'Este nombre de usuario ya está en uso. Elige otro.';
-              break;
-            case 'auth/weak-password':
-              errorMessage = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
-              break;
-             case 'auth/invalid-email':
-               errorMessage = 'El nombre de usuario no tiene un formato válido.';
+           let errorMessage = 'Ocurrió un error desconocido al crear el usuario.';
+           switch (error.code) {
+             case 'auth/email-already-exists':
+               errorMessage = 'Este nombre de usuario ya está en uso. Elige otro.';
                break;
-            case 'permission-denied':
-               const permissionError = new FirestorePermissionError({
-                    path: `users/${newUserData.username}`,
-                    operation: 'create',
-                    requestResourceData: newUserData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                return;
-            default:
-              errorMessage = `Error: ${error.message}`;
-          }
+             case 'auth/weak-password':
+               errorMessage = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+               break;
+              case 'auth/invalid-email':
+                errorMessage = 'El nombre de usuario no tiene un formato válido.';
+                break;
+             default: // Includes 'permission-denied' for Firestore write
+                const permissionError = new FirestorePermissionError({
+                     path: `users/${newUserData.username}`,
+                     operation: 'create',
+                     requestResourceData: newUserData,
+                 });
+                 errorEmitter.emit('permission-error', permissionError);
+                 return;
+           }
+            toast({
+                variant: "destructive",
+                title: "Error al Crear Usuario",
+                description: errorMessage,
+            });
+        } else {
+            // Generic error
+            const permissionError = new FirestorePermissionError({
+                path: `users/${newUserData.username}`,
+                operation: 'create',
+                requestResourceData: newUserData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
         }
-        toast({
-          variant: "destructive",
-          title: "Error al Crear Usuario",
-          description: errorMessage,
-        });
       }
     });
   };
@@ -142,7 +148,7 @@ export default function SettingsPage() {
                 });
                 setIsEditUserOpen(false);
             })
-            .catch(async () => {
+            .catch(() => {
                 const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'update',
@@ -186,7 +192,7 @@ export default function SettingsPage() {
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
-            .catch(async () => {
+            .catch(() => {
                 const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'delete',
@@ -225,9 +231,9 @@ export default function SettingsPage() {
                 onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
                 onAddUser={handleAddUser}
                 onOpenEditDialog={openEditDialog}
-                onUpdateUser={handleUpdateUser}
+                onUpdateUser={onUpdateUser}
                 onOpenDeleteDialog={openDeleteDialog}
-                onConfirmDelete={confirmDelete}
+                onConfirmDelete={onConfirmDelete}
             />
         )}
     </>

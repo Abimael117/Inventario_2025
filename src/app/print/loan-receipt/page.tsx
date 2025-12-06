@@ -5,7 +5,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Loader2, Printer, X, Boxes } from 'lucide-react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface PrintableLoan extends Loan {
@@ -14,21 +14,21 @@ interface PrintableLoan extends Loan {
 }
 
 const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
-  let formattedDate = "Fecha inválida";
-  if (loan.loanDate && typeof loan.loanDate === 'string' && loan.loanDate.includes('-')) {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Fecha inválida";
     try {
-      // The `replace` is a polyfill for Safari, which can't parse 'YYYY-MM-DD' directly.
-      // It changes the format to 'YYYY/MM/DD' which is universally understood.
-      const dateObject = new Date(loan.loanDate.replace(/-/g, '/'));
-      if (!isNaN(dateObject.getTime())) {
-        // We add timeZone: 'UTC' to correctly interpret the date as it was intended,
-        // avoiding shifts caused by the client's local timezone.
-        formattedDate = format(dateObject, "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' });
-      }
+      // Handles both 'YYYY-MM-DD' and ISO strings
+      const date = dateString.includes('T') ? parseISO(dateString) : new Date(dateString.replace(/-/g, '/'));
+      if (isNaN(date.getTime())) return "Fecha inválida";
+      return format(date, "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' });
     } catch (e) {
-      console.error("Failed to parse date:", loan.loanDate, e);
+      console.error("Failed to parse date:", dateString, e);
+      return "Fecha inválida";
     }
-  }
+  };
+
+  const formattedLoanDate = formatDate(loan.loanDate);
+  const formattedReturnDate = formatDate(loan.returnDate);
   
   return (
     <div className="bg-white text-black p-8 font-sans max-w-2xl mx-auto border-2 border-gray-300">
@@ -56,7 +56,7 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
             </div>
             <div>
               <p className="font-bold text-gray-600">Fecha de Préstamo:</p>
-              <p className="text-lg">{formattedDate}</p>
+              <p className="text-lg">{formattedLoanDate}</p>
             </div>
             <div>
               <p className="font-bold text-gray-600">Producto Prestado:</p>
@@ -86,7 +86,7 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
 
         {loan.status === 'Devuelto' && loan.returnDate && (
              <div className="pt-8 text-center text-green-600">
-                <p className="font-bold">** Material Devuelto el {format(new Date(loan.returnDate.replace(/-/g, '/')), "d 'de' MMMM, yyyy", { locale: es, timeZone: 'UTC' })} **</p>
+                <p className="font-bold">** Material Devuelto el {formattedReturnDate} **</p>
             </div>
         )}
       </main>

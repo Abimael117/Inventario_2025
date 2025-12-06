@@ -1,5 +1,4 @@
 
-
 export type Product = {
   id: string;
   name: string;
@@ -14,8 +13,8 @@ export type Loan = {
   productId: string;
   productName: string;
   requester: string;
-  loanDate: string;
-  returnDate?: string;
+  loanDate: string; // ISO 8601 or YYYY-MM-DD
+  returnDate?: string; // ISO 8601 or YYYY-MM-DD
   quantity: number;
   status: 'Prestado' | 'Devuelto';
 };
@@ -27,7 +26,7 @@ export type StockMovement = {
     quantity: number;
     type: 'ajuste';
     reason: string;
-    date: string;
+    date: string; // ISO 8601 format
 };
 
 export type User = {

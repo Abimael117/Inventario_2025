@@ -57,10 +57,10 @@ export default function LoansPage() {
             });
             setIsAddDialogOpen(false);
         })
-        .catch(async (error: any) => {
-            if (error.code) {
+        .catch((error: any) => {
+            if (error.message.includes('permission-denied')) {
                 const permissionError = new FirestorePermissionError({
-                    path: productRef.path,
+                    path: loanRef.path,
                     operation: 'write',
                     requestResourceData: loanData
                 });
@@ -105,8 +105,8 @@ export default function LoansPage() {
                 description: "El producto ha sido marcado como devuelto y el stock ha sido repuesto.",
             });
         })
-        .catch(async (error: any) => {
-            if (error.code) {
+        .catch((error: any) => {
+            if (error.message.includes('permission-denied')) {
                  const permissionError = new FirestorePermissionError({
                     path: loanRef.path,
                     operation: 'write',
@@ -133,32 +133,29 @@ export default function LoansPage() {
     if (loanToDelete && firestore) {
       startTransition(async () => {
         const loanRef = doc(firestore, 'loans', loanToDelete.id);
-        const loanSnap = await getDoc(loanRef);
-        if (loanSnap.exists() && loanSnap.data().status === 'Prestado') {
-             toast({ variant: "destructive", title: "Acción no permitida", description: 'No se puede eliminar un préstamo que está activo. Primero márcalo como "Devuelto".' });
-             setIsDeleteDialogOpen(false);
-             setLoanToDelete(null);
-             return;
-        }
+        
+        try {
+            const loanSnap = await getDoc(loanRef);
+            if (loanSnap.exists() && loanSnap.data().status === 'Prestado') {
+                 toast({ variant: "destructive", title: "Acción no permitida", description: 'No se puede eliminar un préstamo que está activo. Primero márcalo como "Devuelto".' });
+                 return;
+            }
 
-        deleteDoc(loanRef)
-            .then(() => {
-                toast({
-                    title: "Préstamo Eliminado",
-                    description: `El registro del préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
-                });
-            })
-            .catch(async () => {
-                const permissionError = new FirestorePermissionError({
-                    path: loanRef.path,
-                    operation: 'delete',
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            })
-            .finally(() => {
-                setIsDeleteDialogOpen(false);
-                setLoanToDelete(null);
+            await deleteDoc(loanRef);
+            toast({
+                title: "Préstamo Eliminado",
+                description: `El registro del préstamo para "${loanToDelete.productName}" ha sido eliminado.`,
             });
+        } catch (e) {
+            const permissionError = new FirestorePermissionError({
+                path: loanRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } finally {
+            setIsDeleteDialogOpen(false);
+            setLoanToDelete(null);
+        }
       });
     }
   };

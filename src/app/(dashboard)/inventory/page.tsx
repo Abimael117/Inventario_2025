@@ -3,9 +3,8 @@
 
 import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc, runTransaction, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useState, useTransition, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 
 import InventoryClient from "@/components/inventory/inventory-client";
 import AppHeader from "@/components/header";
@@ -15,7 +14,6 @@ import { FirestorePermissionError, errorEmitter } from '@/firebase';
 
 export default function InventoryPage() {
   const firestore = useFirestore();
-  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -90,39 +88,37 @@ export default function InventoryPage() {
   const confirmDelete = () => {
     if (productToDelete && firestore) {
       startTransition(async () => {
-        const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
-        const activeLoansSnapshot = await getDocs(loansQuery);
-        
-        if (!activeLoansSnapshot.empty) {
-            toast({
-                variant: "destructive",
-                title: "Error al Eliminar",
-                description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
-            });
-            setIsDeleteDialogOpen(false);
-            setProductToDelete(null);
-            return;
-        }
-
         const productRef = doc(firestore, 'products', productToDelete.id);
-        deleteDoc(productRef)
-          .then(() => {
-            toast({
-                title: "Producto Eliminado",
-                description: `El producto "${productToDelete.name}" ha sido eliminado.`,
-            });
-          })
-          .catch(async () => {
-              const permissionError = new FirestorePermissionError({
-                  path: productRef.path,
-                  operation: 'delete',
+        const loansQuery = query(collection(firestore, 'loans'), where('productId', '==', productToDelete.id), where('status', '==', 'Prestado'));
+        
+        try {
+          const activeLoansSnapshot = await getDocs(loansQuery);
+        
+          if (!activeLoansSnapshot.empty) {
+              toast({
+                  variant: "destructive",
+                  title: "Error al Eliminar",
+                  description: `No se puede eliminar. Hay ${activeLoansSnapshot.size} préstamo(s) activo(s) para este producto.`,
               });
-              errorEmitter.emit('permission-error', permissionError);
-          })
-          .finally(() => {
+              return;
+          }
+
+          await deleteDoc(productRef);
+          toast({
+              title: "Producto Eliminado",
+              description: `El producto "${productToDelete.name}" ha sido eliminado.`,
+          });
+
+        } catch (e) {
+            const permissionError = new FirestorePermissionError({
+                path: productRef.path,
+                operation: 'delete',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } finally {
             setIsDeleteDialogOpen(false);
             setProductToDelete(null);
-          });
+        }
       });
     }
   };
@@ -131,32 +127,32 @@ export default function InventoryPage() {
      if (!firestore) return;
     startTransition(async () => {
       const productRef = doc(firestore, 'products', newProductData.id);
-      const docSnap = await getDoc(productRef);
-      if (docSnap.exists()) {
-          toast({
-              variant: "destructive",
-              title: "Error al Guardar",
-              description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
-          });
-          return;
-      }
-
-      setDoc(productRef, newProductData)
-        .then(() => {
-          toast({
-            title: "Producto Añadido",
-            description: `El producto "${newProductData.name}" ha sido guardado.`,
-          });
-          setIsAddDialogOpen(false);
-        })
-        .catch(async () => {
-            const permissionError = new FirestorePermissionError({
-                path: productRef.path,
-                operation: 'create',
-                requestResourceData: newProductData,
+      
+      try {
+        const docSnap = await getDoc(productRef);
+        if (docSnap.exists()) {
+            toast({
+                variant: "destructive",
+                title: "Error al Guardar",
+                description: 'Este ID de producto ya existe. Por favor, utiliza uno único.',
             });
-            errorEmitter.emit('permission-error', permissionError);
+            return;
+        }
+
+        await setDoc(productRef, newProductData);
+        toast({
+          title: "Producto Añadido",
+          description: `El producto "${newProductData.name}" ha sido guardado.`,
         });
+        setIsAddDialogOpen(false);
+      } catch (e) {
+          const permissionError = new FirestorePermissionError({
+              path: productRef.path,
+              operation: 'create',
+              requestResourceData: newProductData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+      }
     });
   };
 
@@ -173,7 +169,7 @@ export default function InventoryPage() {
               setIsEditDialogOpen(false);
               setProductToEdit(null);
           })
-          .catch(async () => {
+          .catch(() => {
               const permissionError = new FirestorePermissionError({
                   path: productRef.path,
                   operation: 'update',
@@ -214,7 +210,7 @@ export default function InventoryPage() {
                 quantity: quantityToAdjust,
                 type: 'ajuste',
                 reason: adjustmentData.reason,
-                date: new Date().toLocaleDateString('en-CA'), // YYYY-MM-DD
+                date: new Date().toISOString(),
             };
             transaction.set(movementRef, newMovement);
 
@@ -239,18 +235,17 @@ export default function InventoryPage() {
             setIsAdjustDialogOpen(false);
             setProductToAdjust(null);
         })
-        .catch(async (error: any) => {
-             if (error.code) { // Firestore specific error
+        .catch((error: any) => {
+             if (error.message.includes('permission-denied')) { 
                 const permissionError = new FirestorePermissionError({
                     path: productRef.path,
-                    operation: 'write', // transaction is a write operation
+                    operation: 'write', 
                     requestResourceData: { 
                       quantity: (productToAdjust.quantity || 0) - adjustmentData.quantity, 
-                      reason: adjustmentData.reason 
                     }
                 });
                 errorEmitter.emit('permission-error', permissionError);
-            } else { // Generic JS error
+            } else { 
                 toast({
                   variant: "destructive",
                   title: "Error al Ajustar",
