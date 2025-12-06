@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,16 +28,13 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
-  // The query object can be unstable across renders. We use its path as a stable dependency.
-  const queryPath = query ? (query as any)._query.path.segments.join('/') : null;
-
   useEffect(() => {
     if (!query) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
 
-    setResult(prev => ({ ...prev, isLoading: true }));
+    setResult(prev => ({ ...prev, isLoading: true, error: null }));
 
     const unsubscribe = onSnapshot(
       query,
@@ -66,11 +62,10 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // This cleanup function is called when the component unmounts
-    // or when the dependencies of the effect change.
+    // This cleanup function is crucial. It's called when the component unmounts
+    // or when the query dependency changes, preventing memory leaks.
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryPath]); // Depend only on the stable path representation of the query
+  }, [query]); // Depend directly on the query object.
 
   return result;
 }
