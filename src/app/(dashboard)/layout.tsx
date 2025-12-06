@@ -105,10 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="print-hide">
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2">
-              <Boxes className="size-6 text-primary" />
-              <h1 className="text-xl font-semibold">D.E.C.D</h1>
-            </div>
+            {/* Logo y título movidos al AppHeader */}
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
