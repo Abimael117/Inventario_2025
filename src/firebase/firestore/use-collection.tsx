@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -42,7 +42,16 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  // Use a ref to store the unsubscribe function to ensure it's stable across renders.
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
   useEffect(() => {
+    // If a previous subscription exists, unsubscribe from it before creating a new one.
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
@@ -54,8 +63,7 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Establish the new real-time listener. The 'unsubscribe' function
-    // will be returned by onSnapshot and called by the cleanup function.
+    // Establish the new real-time listener.
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -88,11 +96,14 @@ export function useCollection<T = any>(
       }
     );
 
-    // The cleanup function for the effect. This is critical.
-    // It will be called when the component unmounts or BEFORE the effect runs again
-    // if a dependency changes. This prevents memory leaks and duplicate listeners.
+    // Store the new unsubscribe function in the ref.
+    unsubscribeRef.current = unsubscribe;
+
+    // The cleanup function for the effect when the component unmounts.
     return () => {
-      unsubscribe();
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
     };
   }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference itself changes.
 
