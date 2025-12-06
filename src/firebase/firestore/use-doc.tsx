@@ -30,7 +30,8 @@ export function useDoc<T = any>(
     error: null,
   });
 
-  const docRefRef = useRef(memoizedDocRef);
+  // Use a ref to store the doc ref to prevent re-subscribing on every render.
+  const docRefRef = useRef<DocumentReference<DocumentData> | null | undefined>();
   
   useEffect(() => {
     // Only resubscribe if the document reference has actually changed.
@@ -44,7 +45,7 @@ export function useDoc<T = any>(
       return;
     }
 
-    setResult(prev => ({ ...prev, isLoading: true }));
+    setResult({ data: null, isLoading: true, error: null });
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
@@ -56,6 +57,7 @@ export function useDoc<T = any>(
              error: null
           });
         } else {
+          // If the document does not exist, treat it as "not loading" and no data.
           setResult({ data: null, isLoading: false, error: null });
         }
       },
@@ -70,10 +72,10 @@ export function useDoc<T = any>(
       }
     );
 
+    // This is the cleanup function that will be called when the component unmounts
+    // or when the memoizedDocRef dependency changes, preventing memory leaks.
     return () => unsubscribe();
-  }, [memoizedDocRef]);
+  }, [memoizedDocRef]); // The effect depends only on the memoized document reference.
 
   return result;
 }
-
-    

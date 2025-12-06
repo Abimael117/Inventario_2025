@@ -30,7 +30,8 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
-  const queryRef = useRef(memoizedQuery);
+  // Use a ref to store the query to prevent re-subscribing on every render.
+  const queryRef = useRef<Query<DocumentData> | null | undefined>();
 
   useEffect(() => {
     // Only resubscribe if the query has actually changed.
@@ -45,7 +46,8 @@ export function useCollection<T = DocumentData>(
       return;
     }
     
-    setResult(prev => ({ ...prev, isLoading: true }));
+    // Set loading state to true whenever a new query is provided.
+    setResult({ data: null, isLoading: true, error: null });
 
     const unsubscribe = onSnapshot(
       memoizedQuery,
@@ -72,11 +74,9 @@ export function useCollection<T = DocumentData>(
     );
 
     // This is the cleanup function that will be called when the component unmounts
-    // or when the memoizedQuery dependency changes.
+    // or when the memoizedQuery dependency changes, preventing memory leaks.
     return () => unsubscribe();
-  }, [memoizedQuery]);
+  }, [memoizedQuery]); // The effect depends only on the memoized query.
 
   return result;
 }
-
-    
