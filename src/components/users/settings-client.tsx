@@ -68,10 +68,8 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // This is the definitive fix. Use a Map to guarantee uniqueness based on the user's UID.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
-      // Ensure user object and uid are valid before setting.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
@@ -79,7 +77,6 @@ export default function SettingsClient() {
     
     const uniqueUsers = Array.from(uniqueUsersMap.values());
     
-    // Sort the unique list, placing 'admin' first, then by name.
     return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
