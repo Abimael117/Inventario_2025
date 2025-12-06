@@ -29,8 +29,8 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
-  // The query object can be unstable. We stringify it to get a stable dependency.
-  const queryPath = query ? JSON.stringify((query as any)._query) : null;
+  // The query object can be unstable across renders. We use its path as a stable dependency.
+  const queryPath = query ? (query as any)._query.path.segments.join('/') : null;
 
   useEffect(() => {
     if (!query) {
@@ -50,7 +50,6 @@ export function useCollection<T = DocumentData>(
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
-        // This is a simplified way to get path; might need adjustment for complex queries
         if ('path' in query) {
           path = (query as any).path;
         } else if ((query as any)._query?.path?.segments) {
@@ -71,7 +70,7 @@ export function useCollection<T = DocumentData>(
     // or when the dependencies of the effect change.
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryPath]); // Depend only on the stable string representation of the query
+  }, [queryPath]); // Depend only on the stable path representation of the query
 
   return result;
 }

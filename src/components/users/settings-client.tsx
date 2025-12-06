@@ -66,8 +66,6 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // This useMemo block now correctly deduplicates the users.
-  // It runs whenever rawUsers changes, ensuring the list is always clean.
   const users = useMemo(() => {
     if (!rawUsers) return [];
     // Use a Map to guarantee uniqueness based on user UID. This is a foolproof way

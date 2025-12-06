@@ -29,7 +29,7 @@ export function useDoc<T = any>(
     error: null,
   });
 
-  // docRef can be unstable. We use its path as a stable dependency.
+  // docRef can be unstable across renders. We use its path as a stable dependency.
   const docPath = docRef ? docRef.path : null;
 
   useEffect(() => {
