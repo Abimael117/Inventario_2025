@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,18 +27,8 @@ export function useCollection<T = DocumentData>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   
-  // Use a ref to store the query to prevent re-subscribing on every render.
-  const queryRef = useRef(memoizedQuery);
-
   useEffect(() => {
-    // Only update the ref if the memoizedQuery has actually changed.
-    // This comparison is key to preventing unnecessary re-subscriptions.
-    if (queryRef.current !== memoizedQuery) {
-        queryRef.current = memoizedQuery;
-    }
-
-    // If the query is not ready, reset the state and do nothing.
-    if (!queryRef.current) {
+    if (!memoizedQuery) {
       setIsLoading(false);
       setData(null);
       setError(null);
@@ -47,7 +38,7 @@ export function useCollection<T = DocumentData>(
     setIsLoading(true);
 
     const unsubscribe = onSnapshot(
-      queryRef.current,
+      memoizedQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as WithId<T>)
@@ -58,8 +49,8 @@ export function useCollection<T = DocumentData>(
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
-        if (queryRef.current && 'path' in queryRef.current) {
-          path = (queryRef.current as any).path;
+        if ('path' in memoizedQuery) {
+          path = (memoizedQuery as any).path;
         }
         
         const contextualError = new FirestorePermissionError({
@@ -74,11 +65,12 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // The cleanup function is called on unmount or before the effect re-runs.
     return () => {
       unsubscribe();
     };
-  }, [memoizedQuery]); // The effect re-runs ONLY if the memoized query object itself changes.
+  }, [memoizedQuery]);
 
   return { data, isLoading, error };
 }
+
+    

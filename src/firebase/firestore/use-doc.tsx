@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -26,16 +27,8 @@ export function useDoc<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   
-  const docRefRef = useRef(memoizedDocRef);
-
   useEffect(() => {
-    // Only update the ref if the memoizedDocRef has actually changed.
-    if (docRefRef.current !== memoizedDocRef) {
-        docRefRef.current = memoizedDocRef;
-    }
-
-    // Reset state and do nothing if the document reference is not ready
-    if (!docRefRef.current) {
+    if (!memoizedDocRef) {
       setIsLoading(false);
       setData(null);
       setError(null);
@@ -45,7 +38,7 @@ export function useDoc<T = any>(
     setIsLoading(true);
 
     const unsubscribe = onSnapshot(
-      docRefRef.current,
+      memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setData({ ...(snapshot.data() as T), id: snapshot.id });
@@ -58,7 +51,7 @@ export function useDoc<T = any>(
       (err: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'get',
-          path: docRefRef.current!.path,
+          path: memoizedDocRef.path,
         });
 
         setError(contextualError);
@@ -71,7 +64,9 @@ export function useDoc<T = any>(
     return () => {
       unsubscribe();
     };
-  }, [memoizedDocRef]); // Re-run effect only when the memoized reference itself changes
+  }, [memoizedDocRef]);
 
   return { data, isLoading, error };
 }
+
+    

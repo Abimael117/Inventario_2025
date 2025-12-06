@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -58,34 +59,24 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  // STABLE REFERENCE: This ensures the collection reference object does not
-  // get recreated on every render, which is critical for the useCollection hook.
   const usersCollectionRef = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
-  }, [firestore]); // Dependency is stable.
+  }, [firestore]);
 
-  // The hook receives a stable reference, preventing the memory leak.
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // BULLETPROOF DE-DUPLICATION: This logic guarantees that no matter how many duplicate
-  // users are received from the hook, only unique users will be rendered.
   const users = useMemo(() => {
-    if (!rawUsers) {
-      return [];
-    }
-    // Use a Map to guarantee uniqueness based on the user's UID.
-    // This is the definitive way to prevent duplicates in the UI.
+    if (!rawUsers) return [];
+    
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     }
-    const uniqueUsers = Array.from(uniqueUsersMap.values());
     
-    // Sort the unique users to ensure 'admin' always appears first.
-    return uniqueUsers.sort((a, b) => {
+    return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
       return (a.name || '').localeCompare(b.name || '');
@@ -360,4 +351,5 @@ export default function SettingsClient() {
       </AlertDialog>
     </>
   );
-}
+
+    
