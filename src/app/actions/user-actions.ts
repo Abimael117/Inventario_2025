@@ -8,17 +8,33 @@ import type { User } from '@/lib/types';
 
 // Use environment variables for service account credentials
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
 };
 
 // Initializes and returns Firebase SDK instances for server-side actions.
 // Ensures that Firebase is initialized only once.
 function getFirebaseAdmin() {
+  // Check if all required environment variables are set
+  const requiredEnvVars = [
+    'FIREBASE_API_KEY',
+    'FIREBASE_AUTH_DOMAIN',
+    'FIREBASE_PROJECT_ID',
+    'FIREBASE_STORAGE_BUCKET',
+    'FIREBASE_MESSAGING_SENDER_ID',
+    'FIREBASE_APP_ID',
+  ];
+  const missingVars = requiredEnvVars.filter(v => !process.env[v]);
+
+  if (missingVars.length > 0) {
+    console.error(`Server configuration error: Missing Firebase environment variables on the server: ${missingVars.join(', ')}`);
+    throw new Error('Server configuration error: Missing Firebase environment variables.');
+  }
+
   const appName = 'firebase-admin-app-for-actions';
   const existingApp = getApps().find(app => app.name === appName);
   if (existingApp) {
@@ -93,7 +109,7 @@ export async function createNewUser(
             break;
         }
     } else if (error.message.includes('Server configuration error')) {
-        errorMessage = error.message;
+        errorMessage = 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.';
     }
     
     return { success: false, error: errorMessage };
