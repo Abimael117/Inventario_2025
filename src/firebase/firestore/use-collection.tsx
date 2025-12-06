@@ -42,16 +42,7 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
-  // Use a ref to store the unsubscribe function to ensure it's stable across renders.
-  const unsubscribeRef = useRef<(() => void) | null>(null);
-
   useEffect(() => {
-    // If a previous subscription exists, unsubscribe from it before creating a new one.
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
-
     // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
       setData(null);
@@ -89,21 +80,16 @@ export function useCollection<T = any>(
         });
 
         setError(contextualError);
-        setData(null);
+setData(null);
         setIsLoading(false);
         
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
-    // Store the new unsubscribe function in the ref.
-    unsubscribeRef.current = unsubscribe;
-
-    // The cleanup function for the effect when the component unmounts.
+    // The cleanup function for the effect when the component unmounts or dependency changes.
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-      }
+      unsubscribe();
     };
   }, [memoizedTargetRefOrQuery]); // The effect re-runs ONLY if the memoized reference itself changes.
 
