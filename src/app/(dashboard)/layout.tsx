@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert, FileText } from "lucide-react";
+import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert, FileText, Boxes } from "lucide-react";
 import React, { useEffect, useMemo } from 'react';
 
 import { useUser, useAuth, useDoc, useFirestore } from '@/firebase';
@@ -20,7 +20,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/types";
 
@@ -107,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar>
           <SidebarHeader>
             <div className="flex items-center gap-2">
-              <Icons.logo className="size-6 text-primary" />
+              <Boxes className="size-6 text-primary" />
               <h1 className="text-xl font-semibold">D.E.C.D</h1>
             </div>
           </SidebarHeader>
