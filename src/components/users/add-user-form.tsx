@@ -29,7 +29,7 @@ const permissions = [
 
 const formSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  username: z.string().min(3, "El usuario debe tener al menos 3 caracteres.").regex(/^[a-z0-9._-]+$/, "Solo letras minúsculas, números, puntos, guiones y guiones bajos."),
+  username: z.string().min(3, "El nombre de usuario debe tener al menos 3 caracteres."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
   permissions: z.array(z.string()).refine((value) => value.some((item) => item), {
     message: "Debes seleccionar al menos un permiso.",
@@ -84,7 +84,7 @@ export function AddUserForm({ onSubmit, isPending }: AddUserFormProps) {
             />
         </div>
          <FormDescription className="text-xs -mt-2">
-            El nombre de usuario se usará para iniciar sesión. Sin espacios ni mayúsculas.
+            El nombre de usuario se usará para iniciar sesión.
         </FormDescription>
         <FormField
           control={form.control}
