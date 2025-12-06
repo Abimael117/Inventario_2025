@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import {isEqual} from 'lodash';
 
 export type WithId<T> = T & { id: string };
 
@@ -29,14 +30,24 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
+  const queryRef = useRef<Query<DocumentData> | null | undefined>(null);
+  
   useEffect(() => {
+    // Check if the query has actually changed. This is crucial to prevent re-subscribing
+    // if a parent component re-renders and passes a query object that is structurally identical
+    // but a different object instance.
+    if (query && queryRef.current && isEqual(query, queryRef.current)) {
+      return;
+    }
+    
+    queryRef.current = query;
+    
     if (!query) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
-    
-    // Set loading state to true only when starting the effect
-    setResult(prevState => ({ ...prevState, isLoading: true, error: null }));
+
+    setResult({ data: null, isLoading: true, error: null });
 
     const unsubscribe = onSnapshot(
       query,
@@ -62,9 +73,8 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [query]); // Re-run effect only when the query object instance changes
+  }, [query]);
 
   return result;
 }

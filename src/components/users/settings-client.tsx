@@ -69,9 +69,10 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // Use a Map to guarantee uniqueness based on user UID.
+    // Use a Map to guarantee uniqueness based on user UID. This is the definitive fix.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
+      // We only add the user if the UID is present and not already in the map.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
@@ -195,7 +196,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers) {
+  if (isLoadingUsers && !rawUsers) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
