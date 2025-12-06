@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getApp, getApps, initializeApp } from 'firebase/app';
@@ -19,22 +18,6 @@ const firebaseConfig = {
 // Initializes and returns Firebase SDK instances for server-side actions.
 // Ensures that Firebase is initialized only once.
 function getFirebaseAdmin() {
-  // Check if all required environment variables are set
-  const requiredEnvVars = [
-    'NEXT_PUBLIC_FIREBASE_API_KEY',
-    'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
-    'NEXT_PUBLIC_FIREBASE_PROJECT_ID',
-    'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET',
-    'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID',
-    'NEXT_PUBLIC_FIREBASE_APP_ID',
-  ];
-  const missingVars = requiredEnvVars.filter(v => !process.env[v]);
-
-  if (missingVars.length > 0) {
-    console.error(`Server configuration error: Missing Firebase environment variables on the server: ${missingVars.join(', ')}`);
-    throw new Error('Server configuration error: Missing Firebase environment variables.');
-  }
-
   const appName = 'firebase-admin-app-for-actions';
   const existingApp = getApps().find(app => app.name === appName);
   if (existingApp) {
@@ -65,6 +48,8 @@ export async function createNewUser(
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   try {
+    // This check is problematic in Vercel's build environment.
+    // We rely on the fact that if variables are missing, `initializeApp` will fail.
     const { auth, firestore } = getFirebaseAdmin();
 
     if (!userData.password || userData.password.length < 6) {
@@ -108,8 +93,10 @@ export async function createNewUser(
             errorMessage = 'El formato del nombre de usuario no es válido.';
             break;
         }
-    } else if (error.message.includes('Server configuration error')) {
-        errorMessage = 'Error interno del servidor: no se pudo conectar a los servicios de Firebase.';
+    } else if (error.message && error.message.includes('Firebase ID token has invalid')) {
+        errorMessage = 'Error de configuración del servidor. Contacta al administrador.';
+    } else if (error.message && error.message.includes('auth/configuration-not-found')) {
+         errorMessage = 'Error de configuración de Firebase en el servidor. Asegúrate de que las variables de entorno están bien configuradas en Vercel.';
     }
     
     return { success: false, error: errorMessage };
