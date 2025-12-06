@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -28,9 +27,11 @@ export function useDoc<T = any>(
     isLoading: true,
     error: null,
   });
+  
+  const docPath = docRef?.path;
 
   useEffect(() => {
-    if (!docRef) {
+    if (!docRef || !docPath) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
@@ -60,10 +61,11 @@ export function useDoc<T = any>(
       }
     );
 
+    // This is the crucial part: return the unsubscribe function.
+    // React will call this function when the component unmounts or when
+    // the dependency array changes, which prevents memory leaks.
     return () => unsubscribe();
-  }, [docRef]);
+  }, [docPath]); // Depend only on the stable path string
 
   return result;
 }
-
-    

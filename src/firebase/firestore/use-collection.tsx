@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,6 +19,14 @@ export interface UseCollectionResult<T> {
   error: FirestoreError | Error | null;
 }
 
+// Serialize a query to a stable string for useEffect dependency
+function getQueryPath(query: Query<DocumentData>): string {
+  // Use a combination of path and internal query constraints to create a unique key
+  const path = (query as any)._query.path.segments.join('/');
+  const constraints = (query as any)._query.explicitOrderBy.map((o: any) => `${o.field}${o.dir}`).join('');
+  return `${path}|${constraints}`;
+}
+
 export function useCollection<T = DocumentData>(
   query: Query<DocumentData> | null | undefined
 ): UseCollectionResult<T> {
@@ -29,8 +36,10 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
+  const queryPath = query ? getQueryPath(query) : null;
+
   useEffect(() => {
-    if (!query) {
+    if (!query || !queryPath) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
@@ -46,16 +55,9 @@ export function useCollection<T = DocumentData>(
         setResult({ data: results, isLoading: false, error: null });
       },
       (err: FirestoreError) => {
-        let path = 'unknown_path';
-        if ('path' in query) {
-          path = (query as any).path;
-        } else if ((query as any)._query?.path?.segments) {
-          path = (query as any)._query.path.segments.join('/');
-        }
-        
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path,
+          path: queryPath.split('|')[0], // Get path part from serialized key
         });
 
         setResult({ data: null, isLoading: false, error: contextualError });
@@ -63,10 +65,11 @@ export function useCollection<T = DocumentData>(
       }
     );
 
+    // This is the crucial part: return the unsubscribe function.
+    // React will call this function when the component unmounts or when
+    // the dependency array changes, which prevents memory leaks.
     return () => unsubscribe();
-  }, [query]); 
+  }, [queryPath]); // Depend on the stable, serialized query path
 
   return result;
 }
-
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -68,12 +67,14 @@ export default function SettingsClient() {
 
   const users = useMemo(() => {
     if (!rawUsers) return [];
+    // Use a Map to guarantee uniqueness based on UID
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     }
+    // Convert Map values to an array and sort
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -349,5 +350,3 @@ export default function SettingsClient() {
       </AlertDialog>
     </>
   );
-
-    

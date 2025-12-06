@@ -34,23 +34,23 @@ export default function DashboardClient() {
   const { data: inventoryData, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loansData, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
 
-  if (isLoadingProducts || isLoadingLoans || !inventoryData || !loansData) {
+  const totalProducts = inventoryData?.length ?? 0;
+  const totalStock = inventoryData?.reduce((sum, p) => sum + p.quantity, 0) ?? 0;
+  const lowStockItems = useMemo(() => inventoryData?.filter(
+    (p) => p.quantity <= p.reorderPoint && p.quantity > 0
+  ) ?? [], [inventoryData]);
+  const outOfStockItems = useMemo(() => inventoryData?.filter(p => p.quantity === 0) ?? [], [inventoryData]);
+  const activeLoans = useMemo(() => loansData?.filter(l => l.status === 'Prestado') ?? [], [loansData]);
+
+  const chartData = useMemo(() => inventoryData?.map(p => ({ name: p.name, quantity: p.quantity })) ?? [], [inventoryData]);
+
+  if (isLoadingProducts || isLoadingLoans) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
-
-  const totalProducts = inventoryData.length;
-  const totalStock = inventoryData.reduce((sum, p) => sum + p.quantity, 0);
-  const lowStockItems = inventoryData.filter(
-    (p) => p.quantity <= p.reorderPoint && p.quantity > 0
-  );
-  const outOfStockItems = inventoryData.filter(p => p.quantity === 0);
-  const activeLoans = loansData.filter(l => l.status === 'Prestado');
-
-  const chartData = inventoryData.map(p => ({ name: p.name, quantity: p.quantity }));
 
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -161,5 +161,3 @@ export default function DashboardClient() {
     </div>
   );
 }
-
-    
