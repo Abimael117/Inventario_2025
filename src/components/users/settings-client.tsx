@@ -1,6 +1,5 @@
 'use client';
 
-import AppHeader from '@/components/header';
 import {
   Card,
   CardContent,
@@ -89,102 +88,98 @@ export default function SettingsClient({
 
   return (
     <>
-      <div className="flex flex-1 flex-col">
-        <AppHeader title="Configuración" />
-        <main className="flex-1 p-4 md:p-6">
-          <div className="grid gap-6">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Gestión de Usuarios</CardTitle>
-                  <CardDescription>
-                    Edita, elimina y crea nuevos usuarios para el sistema.
-                  </CardDescription>
-                </div>
-                <Button size="sm" onClick={() => onSetIsAddUserOpen(true)}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Añadir Usuario
-                </Button>
+      <main className="flex-1 p-4 md:p-6">
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Gestión de Usuarios</CardTitle>
+                <CardDescription>
+                  Edita, elimina y crea nuevos usuarios para el sistema.
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={() => onSetIsAddUserOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Añadir Usuario
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Usuario</TableHead>
+                          <TableHead>Permisos</TableHead>
+                          <TableHead className='text-right'>Acciones</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {isLoading && users.length === 0 ? (
+                          <TableRow>
+                              <TableCell colSpan={4} className="h-24 text-center">
+                                  <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                              </TableCell>
+                          </TableRow>
+                      ) : users.map(user => (
+                          <TableRow key={user.uid}>
+                              <TableCell className="font-medium">{user.name}</TableCell>
+                              <TableCell>{user.username}</TableCell>
+                              <TableCell>
+                                <div className="flex flex-row gap-1 flex-wrap">
+                                  {user.role === 'admin' ? (
+                                    <Badge>Todos</Badge>
+                                  ) : user.permissions && user.permissions.length > 0 ? (
+                                    user.permissions.map(p => <Badge key={p} variant="outline">{permissionLabels[p] || p}</Badge>)
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">Ninguno</span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => onOpenEditDialog(user)}
+                                  disabled={isLoading || user.role === 'admin'}
+                                  aria-label="Editar usuario"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => onOpenDeleteDialog(user)}
+                                  disabled={isLoading || user.uid === currentUser?.uid || user.role === 'admin'}
+                                  aria-label="Eliminar usuario"
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                      <ShieldQuestion className="h-5 w-5" />
+                      Sobre la Gestión de Usuarios
+                  </CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nombre</TableHead>
-                            <TableHead>Usuario</TableHead>
-                            <TableHead>Permisos</TableHead>
-                            <TableHead className='text-right'>Acciones</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading && users.map(user => (
-                            <TableRow key={user.uid}>
-                                <TableCell className="font-medium">{user.name}</TableCell>
-                                <TableCell>{user.username}</TableCell>
-                                <TableCell>
-                                  <div className="flex flex-row gap-1 flex-wrap">
-                                    {user.role === 'admin' ? (
-                                      <Badge>Todos</Badge>
-                                    ) : user.permissions && user.permissions.length > 0 ? (
-                                      user.permissions.map(p => <Badge key={p} variant="outline">{permissionLabels[p] || p}</Badge>)
-                                    ) : (
-                                      <span className="text-xs text-muted-foreground">Ninguno</span>
-                                    )}
-                                  </div>
-                                </TableCell>
-                                <TableCell className="text-right">
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => onOpenEditDialog(user)}
-                                    disabled={isLoading || user.role === 'admin'}
-                                    aria-label="Editar usuario"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    onClick={() => onOpenDeleteDialog(user)}
-                                    disabled={isLoading || user.uid === currentUser?.uid}
-                                    aria-label="Eliminar usuario"
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                  <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+                    <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
+                    <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
+                    <li>Las contraseñas de nuevos usuarios deben ser seguras y tener al menos 6 caracteres.</li>
+                  </ul>
               </CardContent>
-            </Card>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <ShieldQuestion className="h-5 w-5" />
-                        Sobre la Gestión de Usuarios
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
-                      <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
-                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
-                      <li>Las contraseñas de nuevos usuarios deben ser seguras y tener al menos 6 caracteres.</li>
-                    </ul>
-                </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
+          </Card>
+        </div>
+      </main>
 
       <Dialog open={isAddUserOpen} onOpenChange={onSetIsAddUserOpen}>
         <DialogContent className="sm:max-w-md">

@@ -108,6 +108,14 @@ export default function SettingsPage() {
       });
       return;
     }
+     if (user.role === 'admin') {
+      toast({
+        variant: "destructive",
+        title: "Acción no permitida",
+        description: "La cuenta de administrador no puede ser eliminada.",
+      });
+      return;
+    }
     setUserToDelete(user);
     setIsDeleteConfirmOpen(true);
   };
@@ -121,7 +129,7 @@ export default function SettingsPage() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
@@ -138,39 +146,36 @@ export default function SettingsPage() {
     });
   };
 
-
-  if (isLoadingUsers && !rawUsers) {
-    return (
-      <div className="flex flex-1 flex-col">
-        <AppHeader title="Configuración" />
-        <main className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Cargando usuarios...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   return (
-    <SettingsClient 
-        users={users} 
-        isLoading={isLoadingUsers || isPending}
-        currentUser={currentUser}
-        userToEdit={userToEdit}
-        userToDelete={userToDelete}
-        isAddUserOpen={isAddUserOpen}
-        isEditUserOpen={isEditUserOpen}
-        isDeleteConfirmOpen={isDeleteConfirmOpen}
-        onSetIsAddUserOpen={setIsAddUserOpen}
-        onSetIsEditUserOpen={setIsEditUserOpen}
-        onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
-        onAddUser={handleAddUser}
-        onOpenEditDialog={openEditDialog}
-        onUpdateUser={handleUpdateUser}
-        onOpenDeleteDialog={openDeleteDialog}
-        onConfirmDelete={confirmDelete}
-    />
+    <>
+        <AppHeader title="Configuración" />
+        {isLoadingUsers && !users.length ? (
+            <main className="flex flex-1 items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Cargando usuarios...</p>
+            </div>
+            </main>
+        ) : (
+            <SettingsClient 
+                users={users} 
+                isLoading={isLoadingUsers || isPending}
+                currentUser={currentUser}
+                userToEdit={userToEdit}
+                userToDelete={userToDelete}
+                isAddUserOpen={isAddUserOpen}
+                isEditUserOpen={isEditUserOpen}
+                isDeleteConfirmOpen={isDeleteConfirmOpen}
+                onSetIsAddUserOpen={setIsAddUserOpen}
+                onSetIsEditUserOpen={setIsEditUserOpen}
+                onSetIsDeleteConfirmOpen={setIsDeleteConfirmOpen}
+                onAddUser={handleAddUser}
+                onOpenEditDialog={openEditDialog}
+                onUpdateUser={handleUpdateUser}
+                onOpenDeleteDialog={openDeleteDialog}
+                onConfirmDelete={confirmDelete}
+            />
+        )}
+    </>
   );
 }
