@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
@@ -42,27 +42,44 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
+  // This ref tracks if the component is mounted to prevent state updates on unmounted components
+  const isMountedRef = useRef<boolean>(true);
+
+  // This effect sets the isMountedRef to false on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // This effect correctly handles the subscription lifecycle.
   useEffect(() => {
     // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
-      setData(null);
-      setIsLoading(false);
-      setError(null);
+      if (isMountedRef.current) {
+        setData(null);
+        setIsLoading(false);
+        setError(null);
+      }
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-
+    if (isMountedRef.current) {
+      setIsLoading(true);
+      setError(null);
+    }
+    
     // Establish the new real-time listener.
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
-        setData(results);
-        setError(null);
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
+          setData(results);
+          setError(null);
+          setIsLoading(false);
+        }
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
@@ -79,9 +96,11 @@ export function useCollection<T = any>(
           path,
         });
 
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          setError(contextualError);
+          setData(null);
+          setIsLoading(false);
+        }
         
         errorEmitter.emit('permission-error', contextualError);
       }
