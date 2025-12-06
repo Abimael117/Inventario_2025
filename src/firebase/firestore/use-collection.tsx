@@ -45,14 +45,10 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
-  const unsubscribeRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
-    // Clean up the previous subscription before creating a new one.
-    if (unsubscribeRef.current) {
-      unsubscribeRef.current();
-      unsubscribeRef.current = null;
-    }
+    // Set initial loading state
+    setIsLoading(true);
 
     if (!memoizedTargetRefOrQuery) {
       setData(null);
@@ -60,11 +56,9 @@ export function useCollection<T = any>(
       setError(null);
       return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    unsubscribeRef.current = onSnapshot(
+    
+    // Set up the real-time listener.
+    const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map((doc) => ({
@@ -98,13 +92,8 @@ export function useCollection<T = any>(
       }
     );
 
-    // Final cleanup when the component unmounts.
-    return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current();
-        unsubscribeRef.current = null;
-      }
-    };
+    // Return the cleanup function that will be called on unmount or dependency change.
+    return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]);
 
   return { data, isLoading, error };
