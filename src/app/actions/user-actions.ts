@@ -1,4 +1,3 @@
-
 'use server';
 
 import * as admin from 'firebase-admin';
@@ -106,4 +105,3 @@ export async function createNewUser(
     return { success: false, error: errorMessage };
   }
 }
-
