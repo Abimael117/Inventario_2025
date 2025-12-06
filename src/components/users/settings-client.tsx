@@ -70,7 +70,6 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // Create a Map to filter out duplicates by UID, ensuring each user appears only once.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
       if (user && user.uid) {
@@ -78,7 +77,6 @@ export default function SettingsClient() {
       }
     });
     
-    // Convert the map back to an array and sort it.
     const uniqueUsers = Array.from(uniqueUsersMap.values());
     
     return uniqueUsers.sort((a, b) => {
@@ -357,5 +355,3 @@ export default function SettingsClient() {
     </>
   );
 }
-
-    
