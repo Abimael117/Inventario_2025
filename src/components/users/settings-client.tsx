@@ -1,3 +1,4 @@
+
 'use client';
 
 import AppHeader from '@/components/header';
@@ -350,3 +351,4 @@ export default function SettingsClient() {
       </AlertDialog>
     </>
   );
+}

@@ -27,11 +27,9 @@ export function useDoc<T = any>(
     isLoading: true,
     error: null,
   });
-  
-  const docPath = docRef?.path;
 
   useEffect(() => {
-    if (!docRef || !docPath) {
+    if (!docRef) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
@@ -65,7 +63,7 @@ export function useDoc<T = any>(
     // React will call this function when the component unmounts or when
     // the dependency array changes, which prevents memory leaks.
     return () => unsubscribe();
-  }, [docPath]); // Depend only on the stable path string
+  }, [docRef]); // Depend directly on the docRef object. useMemo must be used where the ref is created.
 
   return result;
 }
