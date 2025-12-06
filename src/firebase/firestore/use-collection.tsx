@@ -33,13 +33,10 @@ export function useCollection<T = DocumentData>(
   const queryRef = useRef<Query<DocumentData> | null | undefined>(null);
   
   useEffect(() => {
-    // Check if the query has actually changed. This is crucial to prevent re-subscribing
-    // if a parent component re-renders and passes a query object that is structurally identical
-    // but a different object instance.
-    if (query && queryRef.current && isEqual(query, queryRef.current)) {
+    // Prevent re-subscribing if the query is structurally identical but a different instance.
+    if (isEqual(query, queryRef.current)) {
       return;
     }
-    
     queryRef.current = query;
     
     if (!query) {
@@ -73,8 +70,9 @@ export function useCollection<T = DocumentData>(
       }
     );
 
+    // This cleanup function is guaranteed to run on unmount or before the effect re-runs.
     return () => unsubscribe();
-  }, [query]);
+  }, [query]); // The effect re-runs only when the query prop instance changes.
 
   return result;
 }
