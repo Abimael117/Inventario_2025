@@ -68,7 +68,7 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // Use a Map to guarantee uniqueness based on the user's UID. This is the definitive fix.
+    // This is the definitive fix. Use a Map to guarantee uniqueness based on the user's UID.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
       // Ensure user object and uid are valid before setting.
