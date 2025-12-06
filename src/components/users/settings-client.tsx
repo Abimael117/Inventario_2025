@@ -293,7 +293,7 @@ export default function SettingsClient() {
                 <CardContent>
                     <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground">
                       <li>El perfil **Administrador** tiene acceso a todas las secciones y no puede ser editado o eliminado.</li>
-                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
+                      <li>La eliminación de un perfil desde esta interfaz solo borra sus datos de la aplicación. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase si se desea eliminar el acceso por completo.</li>
                       <li>Las contraseñas de nuevos usuarios deben ser seguras y tener al menos 6 caracteres.</li>
                     </ul>
                 </CardContent>
