@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
@@ -80,7 +80,7 @@ export function useCollection<T = any>(
         });
 
         setError(contextualError);
-setData(null);
+        setData(null);
         setIsLoading(false);
         
         errorEmitter.emit('permission-error', contextualError);
