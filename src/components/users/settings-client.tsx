@@ -68,7 +68,6 @@ export default function SettingsClient() {
 
   const users = useMemo(() => {
     if (!rawUsers) return [];
-    
     // Use a Map to guarantee uniqueness based on user UID.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
@@ -76,7 +75,6 @@ export default function SettingsClient() {
         uniqueUsersMap.set(user.uid, user);
       }
     }
-    
     // Convert the Map values to an array and sort them.
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
