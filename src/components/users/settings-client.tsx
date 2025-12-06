@@ -68,15 +68,19 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
+    // Use a Map to ensure all users are unique by their UID. This is a failsafe.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
+      // The check `user && user.uid` ensures we don't process corrupted data.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     });
     
+    // Convert the Map back to an array.
     const uniqueUsers = Array.from(uniqueUsersMap.values());
     
+    // Sort the unique users, putting the admin first.
     return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
