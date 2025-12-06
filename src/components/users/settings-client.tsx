@@ -197,7 +197,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers) {
+  if (isLoadingUsers && !rawUsers) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
