@@ -1,11 +1,10 @@
 
-
 "use client";
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert, FileText } from "lucide-react";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -38,45 +37,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [firestore, user]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-  
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (isUserLoading || isProfileLoading) {
-      return; 
-    }
-
-    if (!user) {
+    // Redirect to login if user loading is complete and there's no user.
+    if (!isUserLoading && !user) {
       router.replace('/login');
-      return;
     }
-    
-    if (profile) {
-      const currentRoute = pathname.split('/')[1] || 'dashboard';
-      const routePermissionMap: { [key: string]: string } = {
-        '': 'dashboard',
-        'dashboard': 'dashboard',
-        'inventory': 'inventory',
-        'loans': 'loans',
-        'reports': 'reports',
-        'settings': 'settings'
-      };
-      
-      const requiredPermission = routePermissionMap[currentRoute];
+  }, [isUserLoading, user, router]);
 
-      if (requiredPermission && (profile.role === 'admin' || profile.permissions?.includes(requiredPermission))) {
-        setHasAccess(true);
-      } else {
-        setHasAccess(false);
-      }
-    } else {
-        // Profile doesn't exist but user does, deny access.
-        setHasAccess(false);
+  const hasAccess = useMemo(() => {
+    if (!profile || !user) {
+      return false; // No access if there is no profile or user
     }
     
-    setIsCheckingAuth(false);
-  }, [isUserLoading, isProfileLoading, user, profile, pathname, router]);
+    // Determine the required permission for the current route
+    const currentRoute = pathname.split('/')[1] || 'dashboard';
+    const routePermissionMap: { [key: string]: string } = {
+      '': 'dashboard',
+      'dashboard': 'dashboard',
+      'inventory': 'inventory',
+      'loans': 'loans',
+      'reports': 'reports',
+      'settings': 'settings'
+    };
+    const requiredPermission = routePermissionMap[currentRoute];
+
+    // Grant access if admin or has the specific permission
+    if (requiredPermission && (profile.role === 'admin' || profile.permissions?.includes(requiredPermission))) {
+      return true;
+    }
+    
+    // If the route is unknown or user lacks permission, deny access.
+    return false;
+  }, [profile, user, pathname]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -85,11 +78,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  if (isCheckingAuth || !profile) {
+  // While user or profile data is loading, show a full-screen loader.
+  if (isUserLoading || isProfileLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+  
+  // If loading is complete but there is no authenticated user, render nothing.
+  // The useEffect above will handle the redirection.
+  if (!user) {
+      return null;
+  }
+  
+  // If loading is complete, user exists but profile doesn't, it implies an incomplete user setup.
+  // Deny access and show a relevant message. Could be refined to a more specific error page.
+  if (!profile) {
+     return (
+        <div className="flex h-screen flex-col items-center justify-center bg-background p-4 print-hide">
+            <ShieldAlert className="h-16 w-16 text-destructive" />
+            <h2 className="mt-4 text-2xl font-bold">Error de Perfil</h2>
+            <p className="mt-2 text-muted-foreground">No se pudo cargar el perfil de usuario. Contacta al administrador.</p>
+            <Button onClick={handleLogout} className="mt-6">Cerrar Sesión</Button>
+        </div>
     );
   }
 
@@ -199,3 +212,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </SidebarProvider>
   );
 }
+
+    
