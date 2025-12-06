@@ -66,22 +66,16 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
-  // This is the definitive fix. By creating a Map, we ensure that each user UID can only exist once.
-  // The useMemo ensures this logic only re-runs when the raw data from Firestore changes.
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
-      // We only add the user to the map if they have a UID.
-      // If a user with the same UID already exists, it will be replaced,
-      // effectively handling updates and preventing duplicates.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     }
     
-    // Convert the map back to an array and sort it.
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -199,7 +193,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers && !users.length) {
+  if (isLoadingUsers) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />

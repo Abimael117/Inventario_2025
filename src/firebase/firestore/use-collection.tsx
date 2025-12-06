@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
@@ -11,7 +11,6 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { isEqual } from 'lodash';
 
 export type WithId<T> = T & { id: string };
 
@@ -30,23 +29,13 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
-  // Use a ref to store the query to prevent re-subscribing on every render.
-  const queryRef = useRef<Query<DocumentData> | null | undefined>();
-
   useEffect(() => {
-    // Only resubscribe if the query has actually changed.
-    // This is critical to prevent memory leaks and unnecessary listeners.
-    if (isEqual(queryRef.current, memoizedQuery)) {
-      return;
-    }
-    queryRef.current = memoizedQuery;
-
     if (!memoizedQuery) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
     
-    // Set loading state to true whenever a new query is provided.
+    // Start loading whenever the query changes.
     setResult({ data: null, isLoading: true, error: null });
 
     const unsubscribe = onSnapshot(
