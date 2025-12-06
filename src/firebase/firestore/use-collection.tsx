@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import {isEqual} from 'lodash';
+import { isEqual } from 'lodash';
 
 export type WithId<T> = T & { id: string };
 
@@ -30,11 +30,13 @@ export function useCollection<T = DocumentData>(
     error: null,
   });
 
+  // Use a ref to store the query which will not change on re-renders
   const queryRef = useRef<Query<DocumentData> | null | undefined>(null);
-  
+
   useEffect(() => {
-    // Prevent re-subscribing if the query is structurally identical but a different instance.
-    if (isEqual(query, queryRef.current)) {
+    // Only re-subscribe if the query itself has changed.
+    // isEqual performs a deep comparison.
+    if (query && isEqual(queryRef.current, query)) {
       return;
     }
     queryRef.current = query;
@@ -44,7 +46,7 @@ export function useCollection<T = DocumentData>(
       return;
     }
 
-    setResult({ data: null, isLoading: true, error: null });
+    setResult(prev => ({ ...prev, isLoading: true }));
 
     const unsubscribe = onSnapshot(
       query,

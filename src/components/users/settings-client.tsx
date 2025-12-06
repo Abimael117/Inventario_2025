@@ -66,13 +66,15 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
+  // This is the definitive fix for the duplicate admin issue.
+  // useMemo ensures this runs only when rawUsers changes.
+  // The Map guarantees that each user is unique by their UID.
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // Use a Map to guarantee uniqueness based on user UID. This is the definitive fix.
+    // Use a Map to guarantee uniqueness based on user UID.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
-      // We only add the user if the UID is present and not already in the map.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }

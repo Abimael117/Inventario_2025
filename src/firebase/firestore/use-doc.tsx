@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import {isEqual} from 'lodash';
+import { isEqual } from 'lodash';
 
 export type WithId<T> = T & { id: string };
 
@@ -31,14 +31,14 @@ export function useDoc<T = any>(
   });
 
   const docRefRef = useRef<DocumentReference<DocumentData> | null | undefined>(null);
-  
+
   useEffect(() => {
     // Prevent re-subscribing if the docRef is structurally identical.
-    if (isEqual(docRef, docRefRef.current)) {
+    if (docRef && isEqual(docRefRef.current, docRef)) {
       return;
     }
     docRefRef.current = docRef;
-    
+
     if (!docRef) {
       setResult({ data: null, isLoading: false, error: null });
       return;
