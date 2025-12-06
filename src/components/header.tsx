@@ -4,7 +4,7 @@
 import { useMemo, useTransition } from 'react';
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { Bell, Search, AlertTriangle, PackageX, LogOut, MinusSquare, X, Boxes } from "lucide-react";
+import { Bell, Search, AlertTriangle, PackageX, LogOut, MinusSquare, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
@@ -105,7 +105,7 @@ export default function AppHeader({
   const getUserAvatar = (user: User | null | undefined): string => {
     if (!user) return "";
     if (user.role === 'admin') {
-      return 'https://escarcega.gob.mx/wp-content/uploads/2021/08/logo-escarcega-white.png';
+      return '';
     }
     return ""; // Fallback to initials
   };
@@ -129,15 +129,7 @@ export default function AppHeader({
   return (
     <header className="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between gap-4 border-b bg-background px-4 md:px-6 print-hide">
       <div className="flex items-center gap-4">
-        {isMobile ? (
-          <SidebarTrigger />
-        ) : (
-          <div className="flex items-center gap-2">
-            <Boxes className="size-6 text-primary" />
-            <h1 className="hidden text-xl font-semibold md:block">D.E.C.D</h1>
-          </div>
-        )}
-        <Separator orientation="vertical" className="h-8" />
+        {isMobile && <SidebarTrigger />}
         <h1 className="text-xl font-semibold md:text-2xl">{title}</h1>
       </div>
       <div className="flex items-center gap-4">

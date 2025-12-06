@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/types";
+import { Separator } from "@/components/ui/separator";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -105,7 +106,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="print-hide">
         <Sidebar>
           <SidebarHeader>
-            {/* Logo y título movidos al AppHeader */}
+             <div className="flex items-center gap-2 p-2">
+                <Boxes className="size-6 text-primary" />
+                <h1 className="text-xl font-semibold">D.E.C.D</h1>
+              </div>
+            <Separator />
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
