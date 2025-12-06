@@ -1,4 +1,3 @@
-
 'use client';
 
 import AppHeader from '@/components/header';
@@ -154,7 +153,7 @@ export default function SettingsClient({
                                     variant="ghost" 
                                     size="icon" 
                                     onClick={() => onOpenDeleteDialog(user)}
-                                    disabled={user.role === 'admin' || isLoading || user.uid === currentUser?.uid}
+                                    disabled={isLoading || user.uid === currentUser?.uid}
                                     aria-label="Eliminar usuario"
                                     className="text-destructive hover:text-destructive"
                                   >

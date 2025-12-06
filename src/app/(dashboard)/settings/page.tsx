@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
@@ -101,14 +100,6 @@ export default function SettingsPage() {
   };
 
   const openDeleteDialog = (user: User) => {
-    if (user.role === 'admin') {
-      toast({
-        variant: "destructive",
-        title: "Acción no permitida",
-        description: "No se puede eliminar al usuario administrador.",
-      });
-      return;
-    }
     if (user.uid === currentUser?.uid) {
       toast({
         variant: "destructive",
