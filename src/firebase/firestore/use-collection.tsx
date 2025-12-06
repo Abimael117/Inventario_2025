@@ -80,7 +80,7 @@ export function useCollection<T = any>(
         });
 
         setError(contextualError);
-        setData(null);
+setData(null);
         setIsLoading(false);
         
         errorEmitter.emit('permission-error', contextualError);
