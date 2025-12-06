@@ -42,7 +42,7 @@ import { AddUserForm } from '@/components/users/add-user-form';
 import { useState, useTransition, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/lib/types';
-import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, FirestorePermissionError, errorEmitter, useUser, useCollection } from '@/firebase';
 import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { createNewUser } from '@/app/actions/user-actions';
 
@@ -59,7 +59,7 @@ export default function SettingsClient() {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const usersCollectionRef = useMemoFirebase(() => {
+  const usersCollectionRef = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'users');
   }, [firestore]);
@@ -68,15 +68,12 @@ export default function SettingsClient() {
 
   const users = useMemo(() => {
     if (!rawUsers) return [];
-    // Use a Map to guarantee uniqueness based on user UID. This is a foolproof way
-    // to prevent duplicates from ever appearing in the UI.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     }
-    // Convert the Map values back to an array and sort them for display.
     return Array.from(uniqueUsersMap.values()).sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -352,3 +349,5 @@ export default function SettingsClient() {
       </AlertDialog>
     </>
   );
+
+    

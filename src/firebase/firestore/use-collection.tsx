@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -62,10 +63,10 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // This cleanup function is crucial. It's called when the component unmounts
-    // or when the query dependency changes, preventing memory leaks.
     return () => unsubscribe();
-  }, [query]); // Depend directly on the query object.
+  }, [query]); 
 
   return result;
 }
+
+    

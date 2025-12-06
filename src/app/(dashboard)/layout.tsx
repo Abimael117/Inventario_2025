@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Home, Package, Settings, ArrowRightLeft, LogOut, Loader2, ShieldAlert, FileText } from "lucide-react";
 import React, { useEffect, useState, useMemo } from 'react';
 
-import { useUser, useAuth, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useAuth, useDoc, useFirestore } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { doc } from "firebase/firestore";
 
@@ -31,7 +31,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
 
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
@@ -39,7 +39,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { data: profile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
   useEffect(() => {
-    // Redirect to login if user loading is complete and there's no user.
     if (!isUserLoading && !user) {
       router.replace('/login');
     }
@@ -47,10 +46,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const hasAccess = useMemo(() => {
     if (!profile || !user) {
-      return false; // No access if there is no profile or user
+      return false; 
     }
     
-    // Determine the required permission for the current route
     const currentRoute = pathname.split('/')[1] || 'dashboard';
     const routePermissionMap: { [key: string]: string } = {
       '': 'dashboard',
@@ -62,12 +60,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
     const requiredPermission = routePermissionMap[currentRoute];
 
-    // Grant access if admin or has the specific permission
     if (requiredPermission && (profile.role === 'admin' || profile.permissions?.includes(requiredPermission))) {
       return true;
     }
     
-    // If the route is unknown or user lacks permission, deny access.
     return false;
   }, [profile, user, pathname]);
 
@@ -78,7 +74,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // While user or profile data is loading, show a full-screen loader.
   if (isUserLoading || isProfileLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
@@ -87,14 +82,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
   
-  // If loading is complete but there is no authenticated user, render nothing.
-  // The useEffect above will handle the redirection.
   if (!user) {
       return null;
   }
   
-  // If loading is complete, user exists but profile doesn't, it implies an incomplete user setup.
-  // Deny access and show a relevant message. Could be refined to a more specific error page.
   if (!profile) {
      return (
         <div className="flex h-screen flex-col items-center justify-center bg-background p-4 print-hide">
@@ -195,7 +186,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </SidebarMenu>
           </SidebarContent>
            <SidebarFooter>
-            {/* The logout button is handled in the header dropdown, this footer can be empty or used for other things */}
           </SidebarFooter>
         </Sidebar>
       </div>

@@ -14,7 +14,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Separator } from '@/components/ui/separator';
-import { useCollection, useFirestore, useMemoFirebase, useUser, useAuth, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useUser, useAuth, useDoc } from '@/firebase';
 import { collection, doc, query, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import type { Product, User, Notification } from '@/lib/types';
@@ -57,17 +57,17 @@ export default function AppHeader({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   
-  const userDocRef = useMemoFirebase(() => {
+  const userDocRef = useMemo(() => {
     if (!firestore || !user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
   const { data: profile } = useDoc<User>(userDocRef);
 
-  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
   const { data: products } = useCollection<Product>(productsRef);
 
-  const notificationsRef = useMemoFirebase(() => {
+  const notificationsRef = useMemo(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'notifications'), orderBy('createdAt', 'desc'), limit(5));
   }, [firestore]);
@@ -274,3 +274,5 @@ export default function AppHeader({
     </header>
   );
 }
+
+    

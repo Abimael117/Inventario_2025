@@ -1,11 +1,13 @@
+
 "use client";
 
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Package, Warehouse, Loader2, ArrowRightLeft } from "lucide-react";
 import { collection } from 'firebase/firestore';
+import { useMemo } from "react";
 
 import type { Loan, Product } from "@/lib/types";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -26,8 +28,8 @@ const chartConfig = {
 export default function DashboardClient() {
   const firestore = useFirestore();
 
-  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
   
   const { data: inventoryData, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loansData, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
@@ -159,3 +161,5 @@ export default function DashboardClient() {
     </div>
   );
 }
+
+    

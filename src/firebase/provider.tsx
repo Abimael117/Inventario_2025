@@ -98,11 +98,4 @@ export const useUser = () => {
     return { user, isUserLoading, userError };
 };
 
-type MemoFirebase<T> = T & {__memo?: boolean};
-
-export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList | undefined): T {
-    const memoized = useMemo(factory, deps);
-    if (typeof memoized !== 'object' || memoized === null) return memoized;
-    (memoized as MemoFirebase<T>).__memo = true;
-    return memoized;
-}
+    

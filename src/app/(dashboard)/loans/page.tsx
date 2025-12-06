@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc, runTransaction, getDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
-import { useTransition, useState } from 'react';
+import { useTransition, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import LoansClient from "@/components/loans/loans-client";
@@ -23,8 +23,8 @@ export default function LoansPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [loanToDelete, setLoanToDelete] = useState<Loan | null>(null);
 
-  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
-  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
 
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
@@ -194,3 +194,5 @@ export default function LoansPage() {
     />
   );
 }
+
+    

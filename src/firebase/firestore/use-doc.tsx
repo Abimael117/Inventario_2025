@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,10 +60,10 @@ export function useDoc<T = any>(
       }
     );
 
-    // This cleanup function is crucial. It's called when the component unmounts
-    // or when the docRef dependency changes, preventing memory leaks.
     return () => unsubscribe();
-  }, [docRef]); // Depend directly on the docRef object.
+  }, [docRef]);
 
   return result;
 }
+
+    

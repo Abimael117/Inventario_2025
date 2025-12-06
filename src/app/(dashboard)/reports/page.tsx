@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 import { useMemo } from 'react';
@@ -14,8 +14,8 @@ import type { Product, Loan } from '@/lib/types';
 export default function ReportsPage() {
   const firestore = useFirestore();
 
-  const productsRef = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
-  const loansRef = useMemoFirebase(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
+  const productsRef = useMemo(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const loansRef = useMemo(() => firestore ? collection(firestore, 'loans') : null, [firestore]);
   
   const { data: products, isLoading: isLoadingProducts } = useCollection<Product>(productsRef);
   const { data: loans, isLoading: isLoadingLoans } = useCollection<Loan>(loansRef);
@@ -50,3 +50,5 @@ export default function ReportsPage() {
     </div>
   );
 }
+
+    

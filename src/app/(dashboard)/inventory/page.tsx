@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc, runTransaction, getDoc, getDocs, query, where } from 'firebase/firestore';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useState, useTransition, useMemo } from 'react';
@@ -30,7 +30,7 @@ export default function InventoryPage() {
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null);
 
-  const productsRef = useMemoFirebase(() => {
+  const productsRef = useMemo(() => {
     if (!firestore) return null;
     return collection(firestore, 'products');
   }, [firestore]);
@@ -311,3 +311,5 @@ export default function InventoryPage() {
     </div>
   );
 }
+
+    
