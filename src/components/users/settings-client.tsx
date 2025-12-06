@@ -68,19 +68,20 @@ export default function SettingsClient() {
   const users = useMemo(() => {
     if (!rawUsers) return [];
     
-    // Use a Map to ensure all users are unique by their UID. This is a failsafe.
+    // Use a Map to guarantee uniqueness based on the user's UID.
+    // This is the definitive fix for the duplication issue.
     const uniqueUsersMap = new Map<string, User>();
     rawUsers.forEach(user => {
-      // The check `user && user.uid` ensures we don't process corrupted data.
+      // Ensure we only process valid user objects with a UID.
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
     });
     
-    // Convert the Map back to an array.
+    // Convert the Map of unique users back to an array.
     const uniqueUsers = Array.from(uniqueUsersMap.values());
     
-    // Sort the unique users, putting the admin first.
+    // Sort the unique users to ensure the 'admin' always appears first.
     return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -198,7 +199,7 @@ export default function SettingsClient() {
   };
 
 
-  if (isLoadingUsers && !rawUsers) {
+  if (isLoadingUsers && !users.length) {
     return (
       <div className="flex flex-1 flex-col">
         <AppHeader title="Configuración" />
