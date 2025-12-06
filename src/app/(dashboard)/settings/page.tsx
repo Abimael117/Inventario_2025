@@ -57,11 +57,42 @@ export default function SettingsPage() {
         });
         setIsAddUserOpen(false);
       } else {
-        toast({
-          variant: "destructive",
-          title: "Error al Crear Usuario",
-          description: result.error || 'Ocurrió un error desconocido.',
-        });
+        // If server-side creation fails (e.g., no credentials), simulate client-side.
+        if (result.error?.includes('SDK de Firebase Admin no está inicializado') && firestore) {
+            const simulatedUid = `simulated_${Date.now()}`;
+            const userDocRef = doc(firestore, 'users', simulatedUid);
+            
+            const { password, ...userDataForFirestore } = newUserData;
+
+            const finalUserData = {
+                ...userDataForFirestore,
+                uid: simulatedUid,
+                role: 'user' as 'user',
+                permissions: newUserData.permissions || [],
+            };
+
+            await setDoc(userDocRef, finalUserData)
+                .then(() => {
+                    toast({
+                        title: "Usuario Simulado Creado",
+                        description: `El usuario "${newUserData.username}" se ha añadido localmente. No podrá iniciar sesión.`,
+                    });
+                    setIsAddUserOpen(false);
+                })
+                .catch(() => {
+                    toast({
+                      variant: "destructive",
+                      title: "Error al Simular",
+                      description: "No se pudo simular la creación del usuario en el cliente.",
+                    });
+                });
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Error al Crear Usuario",
+                description: result.error || 'Ocurrió un error desconocido.',
+            });
+        }
       }
     });
   };
@@ -133,7 +164,7 @@ export default function SettingsPage() {
                     description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
-            .catch(async (serverError: any) => {
+            .catch(async () => {
                 const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
                     operation: 'delete',
@@ -180,3 +211,5 @@ export default function SettingsPage() {
     </>
   );
 }
+
+    
