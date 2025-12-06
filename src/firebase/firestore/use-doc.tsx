@@ -21,7 +21,7 @@ export interface UseDocResult<T> {
 }
 
 export function useDoc<T = any>(
-  memoizedDocRef: DocumentReference<DocumentData> | null | undefined
+  docRef: DocumentReference<DocumentData> | null | undefined
 ): UseDocResult<T> {
   const [result, setResult] = useState<UseDocResult<T>>({
     data: null,
@@ -30,15 +30,15 @@ export function useDoc<T = any>(
   });
   
   useEffect(() => {
-    if (!memoizedDocRef) {
+    if (!docRef) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
 
-    setResult({ data: null, isLoading: true, error: null });
+    setResult(prevState => ({ ...prevState, isLoading: true, error: null }));
 
     const unsubscribe = onSnapshot(
-      memoizedDocRef,
+      docRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
           setResult({
@@ -54,7 +54,7 @@ export function useDoc<T = any>(
       (err: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
           operation: 'get',
-          path: memoizedDocRef.path,
+          path: docRef.path,
         });
 
         setResult({ data: null, isLoading: false, error: contextualError });
@@ -62,10 +62,9 @@ export function useDoc<T = any>(
       }
     );
 
-    // This is the cleanup function that will be called when the component unmounts
-    // or when the memoizedDocRef dependency changes, preventing memory leaks.
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [memoizedDocRef]); // The effect depends only on the memoized document reference.
+  }, [docRef]); // Re-run effect only when the docRef object instance changes
 
   return result;
 }

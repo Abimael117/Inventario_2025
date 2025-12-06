@@ -21,7 +21,7 @@ export interface UseCollectionResult<T> {
 }
 
 export function useCollection<T = DocumentData>(
-  memoizedQuery: Query<DocumentData> | null | undefined
+  query: Query<DocumentData> | null | undefined
 ): UseCollectionResult<T> {
   const [result, setResult] = useState<UseCollectionResult<T>>({
     data: null,
@@ -30,16 +30,16 @@ export function useCollection<T = DocumentData>(
   });
 
   useEffect(() => {
-    if (!memoizedQuery) {
+    if (!query) {
       setResult({ data: null, isLoading: false, error: null });
       return;
     }
     
-    // Start loading whenever the query changes.
-    setResult({ data: null, isLoading: true, error: null });
+    // Set loading state to true only when starting the effect
+    setResult(prevState => ({ ...prevState, isLoading: true, error: null }));
 
     const unsubscribe = onSnapshot(
-      memoizedQuery,
+      query,
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as WithId<T>)
@@ -48,8 +48,8 @@ export function useCollection<T = DocumentData>(
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
-        if ('path' in memoizedQuery) {
-          path = (memoizedQuery as any).path;
+        if ('path' in query) {
+          path = (query as any).path;
         }
         
         const contextualError = new FirestorePermissionError({
@@ -62,10 +62,9 @@ export function useCollection<T = DocumentData>(
       }
     );
 
-    // This is the cleanup function that will be called when the component unmounts
-    // or when the memoizedQuery dependency changes, preventing memory leaks.
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [memoizedQuery]); // The effect depends only on the memoized query.
+  }, [query]); // Re-run effect only when the query object instance changes
 
   return result;
 }
