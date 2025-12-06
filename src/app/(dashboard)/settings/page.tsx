@@ -233,7 +233,7 @@ export default function SettingsPage() {
                 onOpenEditDialog={openEditDialog}
                 onUpdateUser={handleUpdateUser}
                 onOpenDeleteDialog={openDeleteDialog}
-                onConfirmDelete={onConfirmDelete}
+                onConfirmDelete={confirmDelete}
             />
         )}
     </>
