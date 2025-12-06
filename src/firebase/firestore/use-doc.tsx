@@ -27,6 +27,7 @@ export function useDoc<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // Reset state and do nothing if the document reference is not ready
     if (!memoizedDocRef) {
       setIsLoading(false);
       setData(null);
@@ -36,6 +37,7 @@ export function useDoc<T = any>(
 
     setIsLoading(true);
 
+    // Set up the snapshot listener
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
@@ -54,14 +56,16 @@ export function useDoc<T = any>(
         });
 
         setError(contextualError);
-        setData(null);
+setData(null);
         setIsLoading(false);
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
+    // CRITICAL: Return the unsubscribe function to be called on cleanup.
+    // This prevents memory leaks and duplicate listeners.
     return () => unsubscribe();
-  }, [memoizedDocRef]);
+  }, [memoizedDocRef]); // Re-run effect only when the reference itself changes
 
   return { data, isLoading, error };
 }

@@ -31,6 +31,7 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
+    // Reset state and do nothing if the query is not ready
     if (!memoizedTargetRefOrQuery) {
       setIsLoading(false);
       setData(null);
@@ -40,6 +41,7 @@ export function useCollection<T = any>(
     
     setIsLoading(true);
 
+    // Set up the snapshot listener
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -73,8 +75,10 @@ export function useCollection<T = any>(
       }
     );
 
+    // CRITICAL: Return the unsubscribe function to be called on cleanup.
+    // This prevents memory leaks and duplicate listeners.
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]);
+  }, [memoizedTargetRefOrQuery]); // Re-run effect only when the query itself changes
 
   return { data, isLoading, error };
 }

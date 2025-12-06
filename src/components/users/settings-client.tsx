@@ -65,11 +65,12 @@ export default function SettingsClient() {
 
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
+  // BULLETPROOF: This logic guarantees that no matter how many duplicate
+  // users are received from the hook, only unique users will be rendered.
   const users = useMemo(() => {
     if (!rawUsers) {
       return [];
     }
-    // This is the definitive fix for the duplication issue.
     // Use a Map to guarantee uniqueness based on the user's UID.
     const uniqueUsersMap = new Map<string, User>();
     for (const user of rawUsers) {
