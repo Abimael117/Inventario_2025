@@ -66,22 +66,20 @@ export default function SettingsClient() {
   const { data: rawUsers, isLoading: isLoadingUsers } = useCollection<User>(usersCollectionRef);
 
   const users = useMemo(() => {
-    if (!rawUsers) return [];
-    
-    // Use a Map to guarantee uniqueness based on the user's UID.
+    if (!rawUsers) {
+      return [];
+    }
     // This is the definitive fix for the duplication issue.
+    // Use a Map to guarantee uniqueness based on the user's UID.
     const uniqueUsersMap = new Map<string, User>();
-    rawUsers.forEach(user => {
-      // Ensure we only process valid user objects with a UID.
+    for (const user of rawUsers) {
       if (user && user.uid) {
         uniqueUsersMap.set(user.uid, user);
       }
-    });
-    
-    // Convert the Map of unique users back to an array.
+    }
     const uniqueUsers = Array.from(uniqueUsersMap.values());
     
-    // Sort the unique users to ensure the 'admin' always appears first.
+    // Sort the unique users to ensure 'admin' always appears first.
     return uniqueUsers.sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
       if (b.role === 'admin' && a.role !== 'admin') return 1;
@@ -173,7 +171,7 @@ export default function SettingsClient() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
                 });
             })
             .catch(error => {
