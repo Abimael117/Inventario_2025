@@ -22,15 +22,6 @@ export interface UseCollectionResult<T> {
   error: FirestoreError | Error | null;
 }
 
-interface InternalQuery extends Query<DocumentData> {
-  _query: {
-    path: {
-      canonicalString(): string;
-      toString(): string;
-    }
-  }
-}
-
 /**
  * React hook to subscribe to a Firestore collection or query in real-time.
  * Handles nullable references/queries.
@@ -82,7 +73,8 @@ export function useCollection<T = any>(
           if (memoizedTargetRefOrQuery.type === 'collection') {
             path = (memoizedTargetRefOrQuery as CollectionReference).path;
           } else {
-             path = (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+             // A less ideal but functional way to get path from a query
+             path = (memoizedTargetRefOrQuery as Query)._query.path.segments.join('/');
           }
         } catch (e) {
           console.error("Could not determine path for Firestore error:", e);
