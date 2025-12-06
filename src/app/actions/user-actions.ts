@@ -1,57 +1,42 @@
+
 'use server';
 
-import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 
-// This function now reads environment variables at runtime, which is crucial for Vercel.
-const getFirebaseConfig = () => {
-    const config = {
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-        messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-        appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+// Helper function to initialize Firebase Admin SDK.
+// It ensures the SDK is initialized only once.
+function initializeFirebaseAdmin() {
+  // Check if the app is already initialized to prevent crashing.
+  if (!admin.apps.length) {
+    // Get credentials from server-side environment variables
+    const serviceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // IMPORTANT: Replace escaped newlines for production environments
+      privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
     };
 
-    // This check ensures that all variables are present when the function is called.
-    for (const [key, value] of Object.entries(config)) {
-        if (!value) {
-            throw new Error(`Missing Firebase environment variable: ${key}. Please set it in your Vercel project settings.`);
-        }
+    // Verify that all required environment variables are present.
+    if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+        console.error("Firebase Admin SDK environment variables are not set or missing.");
+        throw new Error('Firebase Admin environment variables are not set. Check FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY.');
     }
-    return config;
-};
 
-// Initializes and returns Firebase SDK instances for server-side actions.
-// Ensures that Firebase is initialized only once.
-function getFirebaseAdmin() {
-  const appName = 'firebase-admin-app-for-actions';
-  // Check if the app is already initialized
-  const existingApp = getApps().find(app => app.name === appName);
-  if (existingApp) {
-    return {
-      auth: getAuth(existingApp),
-      firestore: getFirestore(existingApp)
-    };
+    // Initialize the app with credentials
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
   }
-  
-  // If not initialized, get config and create a new app instance
-  const firebaseConfig = getFirebaseConfig();
-  const app = initializeApp(firebaseConfig, appName);
-  return {
-      auth: getAuth(app),
-      firestore: getFirestore(app)
-  };
+  return admin.app();
 }
 
-
-const DUMMY_DOMAIN = 'decd.local';
+// Initialize outside the function scope to ensure it's called only once.
+initializeFirebaseAdmin();
 
 /**
- * Creates a new user in Firebase Authentication and Firestore.
+ * Creates a new user in Firebase Authentication and Firestore using the Admin SDK.
  * This is a server action and should only be called from the server.
  * @param userData - The user data for the new user.
  * @returns An object with success status and a message or error.
@@ -61,40 +46,41 @@ export async function createNewUser(
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   try {
-    const { auth, firestore } = getFirebaseAdmin();
-
     if (!userData.password || userData.password.length < 6) {
       return { success: false, error: 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.' };
     }
 
-    const email = `${userData.username}@${DUMMY_DOMAIN}`;
+    // The email is constructed for Firebase Auth but not exposed to the user.
+    const email = `${userData.username}@decd.local`;
 
-    // 1. Create user in Firebase Authentication
-    const userCredential = await createUserWithEmailAndPassword(auth, email, userData.password);
-    const userRecord = userCredential.user;
+    // 1. Create user in Firebase Authentication using Admin SDK
+    const userRecord = await admin.auth().createUser({
+      email: email,
+      password: userData.password,
+      displayName: userData.name,
+    });
 
     // 2. Create user profile in Firestore
-    // Do NOT store the password in Firestore.
+    const firestore = getFirestore();
     const { password, ...userDataForFirestore } = userData;
 
-    const userDocRef = doc(firestore, 'users', userRecord.uid);
-    await setDoc(userDocRef, {
+    const userDocRef = firestore.collection('users').doc(userRecord.uid);
+    await userDocRef.set({
       ...userDataForFirestore,
       uid: userRecord.uid,
-      role: 'user', // Default role
-      permissions: userData.permissions || [], // Use permissions from form
+      role: 'user', // Default role for new users
+      permissions: userData.permissions || [],
     });
 
     return { success: true, message: 'Usuario creado con éxito.' };
 
   } catch (error: any) {
-    console.error('Error creating new user:', error);
+    console.error('Error creating new user with Admin SDK:', error);
     let errorMessage = 'Error desconocido al crear el usuario.';
     
-    // Provide more specific error messages based on Firebase error codes
     if (error.code) {
         switch (error.code) {
-        case 'auth/email-already-in-use':
+        case 'auth/email-already-exists':
             errorMessage = 'Este nombre de usuario ya está en uso.';
             break;
         case 'auth/invalid-password':
@@ -103,12 +89,7 @@ export async function createNewUser(
         case 'auth/invalid-email':
             errorMessage = 'El formato del nombre de usuario no es válido.';
             break;
-        case 'app/no-app':
-             errorMessage = 'Error de configuración de Firebase en el servidor. Asegúrate de que las variables de entorno están bien configuradas en Vercel.';
-             break;
         }
-    } else if (error.message && error.message.includes('Firebase ID token has invalid')) {
-        errorMessage = 'Error de configuración del servidor. Contacta al administrador.';
     }
     
     return { success: false, error: errorMessage };
