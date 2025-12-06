@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   DocumentReference,
   onSnapshot,
@@ -12,7 +11,7 @@ import {
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-type WithId<T> = T & { id: string };
+export type WithId<T> = T & { id: string };
 
 export interface UseDocResult<T> {
   data: WithId<T> | null;
@@ -23,30 +22,32 @@ export interface UseDocResult<T> {
 export function useDoc<T = any>(
   memoizedDocRef: DocumentReference<DocumentData> | null | undefined
 ): UseDocResult<T> {
-  const [data, setData] = useState<WithId<T> | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const [result, setResult] = useState<UseDocResult<T>>({
+    data: null,
+    isLoading: true,
+    error: null,
+  });
   
   useEffect(() => {
     if (!memoizedDocRef) {
-      setIsLoading(false);
-      setData(null);
-      setError(null);
+      setResult({ data: null, isLoading: false, error: null });
       return;
     }
 
-    setIsLoading(true);
+    setResult(prev => ({ ...prev, isLoading: true }));
 
     const unsubscribe = onSnapshot(
       memoizedDocRef,
       (snapshot: DocumentSnapshot<DocumentData>) => {
         if (snapshot.exists()) {
-          setData({ ...(snapshot.data() as T), id: snapshot.id });
+          setResult({
+             data: { ...(snapshot.data() as T), id: snapshot.id },
+             isLoading: false,
+             error: null
+          });
         } else {
-          setData(null);
+          setResult({ data: null, isLoading: false, error: null });
         }
-        setError(null);
-        setIsLoading(false);
       },
       (err: FirestoreError) => {
         const contextualError = new FirestorePermissionError({
@@ -54,19 +55,13 @@ export function useDoc<T = any>(
           path: memoizedDocRef.path,
         });
 
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
+        setResult({ data: null, isLoading: false, error: contextualError });
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [memoizedDocRef]);
 
-  return { data, isLoading, error };
+  return result;
 }
-
-    

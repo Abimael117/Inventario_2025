@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Query,
   onSnapshot,
@@ -23,19 +22,19 @@ export interface UseCollectionResult<T> {
 export function useCollection<T = DocumentData>(
   memoizedQuery: Query<DocumentData> | null | undefined
 ): UseCollectionResult<T> {
-  const [data, setData] = useState<WithId<T>[] | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<FirestoreError | Error | null>(null);
-  
+  const [result, setResult] = useState<UseCollectionResult<T>>({
+    data: null,
+    isLoading: true,
+    error: null,
+  });
+
   useEffect(() => {
     if (!memoizedQuery) {
-      setIsLoading(false);
-      setData(null);
-      setError(null);
+      setResult({ data: null, isLoading: false, error: null });
       return;
     }
-
-    setIsLoading(true);
+    
+    setResult(prev => ({ ...prev, isLoading: true }));
 
     const unsubscribe = onSnapshot(
       memoizedQuery,
@@ -43,9 +42,7 @@ export function useCollection<T = DocumentData>(
         const results = snapshot.docs.map(
           (doc) => ({ id: doc.id, ...doc.data() } as WithId<T>)
         );
-        setData(results);
-        setError(null);
-        setIsLoading(false);
+        setResult({ data: results, isLoading: false, error: null });
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
@@ -58,19 +55,13 @@ export function useCollection<T = DocumentData>(
           path,
         });
 
-        setError(contextualError);
-        setData(null);
-        setIsLoading(false);
+        setResult({ data: null, isLoading: false, error: contextualError });
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, [memoizedQuery]);
 
-  return { data, isLoading, error };
+  return result;
 }
-
-    
