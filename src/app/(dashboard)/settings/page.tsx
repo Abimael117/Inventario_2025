@@ -2,18 +2,21 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useAuth } from '@/firebase';
 import { collection, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 import AppHeader from '@/components/header';
 import SettingsClient from '@/components/users/settings-client';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError, errorEmitter } from '@/firebase';
-import { createNewUser } from '@/app/actions/user-actions';
+import { FirebaseError } from 'firebase/app';
+
 
 export default function SettingsPage() {
   const firestore = useFirestore();
+  const auth = useAuth();
   const { user: currentUser } = useUser();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -49,50 +52,69 @@ export default function SettingsPage() {
 
   const handleAddUser = (newUserData: Omit<User, 'uid' | 'role'>) => {
     startTransition(async () => {
-      const result = await createNewUser(newUserData);
-      if (result.success) {
+      if (!auth || !firestore) {
+        toast({
+            variant: "destructive",
+            title: "Error de Servicio",
+            description: "Los servicios de Firebase no están disponibles.",
+        });
+        return;
+      }
+      
+      const email = `${newUserData.username}@decd.local`;
+
+      try {
+        // Step 1: Create user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, email, newUserData.password!);
+        const newAuthUser = userCredential.user;
+
+        // Step 2: Create user profile in Firestore
+        const { password, ...userDataForFirestore } = newUserData;
+        const userDocRef = doc(firestore, 'users', newAuthUser.uid);
+        
+        await setDoc(userDocRef, {
+          ...userDataForFirestore,
+          uid: newAuthUser.uid,
+          role: 'user', // Default role
+          permissions: newUserData.permissions || [],
+        });
+
         toast({
           title: "Usuario Creado",
-          description: `El usuario "${newUserData.username}" ha sido creado con éxito.`,
+          description: `El usuario "${newUserData.username}" ha sido creado y ya puede iniciar sesión.`,
         });
         setIsAddUserOpen(false);
-      } else {
-        // If server-side creation fails (e.g., no credentials), simulate client-side.
-        if (result.error?.includes('SDK de Firebase Admin no está inicializado') && firestore) {
-            const simulatedUid = `simulated_${Date.now()}`;
-            const userDocRef = doc(firestore, 'users', simulatedUid);
-            
-            const { password, ...userDataForFirestore } = newUserData;
 
-            const finalUserData = {
-                ...userDataForFirestore,
-                uid: simulatedUid,
-                role: 'user' as 'user',
-                permissions: newUserData.permissions || [],
-            };
-
-            await setDoc(userDocRef, finalUserData)
-                .then(() => {
-                    toast({
-                        title: "Usuario Simulado Creado",
-                        description: `El usuario "${newUserData.username}" se ha añadido localmente. No podrá iniciar sesión.`,
-                    });
-                    setIsAddUserOpen(false);
-                })
-                .catch(() => {
-                    toast({
-                      variant: "destructive",
-                      title: "Error al Simular",
-                      description: "No se pudo simular la creación del usuario en el cliente.",
-                    });
+      } catch (error) {
+        let errorMessage = 'Ocurrió un error desconocido al crear el usuario.';
+        if (error instanceof FirebaseError) {
+          switch (error.code) {
+            case 'auth/email-already-exists':
+              errorMessage = 'Este nombre de usuario ya está en uso. Elige otro.';
+              break;
+            case 'auth/weak-password':
+              errorMessage = 'La contraseña es demasiado débil. Debe tener al menos 6 caracteres.';
+              break;
+             case 'auth/invalid-email':
+               errorMessage = 'El nombre de usuario no tiene un formato válido.';
+               break;
+            case 'permission-denied':
+               const permissionError = new FirestorePermissionError({
+                    path: `users/${newUserData.username}`,
+                    operation: 'create',
+                    requestResourceData: newUserData,
                 });
-        } else {
-             toast({
-                variant: "destructive",
-                title: "Error al Crear Usuario",
-                description: result.error || 'Ocurrió un error desconocido.',
-            });
+                errorEmitter.emit('permission-error', permissionError);
+                return;
+            default:
+              errorMessage = `Error: ${error.message}`;
+          }
         }
+        toast({
+          variant: "destructive",
+          title: "Error al Crear Usuario",
+          description: errorMessage,
+        });
       }
     });
   };
@@ -161,7 +183,7 @@ export default function SettingsPage() {
             .then(() => {
                  toast({
                     title: "Perfil de Usuario Eliminado",
-                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manually desde la Consola de Firebase.`,
+                    description: `El perfil de "${userToDelete.username}" ha sido eliminado. La cuenta de acceso debe ser borrada manualmente desde la Consola de Firebase.`,
                 });
             })
             .catch(async () => {
@@ -211,5 +233,3 @@ export default function SettingsPage() {
     </>
   );
 }
-
-    
