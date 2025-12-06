@@ -43,9 +43,9 @@ export function useCollection<T = any>(
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   // This ref tracks if the component is mounted to prevent state updates on unmounted components
-  const isMountedRef = useRef<boolean>(true);
+  const isMountedRef = useRef<boolean>(false);
 
-  // This effect sets the isMountedRef to false on unmount
+  // This effect sets the isMountedRef to true on mount and false on unmount
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
