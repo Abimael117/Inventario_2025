@@ -19,6 +19,7 @@ const firebaseConfig = {
 // Ensures that Firebase is initialized only once.
 function getFirebaseAdmin() {
   const appName = 'firebase-admin-app-for-actions';
+  // Check if the app is already initialized
   const existingApp = getApps().find(app => app.name === appName);
   if (existingApp) {
     return {
@@ -27,6 +28,7 @@ function getFirebaseAdmin() {
     };
   }
   
+  // If not initialized, create a new app instance
   const app = initializeApp(firebaseConfig, appName);
   return {
       auth: getAuth(app),
@@ -48,8 +50,6 @@ export async function createNewUser(
 ): Promise<{ success: boolean; message?: string; error?: string }> {
   
   try {
-    // This check is problematic in Vercel's build environment.
-    // We rely on the fact that if variables are missing, `initializeApp` will fail.
     const { auth, firestore } = getFirebaseAdmin();
 
     if (!userData.password || userData.password.length < 6) {
@@ -92,11 +92,12 @@ export async function createNewUser(
         case 'auth/invalid-email':
             errorMessage = 'El formato del nombre de usuario no es válido.';
             break;
+        case 'app/no-app':
+             errorMessage = 'Error de configuración de Firebase en el servidor. Asegúrate de que las variables de entorno están bien configuradas en Vercel.';
+             break;
         }
     } else if (error.message && error.message.includes('Firebase ID token has invalid')) {
         errorMessage = 'Error de configuración del servidor. Contacta al administrador.';
-    } else if (error.message && error.message.includes('auth/configuration-not-found')) {
-         errorMessage = 'Error de configuración de Firebase en el servidor. Asegúrate de que las variables de entorno están bien configuradas en Vercel.';
     }
     
     return { success: false, error: errorMessage };
