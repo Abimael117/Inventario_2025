@@ -42,44 +42,27 @@ export function useCollection<T = any>(
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
-  // This ref tracks if the component is mounted to prevent state updates on unmounted components
-  const isMountedRef = useRef<boolean>(false);
-
-  // This effect sets the isMountedRef to true on mount and false on unmount
-  useEffect(() => {
-    isMountedRef.current = true;
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
-
   // This effect correctly handles the subscription lifecycle.
   useEffect(() => {
     // If no query is provided, reset the state and do nothing further.
     if (!memoizedTargetRefOrQuery) {
-      if (isMountedRef.current) {
-        setData(null);
-        setIsLoading(false);
-        setError(null);
-      }
+      setData(null);
+      setIsLoading(false);
+      setError(null);
       return;
     }
 
-    if (isMountedRef.current) {
-      setIsLoading(true);
-      setError(null);
-    }
+    setIsLoading(true);
+    setError(null);
     
     // Establish the new real-time listener.
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
-        if (isMountedRef.current) {
-          const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
-          setData(results);
-          setError(null);
-          setIsLoading(false);
-        }
+        const results = snapshot.docs.map(doc => ({ ...(doc.data() as T), id: doc.id }));
+        setData(results);
+        setError(null);
+        setIsLoading(false);
       },
       (err: FirestoreError) => {
         let path = 'unknown_path';
@@ -95,12 +78,10 @@ export function useCollection<T = any>(
           operation: 'list',
           path,
         });
-
-        if (isMountedRef.current) {
-          setError(contextualError);
-          setData(null);
-          setIsLoading(false);
-        }
+        
+        setError(contextualError);
+        setData(null);
+        setIsLoading(false);
         
         errorEmitter.emit('permission-error', contextualError);
       }
