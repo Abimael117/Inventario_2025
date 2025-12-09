@@ -107,38 +107,40 @@ export default function PrintLoanReceiptPage() {
 
   useEffect(() => {
     let printTimeout: NodeJS.Timeout;
+    let dataLoadTimeout: NodeJS.Timeout;
 
     const handleAfterPrint = () => {
       setShowPrintControls(true);
     };
     window.addEventListener('afterprint', handleAfterPrint);
 
-    const loanDataString = sessionStorage.getItem('printableLoan');
-    if (loanDataString) {
+    // Give the browser a moment to write to sessionStorage from the other tab
+    dataLoadTimeout = setTimeout(() => {
       try {
-        const loanData = JSON.parse(loanDataString);
-        setLoan(loanData);
-        // Set a timeout to trigger print, allowing the component to render first.
-        printTimeout = setTimeout(() => {
-          window.print();
-        }, 500);
+        const loanDataString = sessionStorage.getItem('printableLoan');
+        if (loanDataString) {
+          const loanData = JSON.parse(loanDataString);
+          setLoan(loanData);
+          
+          // Set a timeout to trigger print, allowing the component to render first.
+          printTimeout = setTimeout(() => {
+            window.print();
+          }, 500);
+        }
       } catch (error) {
-        console.error("Failed to parse loan data from session storage:", error);
+        console.error("Failed to parse or process loan data:", error);
       } finally {
         setIsLoading(false);
       }
-    } else {
-      setIsLoading(false);
-    }
-    
+    }, 100); // Wait 100ms before trying to read from sessionStorage
+
     // Cleanup function
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
-      if (printTimeout) {
-        clearTimeout(printTimeout);
-      }
+      if (printTimeout) clearTimeout(printTimeout);
+      if (dataLoadTimeout) clearTimeout(dataLoadTimeout);
     };
-  }, []); // Empty dependency array ensures this effect runs only once on mount.
+  }, []);
 
 
   if (isLoading) {
