@@ -1,3 +1,4 @@
+
 'use client';
     
 import {
@@ -13,8 +14,14 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import {FirestorePermissionError} from '@/firebase/errors';
 
 /**
+ * @deprecated This non-blocking update pattern is not currently used in the application.
+ * Components directly use async Firestore functions. This file is kept for potential future use but is considered obsolete.
+ */
+
+/**
  * Initiates a setDoc operation for a document reference.
  * Does NOT await the write operation internally.
+ * @deprecated This function is part of a non-blocking pattern not currently implemented.
  */
 export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
   setDoc(docRef, data, options).catch(error => {
@@ -35,6 +42,7 @@ export function setDocumentNonBlocking(docRef: DocumentReference, data: any, opt
  * Initiates an addDoc operation for a collection reference.
  * Does NOT await the write operation internally.
  * Returns the Promise for the new doc ref, but typically not awaited by caller.
+ * @deprecated This function is part of a non-blocking pattern not currently implemented.
  */
 export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
   const promise = addDoc(colRef, data)
@@ -55,6 +63,7 @@ export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
 /**
  * Initiates an updateDoc operation for a document reference.
  * Does NOT await the write operation internally.
+ * @deprecated This function is part of a non-blocking pattern not currently implemented.
  */
 export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
   updateDoc(docRef, data)
@@ -74,6 +83,7 @@ export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) 
 /**
  * Initiates a deleteDoc operation for a document reference.
  * Does NOT await the write operation internally.
+ * @deprecated This function is part of a non-blocking pattern not currently implemented.
  */
 export function deleteDocumentNonBlocking(docRef: DocumentReference) {
   deleteDoc(docRef)
