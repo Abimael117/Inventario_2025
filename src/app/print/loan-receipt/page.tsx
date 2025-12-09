@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, Printer, X, Boxes } from 'lucide-react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -104,38 +104,42 @@ export default function PrintLoanReceiptPage() {
   const [loan, setLoan] = useState<PrintableLoan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showPrintControls, setShowPrintControls] = useState(false);
-  const printTriggered = useRef(false);
 
   useEffect(() => {
+    let printTimeout: NodeJS.Timeout;
+
     const handleAfterPrint = () => {
       setShowPrintControls(true);
     };
-
     window.addEventListener('afterprint', handleAfterPrint);
 
     const loanDataString = sessionStorage.getItem('printableLoan');
-    if (loanDataString && !printTriggered.current) {
+    if (loanDataString) {
       try {
         const loanData = JSON.parse(loanDataString);
         setLoan(loanData);
-        setIsLoading(false);
-        printTriggered.current = true;
-        
-        setTimeout(() => {
+        // Set a timeout to trigger print, allowing the component to render first.
+        printTimeout = setTimeout(() => {
           window.print();
-        }, 500); // Small delay to ensure content is rendered
+        }, 500);
       } catch (error) {
         console.error("Failed to parse loan data from session storage:", error);
+      } finally {
         setIsLoading(false);
       }
-    } else if (!loanDataString) {
+    } else {
       setIsLoading(false);
     }
-
+    
+    // Cleanup function
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
+      if (printTimeout) {
+        clearTimeout(printTimeout);
+      }
     };
-  }, []);
+  }, []); // Empty dependency array ensures this effect runs only once on mount.
+
 
   if (isLoading) {
     return (
