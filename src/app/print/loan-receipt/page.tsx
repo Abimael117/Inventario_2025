@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, Printer, X, Boxes } from 'lucide-react';
 import type { Loan } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -99,49 +100,48 @@ const PrintLoanReceipt = ({ loan }: { loan: PrintableLoan }) => {
   );
 };
 
-
-export default function PrintLoanReceiptPage() {
+const PrintPageContent = () => {
+  const searchParams = useSearchParams();
   const [loan, setLoan] = useState<PrintableLoan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showPrintControls, setShowPrintControls] = useState(false);
 
   useEffect(() => {
+    const dataParam = searchParams.get('data');
     let printTimeout: NodeJS.Timeout;
-    let dataLoadTimeout: NodeJS.Timeout;
 
+    if (dataParam) {
+      try {
+        const decodedData = decodeURIComponent(atob(dataParam));
+        const loanData = JSON.parse(decodedData);
+        setLoan(loanData);
+        
+        printTimeout = setTimeout(() => {
+            window.print();
+        }, 500);
+
+      } catch (e) {
+        console.error("Failed to parse loan data from URL:", e);
+        setError("Los datos del comprobante son inválidos o están corruptos.");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+        setError("No se encontraron datos del préstamo para imprimir.");
+        setIsLoading(false);
+    }
+    
     const handleAfterPrint = () => {
       setShowPrintControls(true);
     };
     window.addEventListener('afterprint', handleAfterPrint);
 
-    // Give the browser a moment to write to sessionStorage from the other tab
-    dataLoadTimeout = setTimeout(() => {
-      try {
-        const loanDataString = sessionStorage.getItem('printableLoan');
-        if (loanDataString) {
-          const loanData = JSON.parse(loanDataString);
-          setLoan(loanData);
-          
-          // Set a timeout to trigger print, allowing the component to render first.
-          printTimeout = setTimeout(() => {
-            window.print();
-          }, 500);
-        }
-      } catch (error) {
-        console.error("Failed to parse or process loan data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }, 100); // Wait 100ms before trying to read from sessionStorage
-
-    // Cleanup function
     return () => {
       window.removeEventListener('afterprint', handleAfterPrint);
       if (printTimeout) clearTimeout(printTimeout);
-      if (dataLoadTimeout) clearTimeout(dataLoadTimeout);
     };
-  }, []);
-
+  }, [searchParams]);
 
   if (isLoading) {
     return (
@@ -152,11 +152,11 @@ export default function PrintLoanReceiptPage() {
     );
   }
 
-  if (!loan) {
+  if (error || !loan) {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center bg-gray-100 p-4 text-center">
         <X className="h-10 w-10 text-destructive" />
-        <h1 className="mt-4 text-xl font-bold text-gray-800">No se encontraron datos del préstamo</h1>
+        <h1 className="mt-4 text-xl font-bold text-gray-800">{error || "No se encontraron datos del préstamo"}</h1>
         <p className="mt-2 text-gray-600">
           Por favor, cierra esta pestaña y genera el comprobante de nuevo.
         </p>
@@ -187,5 +187,13 @@ export default function PrintLoanReceiptPage() {
         <PrintLoanReceipt loan={loan} />
       </main>
     </div>
+  );
+}
+
+export default function PrintLoanReceiptPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-gray-100"><Loader2 className="h-8 w-8 animate-spin text-gray-700" /></div>}>
+      <PrintPageContent />
+    </Suspense>
   );
 }

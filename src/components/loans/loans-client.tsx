@@ -97,8 +97,12 @@ export default function LoansClient({
         ...loanToPrint,
         ...printData,
       };
-      sessionStorage.setItem('printableLoan', JSON.stringify(printableData));
-      window.open('/print/loan-receipt', '_blank');
+      
+      const dataString = JSON.stringify(printableData);
+      const encodedData = btoa(encodeURIComponent(dataString));
+      const printUrl = `/print/loan-receipt?data=${encodedData}`;
+
+      window.open(printUrl, '_blank');
       setIsPrintConfirmOpen(false);
       setLoanToPrint(null);
     }
